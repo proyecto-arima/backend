@@ -3,6 +3,8 @@ FROM node:current-slim
 # Create app directory
 WORKDIR /usr/src/app
 
+RUN apt-get update && apt-get install -y curl
+
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
