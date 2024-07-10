@@ -59,7 +59,7 @@ jobs:
       - name: Install SSH client
         run: sudo apt-get update && sudo apt-get install -y openssh-client
 
-      - name: Copy SSH key
+      - name: Deploy to test
         uses: appleboy/ssh-action@v0.1.4
         with:
           key: ${{ secrets.TEST_SSH_PRIVATE_KEY }}
