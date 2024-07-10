@@ -3,7 +3,7 @@ name: Deploy to production
 on: 
   push:
     tags:
-      - 'refs/tags/v*'
+      - '*'
 
 jobs:
   build-docker-image:
