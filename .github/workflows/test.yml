@@ -69,4 +69,4 @@ jobs:
           script: |
             cd ${{ secrets.TEST_REMOTE_PATH }}
             docker compose pull
-            docker compose up -d --build backend
+            docker compose --profile deploy up -d --build backend
