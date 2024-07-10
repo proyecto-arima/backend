@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import { StatusCodes } from 'http-status-codes';
 
 import { User } from '@/api/user/userModel';
@@ -31,6 +32,19 @@ export const userService = {
       return new ServiceResponse<User>(ResponseStatus.Success, 'User found', user, StatusCodes.OK);
     } catch (ex) {
       const errorMessage = `Error finding user with id ${id}:, ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return new ServiceResponse(ResponseStatus.Failed, errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  },
+
+  register: async (user: User): Promise<ServiceResponse> => {
+    try {
+      const hash = await bcrypt.hash(user.password, 10);
+      const userToSave = { ...user, password: hash };
+      await userRepository.registerAsync(userToSave);
+      return new ServiceResponse(ResponseStatus.Success, 'User registered', null, StatusCodes.CREATED);
+    } catch (ex) {
+      const errorMessage = `Error registering user: ${(ex as Error).message}`;
       logger.error(errorMessage);
       return new ServiceResponse(ResponseStatus.Failed, errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
     }

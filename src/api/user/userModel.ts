@@ -10,7 +10,7 @@ export const UserSchema = z.object({
   id: z.number(),
   name: z.string(),
   email: z.string().email(),
-  age: z.number(),
+  password: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -18,4 +18,12 @@ export const UserSchema = z.object({
 // Input Validation for 'GET users/:id' endpoint
 export const GetUserSchema = z.object({
   params: z.object({ id: commonValidations.id }),
+});
+
+export const CreateUserSchema = z.object({
+  body: z.object({
+    name: z.string(),
+    email: z.string().email(),
+    password: z.string(),
+  }),
 });
