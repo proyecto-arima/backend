@@ -17,7 +17,11 @@ export const sessionMiddleware = async (req: SessionRequest, res: Response, next
     res.status(401).send('Unauthorized');
   }
 
-  // TODO: Get Authorization header!
+  // TODO: Check if get Authorization header
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    res.status(401).send('Unauthorized');
+  }
 
   if (!jwt.verify(accessToken, process.env.JWT_SECRET as string)) {
     res.status(401).send('Unauthorized');
