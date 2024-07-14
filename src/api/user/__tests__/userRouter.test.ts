@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import request from 'supertest';
 
-import { User } from '@/api/user/userModel';
+import { UserDTO } from '@/api/user/userModel';
 import { users } from '@/api/user/userRepository';
 import { ServiceResponse } from '@/common/models/serviceResponse';
 import { app } from '@/server';
@@ -11,14 +11,14 @@ describe('User API Endpoints', () => {
     it('should return a list of users', async () => {
       // Act
       const response = await request(app).get('/users');
-      const responseBody: ServiceResponse<User[]> = response.body;
+      const responseBody: ServiceResponse<UserDTO[]> = response.body;
 
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.OK);
       expect(responseBody.success).toBeTruthy();
       expect(responseBody.message).toContain('Users found');
       expect(responseBody.responseObject.length).toEqual(users.length);
-      responseBody.responseObject.forEach((user, index) => compareUsers(users[index] as User, user));
+      responseBody.responseObject.forEach((user, index) => compareUsers(users[index] as UserDTO, user));
     });
   });
 
@@ -26,11 +26,11 @@ describe('User API Endpoints', () => {
     it('should return a user for a valid ID', async () => {
       // Arrange
       const testId = 1;
-      const expectedUser = users.find((user) => user.id === testId) as User;
+      const expectedUser = users.find((user) => user.id === testId) as UserDTO;
 
       // Act
       const response = await request(app).get(`/users/${testId}`);
-      const responseBody: ServiceResponse<User> = response.body;
+      const responseBody: ServiceResponse<UserDTO> = response.body;
 
       // Assert
       expect(response.statusCode).toEqual(StatusCodes.OK);
@@ -70,7 +70,7 @@ describe('User API Endpoints', () => {
   });
 });
 
-function compareUsers(mockUser: User, responseUser: User) {
+function compareUsers(mockUser: UserDTO, responseUser: UserDTO) {
   if (!mockUser || !responseUser) {
     throw new Error('Invalid test data: mockUser or responseUser is undefined');
   }

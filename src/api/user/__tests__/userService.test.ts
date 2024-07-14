@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import { Mock } from 'vitest';
 
-import { User } from '@/api/user/userModel';
+import { UserDTO } from '@/api/user/userModel';
 import { userRepository } from '@/api/user/userRepository';
 import { userService } from '@/api/user/userService';
 
@@ -14,7 +14,7 @@ vi.mock('@/server', () => ({
 }));
 
 describe('userService', () => {
-  const mockUsers: User[] = [
+  const mockUsers: UserDTO[] = [
     { id: 1, name: 'Alice', email: 'alice@example.com', age: 42, createdAt: new Date(), updatedAt: new Date() },
     { id: 2, name: 'Bob', email: 'bob@example.com', age: 21, createdAt: new Date(), updatedAt: new Date() },
   ];
