@@ -1,20 +1,19 @@
 import nodemailer from 'nodemailer';
 
+import { config } from '../utils/config';
+
 // TODO: Check configuracion de SMTP server to debug emails to send
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.sendgrid.net',
-  port: 465,
-  // secure: false,
-  auth: {
-    user: 'yaciro8783@furnato.com',
-    pass: '',
-  },
+  host: config.smtp.host,
+  port: config.smtp.port,
+  secure: false,
+  auth: config.smtp.auth,
 });
 
 async function sendMailTo(mails: Array<string>, subject: string, html: string) {
   const info = await transporter.sendMail({
-    from: 'yaciro8783@furnato.com',
+    from: config.smtp.sender,
     to: mails.join(','),
     subject: subject,
     html: html,

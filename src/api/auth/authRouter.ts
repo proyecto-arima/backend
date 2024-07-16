@@ -36,6 +36,13 @@ export const authRouter: Router = (() => {
     responses: createApiResponse(SessionTokenSchema, 'Success'),
   });
 
+  authRegistry.registerPath({
+    method: 'post',
+    path: '/auth/logout',
+    tags: ['Authentication'],
+    responses: createApiResponse(z.object({}), 'Success'),
+  });
+
   router.post(
     '/reset',
     validateRequest(PasswordResetSchema),
@@ -46,8 +53,8 @@ export const authRouter: Router = (() => {
         return res.status(StatusCodes.UNAUTHORIZED).send('Unauthorized');
       }
       try {
-        await authService.resetPassword(sessionContext.userId, req.body);
-        res.sendStatus(StatusCodes.OK);
+        const response: ServiceResponse = await authService.resetPassword(sessionContext.userId, req.body);
+        return handleServiceResponse(response, res);
       } catch (ex) {
         const errorMessage = `Error resetting password: ${(ex as Error).message}`;
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(errorMessage);
@@ -56,10 +63,24 @@ export const authRouter: Router = (() => {
   );
 
   router.post('/login', validateRequest(UserLoginSchema), async (req: Request, res: Response) => {
-    const session: SessionToken = await userService.login(req.body);
-    res.cookie('access_token', session.access_token, { httpOnly: true, maxAge: 12 * 60 * 60 * 1000 });
-    const response = new ServiceResponse(ResponseStatus.Success, 'User logged in', session, StatusCodes.OK);
-    handleServiceResponse(response, res);
+    try {
+      const session: SessionToken = await userService.login(req.body);
+      res.cookie('access_token', session.access_token, { httpOnly: true, maxAge: 12 * 60 * 60 * 1000 });
+      const response = new ServiceResponse(ResponseStatus.Success, 'User logged in', session, StatusCodes.OK);
+      handleServiceResponse(response, res);
+    } catch (ex) {
+      // Specify class
+      if (ex instanceof Error) {
+        const errorResponse = new ServiceResponse(ResponseStatus.Failed, ex.message, null, StatusCodes.UNAUTHORIZED);
+        return handleServiceResponse(errorResponse, res);
+      }
+    }
+  });
+
+  router.post('/logout', sessionMiddleware, async (req: Request, res: Response) => {
+    res.clearCookie('access_token');
+    const response = new ServiceResponse(ResponseStatus.Success, 'User logged out', null, StatusCodes.OK);
+    return handleServiceResponse(response, res);
   });
 
   return router;

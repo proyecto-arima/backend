@@ -1,8 +1,10 @@
 import bcrypt from 'bcrypt';
+import { StatusCodes } from 'http-status-codes';
 import jwt from 'jsonwebtoken';
 
 import { SessionToken, User, UserLoginDTO } from '@/api/user/userModel';
 import { userRepository } from '@/api/user/userRepository';
+import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
 import { ObjectId } from '@/common/utils/commonTypes';
 import { logger } from '@/server';
 
@@ -33,7 +35,7 @@ export const authService = {
     }
   },
 
-  resetPassword: async (id: ObjectId, passwordReset: PasswordReset): Promise<void> => {
+  resetPassword: async (id: ObjectId, passwordReset: PasswordReset): Promise<ServiceResponse> => {
     try {
       const user: User = await userRepository.findByIdAsync(id);
       if (!user) {
@@ -44,7 +46,7 @@ export const authService = {
         return Promise.reject(new Error('Invalid credentials'));
       }
       if (passwordReset.newPassword !== passwordReset.newPasswordConfirmation) {
-        return Promise.reject(new Error('Invalid credentials'));
+        return Promise.reject(new Error('Passwords do not match'));
       }
       if (!user.forcePasswordReset) {
         return Promise.reject(new Error('Invalid credentials'));
@@ -56,7 +58,7 @@ export const authService = {
       user.password = hash;
       user.forcePasswordReset = false;
       await userRepository.update(id, user);
-      return Promise.resolve();
+      return new ServiceResponse(ResponseStatus.Success, 'Password reset', null, StatusCodes.OK);
     } catch (ex) {
       const errorMessage = `Error resetting password: ${(ex as Error).message}`;
       logger.error(errorMessage);

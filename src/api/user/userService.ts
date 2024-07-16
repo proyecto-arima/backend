@@ -66,12 +66,14 @@ export const userService = {
       const foundUser: User = await userRepository.findByEmail(user.email);
       if (!foundUser) {
         //return new ServiceResponse(ResponseStatus.Failed, 'Invalid credentials', null, StatusCodes.UNAUTHORIZED);
+        logger.debug(`User not found with email: ${user.email}`);
         return Promise.reject(new Error('Invalid credentials'));
       }
 
       const isPasswordValid = await bcrypt.compare(user.password, foundUser.password);
       if (!isPasswordValid) {
         //return new ServiceResponse(ResponseStatus.Failed, 'Invalid credentials', null, StatusCodes.UNAUTHORIZED);
+        logger.debug(`Invalid password for user with email: ${user.email}`);
         return Promise.reject(new Error('Invalid credentials'));
       }
       //return new ServiceResponse(ResponseStatus.Success, 'User logged in', foundUser.toDto(), StatusCodes.OK);
@@ -80,8 +82,8 @@ export const userService = {
         access_token: jwt.sign({ id: userDto.id }, process.env.JWT_SECRET as string, { expiresIn: '12h' }),
       };
     } catch (ex) {
-      const errorMessage = `Error logging in user: ${(ex as Error).message}`;
-      logger.error(errorMessage);
+      logger.debug(`Error logging in user: ${(ex as Error).message}`);
+      const errorMessage = `Invalid credentials`;
       return Promise.reject(new Error(errorMessage));
     }
   },

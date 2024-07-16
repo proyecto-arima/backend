@@ -26,9 +26,7 @@ export const userRepository = {
   },
 
   update: async (id: ObjectId, user: User): Promise<User> => {
-    console.log(user);
     const updatedUser = await UserModel.findByIdAndUpdate<User>(id, user, { new: true });
-    console.log(updatedUser);
     if (!updatedUser) {
       return Promise.reject(new Error('User not found'));
     }

@@ -1,7 +1,7 @@
 {
-  "name": "express-typescript-boilerplate",
+  "name": "proyecto-arima-backend",
   "version": "0.0.1",
-  "description": "An Express boilerplate backend",
+  "description": "Backend for ADAPTAR-IA by Proyecto Arima",
   "main": "index.ts",
   "private": true,
   "scripts": {
@@ -16,7 +16,8 @@
     "test:dev": "vitest dev",
     "test:cov": "vitest run --coverage",
     "release": "semantic-release",
-    "prepare": "husky"
+    "prepare": "husky",
+    "seed_db": "node src/common/utils/seed_db.js"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.0.0",
@@ -43,6 +44,7 @@
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^10.0.3",
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
@@ -60,6 +62,7 @@
     "eslint-plugin-simple-import-sort": "^12.0.0",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
+    "mongodb-memory-server": "^9.4.1",
     "pino-pretty": "^11.0.0",
     "prettier": "^3.2.5",
     "rimraf": "^5.0.5",
@@ -75,7 +78,7 @@
     "**/*": "npm run format",
     "**/*.{js,ts}": "npm run lint:fix"
   },
-  "author": "Edwin Hernandez",
-  "repository": "edwinhern/express-typescript-2024",
+  "author": "Proyecto Arima",
+  "repository": "proyecto-arima/backend",
   "license": "ISC"
 }

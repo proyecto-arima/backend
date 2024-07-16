@@ -88,7 +88,6 @@ const userModelSchema = new Schema<IUserSchemaDefinition, UserModelDefinition, I
  * Read more about Mongoose methods here: https://mongoosejs.com/docs/typescript/statics-and-methods.html
  */
 userModelSchema.method('toDto', function (): UserDTO {
-  console.log(this);
   return {
     id: this._id.toString(),
     firstName: this.firstName.toString(),
