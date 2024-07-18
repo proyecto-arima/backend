@@ -3,9 +3,17 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import request from 'supertest';
 
-import { ServiceResponse } from '@/common/models/serviceResponse';
+import { ApiResponse } from '@/common/models/apiResponse';
 import { connectToMongoDB, disconnectFromMongoDB } from '@/common/utils/mongodb';
 import { app } from '@/server';
+
+vi.mock('@/common/mailSender/mailSenderService', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('@/common/mailSender/mailSenderService')>();
+  return {
+    ...mod,
+    sendMailTo: vi.fn(),
+  };
+});
 
 describe('Authentication tests', () => {
   beforeAll(async () => {
@@ -30,45 +38,45 @@ describe('Authentication tests', () => {
   });
 
   const loginAsAdminShouldSuccess = async (email = 'admin@proyectoarima.tech', password = 'admin') => {
-    const response = await request(app).post('/auth/login').send({
+    const response = await request(app).post('/auth').send({
       email,
       password,
     });
-    const result: ServiceResponse = response.body;
+    const result: ApiResponse = response.body;
     expect(response.statusCode).toEqual(StatusCodes.OK);
     expect(result.success).toBeTruthy();
-    expect(result.responseObject).toHaveProperty('access_token');
+    expect(result.data).toHaveProperty('access_token');
     expect(result.message).toEqual('User logged in');
     expect(response.header).toHaveProperty('set-cookie');
     expect(response.header['set-cookie'][0]).toMatch(/access_token=.+; Max-Age=\d+; Path=\/; Expires=.+; HttpOnly/);
 
-    return result.responseObject?.['access_token'];
+    return result.data?.['access_token'];
   };
 
   const loginAsAdminShouldFail = async (email: string, password: string) => {
-    const response = await request(app).post('/auth/login').send({
+    const response = await request(app).post('/auth').send({
       email,
       password,
     });
 
-    const result: ServiceResponse = response.body;
+    const result: ApiResponse = response.body;
 
     expect(response.statusCode).toEqual(StatusCodes.UNAUTHORIZED);
     expect(result.success).toBeFalsy();
     expect(result.message).toEqual('Invalid credentials');
-    expect(result.responseObject).toBeNull();
+    expect(result.data).toBeNull();
     expect(response.header).not.toHaveProperty('set-cookie');
   };
 
-  it('POST /auth/login', async () => {
+  it('POST /auth', async () => {
     await loginAsAdminShouldSuccess();
   });
 
-  it('POST /auth/login with invalid email', async () => {
+  it('POST /auth with invalid email', async () => {
     loginAsAdminShouldFail('admin2@proyectoarima.tech', 'admin');
   });
 
-  it('POST /auth/login with invalid password', async () => {
+  it('POST /auth with invalid password', async () => {
     loginAsAdminShouldFail('admin@proyectoarima.tech', 'admin2');
   });
 
@@ -81,20 +89,20 @@ describe('Authentication tests', () => {
       newPasswordConfirmation: 'admin2',
     });
 
-    const result: ServiceResponse = response.body;
+    const result: ApiResponse = response.body;
     expect(response.statusCode).toEqual(StatusCodes.OK);
     expect(result.success).toBeTruthy();
-    expect(result.message).toEqual('Password reset');
-    expect(result.responseObject).toBeNull();
+    expect(result.message).toEqual('Password reset successfully');
+    expect(result.data).toBeNull();
 
     await loginAsAdminShouldFail('admin@proyectoarima.tech', 'admin');
     await loginAsAdminShouldSuccess('admin@proyectoarima.tech', 'admin2');
   });
 
-  it('POST /auth/logout', async () => {
+  it('DELETE /auth', async () => {
     const accessToken = await loginAsAdminShouldSuccess();
 
-    const response = await request(app).post('/auth/logout').set('Cookie', `access_token=${accessToken}`);
+    const response = await request(app).delete('/auth').set('Cookie', `access_token=${accessToken}`);
 
     expect(response.statusCode).toEqual(StatusCodes.OK);
     expect(response.header).not.toHaveProperty('Set-Cookie');

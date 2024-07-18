@@ -3,7 +3,7 @@ import express, { Request, Response, Router } from 'express';
 
 import { UserCreationSchema, UserDTOSchema } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { handleServiceResponse, validateRequest } from '@/common/utils/httpHandlers';
+import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 
 import { teacherService } from './teacherService';
 
@@ -24,7 +24,7 @@ export const studentRouter: Router = (() => {
 
   router.post('/', validateRequest(UserCreationSchema), async (req: Request, res: Response) => {
     const serviceResponse = await teacherService.create(req.body);
-    handleServiceResponse(serviceResponse, res);
+    handleApiResponse(serviceResponse, res);
   });
 
   return router;

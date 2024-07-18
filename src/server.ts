@@ -7,7 +7,7 @@ import { pino } from 'pino';
 import { healthCheckRouter } from '@/api/healthCheck/healthCheckRouter';
 import { userRouter } from '@/api/user/userRouter';
 import { openAPIRouter } from '@/api-docs/openAPIRouter';
-import errorHandler from '@/common/middleware/errorHandler';
+import { errorHandler, unexpectedRequest } from '@/common/middleware/errorHandler';
 import rateLimiter from '@/common/middleware/rateLimiter';
 import requestLogger from '@/common/middleware/requestLogger';
 
@@ -43,10 +43,6 @@ app.use(openAPIRouter);
 
 // Error handlers
 app.use(errorHandler());
-
-app.use((_req, res, next, err) => {
-  logger.error(`Unhandled error: ${err}`);
-  res.status(500).send('Internal Server Error');
-});
+app.use('*', unexpectedRequest);
 
 export { app, logger };

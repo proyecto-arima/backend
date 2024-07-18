@@ -1,68 +1,56 @@
 import bcrypt from 'bcrypt';
-import { StatusCodes } from 'http-status-codes';
 import jwt from 'jsonwebtoken';
 
 import { SessionToken, User, UserLoginDTO } from '@/api/user/userModel';
 import { userRepository } from '@/api/user/userRepository';
-import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
-import { ObjectId } from '@/common/utils/commonTypes';
-import { logger } from '@/server';
+import { config } from '@/common/utils/config';
 
-import { PasswordReset } from './authModel';
+import {
+  InvalidCredentialsError,
+  PasswordReset,
+  SessionPayload,
+  SessionPayloadSchema,
+  UserNotFoundError,
+} from './authModel';
 
 export const authService = {
   login: async (user: UserLoginDTO): Promise<SessionToken> => {
     try {
       const foundUser: User = await userRepository.findByEmail(user.email);
-      if (!foundUser) {
-        //return new ServiceResponse(ResponseStatus.Failed, 'Invalid credentials', null, StatusCodes.UNAUTHORIZED);
-        return Promise.reject(new Error('Invalid credentials'));
-      }
       const isPasswordValid = await bcrypt.compare(user.password, foundUser.password);
       if (!isPasswordValid) {
-        //return new ServiceResponse(ResponseStatus.Failed, 'Invalid credentials', null, StatusCodes.UNAUTHORIZED);
-        return Promise.reject(new Error('Invalid credentials'));
+        throw new InvalidCredentialsError();
       }
-      //return new ServiceResponse(ResponseStatus.Success, 'User logged in', foundUser.toDto(), StatusCodes.OK);
       const userDto = foundUser.toDto();
-      return {
-        access_token: jwt.sign({ id: userDto.id }, process.env.JWT_SECRET as string, { expiresIn: '12h' }),
-      };
+      const token: SessionPayload = SessionPayloadSchema.parse({ id: userDto.id });
+      const access_token = jwt.sign(token, config.jwt.secret as string, { expiresIn: '12h' });
+      return { access_token };
     } catch (ex) {
-      const errorMessage = `Error logging in user: ${(ex as Error).message}`;
-      logger.error(errorMessage);
-      return Promise.reject(new Error(errorMessage));
+      if (ex instanceof UserNotFoundError) {
+        throw new InvalidCredentialsError(); // Map UserNotFoundError to InvalidCredentialsError for login!
+      }
+      throw ex;
     }
   },
 
-  resetPassword: async (id: ObjectId, passwordReset: PasswordReset): Promise<ServiceResponse> => {
-    try {
-      const user: User = await userRepository.findByIdAsync(id);
-      if (!user) {
-        return Promise.reject(new Error('Invalid credentials'));
-      }
-      const oldPasswordValid = await bcrypt.compare(passwordReset.oldPassword, user.password);
-      if (!oldPasswordValid) {
-        return Promise.reject(new Error('Invalid credentials'));
-      }
-      if (passwordReset.newPassword !== passwordReset.newPasswordConfirmation) {
-        return Promise.reject(new Error('Passwords do not match'));
-      }
-      if (!user.forcePasswordReset) {
-        return Promise.reject(new Error('Invalid credentials'));
-      }
-
-      // TODO: temp password expiration
-
-      const hash = await bcrypt.hash(passwordReset.newPassword, 10);
-      user.password = hash;
-      user.forcePasswordReset = false;
-      await userRepository.update(id, user);
-      return new ServiceResponse(ResponseStatus.Success, 'Password reset', null, StatusCodes.OK);
-    } catch (ex) {
-      const errorMessage = `Error resetting password: ${(ex as Error).message}`;
-      logger.error(errorMessage);
-      return Promise.reject(new Error(errorMessage));
+  resetPassword: async (id: string, passwordReset: PasswordReset): Promise<void> => {
+    const user: User = await userRepository.findByIdAsync(id);
+    if (!user) {
+      throw new UserNotFoundError();
     }
+    const oldPasswordValid = await bcrypt.compare(passwordReset.oldPassword, user.password);
+    if (!oldPasswordValid) {
+      throw new InvalidCredentialsError();
+    }
+    if (passwordReset.newPassword !== passwordReset.newPasswordConfirmation) {
+      throw new InvalidCredentialsError();
+    }
+
+    // TODO: temp password expiration
+    const hash = await bcrypt.hash(passwordReset.newPassword, 10);
+    user.password = hash;
+    user.forcePasswordReset = false;
+    await userRepository.update(id, user);
+    return Promise.resolve();
   },
 };

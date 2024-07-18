@@ -1,11 +1,16 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
-import express, { Request, Response, Router } from 'express';
+import express, { NextFunction, Request, Response, Router } from 'express';
+import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-import { GetUserSchema, UserDTOSchema } from '@/api/user/userModel';
+import { GetUserSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
 import { userService } from '@/api/user/userService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { handleServiceResponse, validateRequest } from '@/common/utils/httpHandlers';
+import { ApiError } from '@/common/models/apiError';
+import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
+import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
+
+import { UserNotFoundError } from '../auth/authModel';
 
 export const userRegistry = new OpenAPIRegistry();
 
@@ -31,15 +36,36 @@ export const userRouter: Router = (() => {
   });
 
   // Router
-  router.get('/', async (_req: Request, res: Response) => {
-    const serviceResponse = await userService.findAll();
-    handleServiceResponse(serviceResponse, res);
+  router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const users: UserDTO[] = await userService.findAll();
+      const apiResponse = new ApiResponse(
+        ResponseStatus.Success,
+        'Users retrieved successfully',
+        users,
+        StatusCodes.OK
+      );
+      handleApiResponse(apiResponse, res);
+    } catch (error) {
+      const apiError = new ApiError('Failed to retrieve users', StatusCodes.INTERNAL_SERVER_ERROR, error);
+      return next(apiError);
+    }
   });
 
-  router.get('/:id', validateRequest(GetUserSchema), async (req: Request, res: Response) => {
-    const user = GetUserSchema.parse({ params: req.params });
-    const serviceResponse = await userService.findById(user.params.id);
-    handleServiceResponse(serviceResponse, res);
+  router.get('/:id', validateRequest(GetUserSchema), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userReq = GetUserSchema.parse({ params: req.params });
+      const user: UserDTO = await userService.findById(userReq.params.id.toString());
+      const apiResponse = new ApiResponse(ResponseStatus.Success, 'User retrieved successfully', user, StatusCodes.OK);
+
+      handleApiResponse(apiResponse, res);
+    } catch (e) {
+      if (e instanceof UserNotFoundError) {
+        const apiResponse = new ApiResponse(ResponseStatus.Failed, 'User not found', null, StatusCodes.NOT_FOUND);
+        return handleApiResponse(apiResponse, res);
+      }
+      return next(new ApiError('Failed to retrieve user', StatusCodes.INTERNAL_SERVER_ERROR, e));
+    }
   });
 
   return router;

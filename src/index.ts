@@ -1,5 +1,6 @@
 import { app, logger } from '@/server';
 
+import { buildTransporter, initTransporter } from './common/mailSender/mailSenderService';
 import { config } from './common/utils/config';
 import { connectToMongoDB } from './common/utils/mongodb';
 
@@ -11,6 +12,8 @@ const server = app.listen(config.app.port, () => {
 connectToMongoDB(config.mongodb.uri)
   .then(() => logger.info('MongoDB connected'))
   .catch((ex) => logger.error(`Error connecting to MongoDB: ${(ex as Error).message}`));
+
+initTransporter(buildTransporter());
 
 const onCloseSignal = () => {
   logger.info('sigint received, shutting down');

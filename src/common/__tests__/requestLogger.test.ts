@@ -2,7 +2,7 @@ import express from 'express';
 import { StatusCodes } from 'http-status-codes';
 import request from 'supertest';
 
-import errorHandler from '@/common/middleware/errorHandler';
+import { errorHandler } from '@/common/middleware/errorHandler';
 import requestLogger from '@/common/middleware/requestLogger';
 
 describe('Request Logger Middleware', () => {

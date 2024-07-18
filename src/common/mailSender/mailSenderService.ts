@@ -4,12 +4,19 @@ import { config } from '../utils/config';
 
 // TODO: Check configuracion de SMTP server to debug emails to send
 
-const transporter = nodemailer.createTransport({
-  host: config.smtp.host,
-  port: config.smtp.port,
-  secure: false,
-  auth: config.smtp.auth,
-});
+let transporter: nodemailer.Transporter;
+
+export async function initTransporter(t: nodemailer.Transporter) {
+  transporter = t;
+}
+
+export const buildTransporter = () =>
+  nodemailer.createTransport({
+    host: config.smtp.host,
+    port: config.smtp.port,
+    secure: false,
+    auth: config.smtp.auth,
+  });
 
 async function sendMailTo(mails: Array<string>, subject: string, html: string) {
   const info = await transporter.sendMail({

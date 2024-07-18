@@ -1,9 +1,11 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { Request, Response, Router } from 'express';
+import { StatusCodes } from 'http-status-codes';
 
-import { UserCreationSchema, UserDTOSchema } from '@/api/user/userModel';
+import { UserCreationSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { handleServiceResponse, validateRequest } from '@/common/utils/httpHandlers';
+import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
+import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 
 import { studentService } from './studentService';
 
@@ -23,8 +25,14 @@ export const studentRouter: Router = (() => {
   });
 
   router.post('/', validateRequest(UserCreationSchema), async (req: Request, res: Response) => {
-    const serviceResponse = await studentService.create(req.body);
-    handleServiceResponse(serviceResponse, res);
+    const userDTO: UserDTO = await studentService.create(req.body);
+    const apiResponse = new ApiResponse(
+      ResponseStatus.Success,
+      'Student created successfully',
+      userDTO,
+      StatusCodes.CREATED
+    );
+    handleApiResponse(apiResponse, res);
   });
 
   return router;
