@@ -19,7 +19,6 @@ userRegistry.register('User', UserDTOSchema);
 export const userRouter: Router = (() => {
   const router = express.Router();
 
-  // Path
   userRegistry.registerPath({
     method: 'get',
     path: '/users',
@@ -35,7 +34,6 @@ export const userRouter: Router = (() => {
     responses: createApiResponse(UserDTOSchema, 'Success'),
   });
 
-  // Router
   router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const users: UserDTO[] = await userService.findAll();
@@ -57,7 +55,6 @@ export const userRouter: Router = (() => {
       const userReq = GetUserSchema.parse({ params: req.params });
       const user: UserDTO = await userService.findById(userReq.params.id.toString());
       const apiResponse = new ApiResponse(ResponseStatus.Success, 'User retrieved successfully', user, StatusCodes.OK);
-
       handleApiResponse(apiResponse, res);
     } catch (e) {
       if (e instanceof UserNotFoundError) {

@@ -80,11 +80,11 @@ describe('Authentication tests', () => {
     loginAsAdminShouldFail('admin@proyectoarima.tech', 'admin2');
   });
 
-  it('POST /auth/reset', async () => {
+  it('POST /auth/setPassword', async () => {
     const accessToken = await loginAsAdminShouldSuccess();
 
-    const response = await request(app).post('/auth/reset').set('Authorization', `Bearer ${accessToken}`).send({
-      oldPassword: 'admin',
+    const response = await request(app).post('/auth/setPassword').set('Authorization', `Bearer ${accessToken}`).send({
+      initPassword: 'admin',
       newPassword: 'admin2',
       newPasswordConfirmation: 'admin2',
     });
@@ -92,11 +92,18 @@ describe('Authentication tests', () => {
     const result: ApiResponse = response.body;
     expect(response.statusCode).toEqual(StatusCodes.OK);
     expect(result.success).toBeTruthy();
-    expect(result.message).toEqual('Password reset successfully');
+    expect(result.message).toEqual('Password set successfully');
     expect(result.data).toBeNull();
 
     await loginAsAdminShouldFail('admin@proyectoarima.tech', 'admin');
     await loginAsAdminShouldSuccess('admin@proyectoarima.tech', 'admin2');
+  });
+
+  // TODO: Pendiente
+  it.skip('POST /auth/resetPassword', async () => {
+    // 1. Token expires
+    // 2. Email not sended if the user does not exist
+    // 3. Email sended if the user exists
   });
 
   it('DELETE /auth', async () => {

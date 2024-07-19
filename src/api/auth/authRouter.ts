@@ -1,6 +1,7 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import { TokenExpiredError } from 'jsonwebtoken';
 import { z } from 'zod';
 
 import { SessionToken, SessionTokenSchema, UserLoginSchema } from '@/api/user/userModel';
@@ -10,7 +11,7 @@ import { INVALID_CREDENTIALS, UNAUTHORIZED, UNEXPECTED_ERROR } from '@/common/mo
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 
-import { InvalidCredentialsError, PasswordResetSchema } from './authModel';
+import { InvalidCredentialsError, PasswordResetSchema, PasswordSetSchema } from './authModel';
 import { authService } from './authService';
 
 export const authRegistry = new OpenAPIRegistry();
@@ -22,9 +23,9 @@ export const authRouter: Router = (() => {
 
   authRegistry.registerPath({
     method: 'post',
-    path: '/auth/reset',
+    path: '/auth/setPassword',
     tags: ['Authentication'],
-    request: { body: { content: { 'application/json': { schema: PasswordResetSchema.shape.body } }, description: '' } },
+    request: { body: { content: { 'application/json': { schema: PasswordSetSchema.shape.body } }, description: '' } },
     responses: createApiResponse(z.object({}), 'Success'),
   });
 
@@ -44,8 +45,8 @@ export const authRouter: Router = (() => {
   });
 
   router.post(
-    '/reset',
-    validateRequest(PasswordResetSchema),
+    '/setPassword',
+    validateRequest(PasswordSetSchema),
     sessionMiddleware,
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const sessionContext = req.sessionContext;
@@ -53,12 +54,29 @@ export const authRouter: Router = (() => {
         return next(UNAUTHORIZED);
       }
       try {
-        await authService.resetPassword(sessionContext?.user?.id, req.body);
-        const response = new ApiResponse(ResponseStatus.Success, 'Password reset successfully', null, StatusCodes.OK);
+        await authService.passwordSetAtFirstLogin(sessionContext?.user?.id, req.body);
+        const response = new ApiResponse(ResponseStatus.Success, 'Password set successfully', null, StatusCodes.OK);
         return handleApiResponse(response, res);
       } catch (ex) {
         if (ex instanceof InvalidCredentialsError) {
           return next(INVALID_CREDENTIALS);
+        }
+        return next(UNEXPECTED_ERROR(ex));
+      }
+    }
+  );
+
+  router.post(
+    '/resetPassword',
+    validateRequest(PasswordResetSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      try {
+        await authService.passwordResetRequest(req.body.email);
+        const response = new ApiResponse(ResponseStatus.Success, 'Password reset successfully', null, StatusCodes.OK);
+        return handleApiResponse(response, res);
+      } catch (ex) {
+        if (ex instanceof TokenExpiredError) {
+          return next(TokenExpiredError);
         }
         return next(UNEXPECTED_ERROR(ex));
       }
