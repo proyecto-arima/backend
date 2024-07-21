@@ -7,14 +7,14 @@ import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers'
 
 import { teacherService } from './teacherService';
 
-export const studentRegistry = new OpenAPIRegistry();
+export const teacherRegistry = new OpenAPIRegistry();
 
-studentRegistry.register('Student', UserDTOSchema);
+teacherRegistry.register('Teacher', UserDTOSchema);
 
-export const studentRouter: Router = (() => {
+export const teacherRouter: Router = (() => {
   const router = express.Router();
 
-  studentRegistry.registerPath({
+  teacherRegistry.registerPath({
     method: 'post',
     path: '/teachers/',
     tags: ['Teacher'],
@@ -23,6 +23,7 @@ export const studentRouter: Router = (() => {
   });
 
   router.post('/', validateRequest(UserCreationSchema), async (req: Request, res: Response) => {
+    console.log('entro al post router');
     const serviceResponse = await teacherService.create(req.body);
     handleApiResponse(serviceResponse, res);
   });

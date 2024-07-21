@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import { StatusCodes } from 'http-status-codes';
 
 import { UserCreationDTO, UserDTO } from '@/api/user/userModel';
@@ -11,7 +12,7 @@ import { userService } from '../user/userService';
 // TODO: Reimplementar para no repetir
 export const teacherService = {
   create: async (user: UserCreationDTO): Promise<ApiResponse<UserDTO | null>> => {
-    const randomPassword = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
+    const randomPassword = crypto.randomBytes(4).toString('hex');
     try {
       const hash = await bcrypt.hash(randomPassword, 10);
       const createdUser: UserDTO = await userService.create({ ...user, password: hash, role: Role.TEACHER });
