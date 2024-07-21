@@ -13,7 +13,6 @@ import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers'
 import { UserNotFoundError } from '../auth/authModel';
 
 export const userRegistry = new OpenAPIRegistry();
-
 userRegistry.register('User', UserDTOSchema);
 
 export const userRouter: Router = (() => {

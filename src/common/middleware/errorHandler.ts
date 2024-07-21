@@ -5,6 +5,8 @@ import { ApiError } from '../models/apiError';
 import { ApiResponse, ResponseStatus } from '../models/apiResponse';
 import { handleApiResponse } from '../utils/httpHandlers';
 
+import { logger } from '../utils/serverLogger';
+
 export const unexpectedRequest: RequestHandler = (_req, res) => {
   res.sendStatus(StatusCodes.NOT_FOUND);
 };
@@ -19,6 +21,8 @@ const sendResponseError: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof ApiError) {
     const error = err as ApiError;
     res.locals.err = error.err;
+
+    logger.error(error.err);
     const apiResponse = new ApiResponse(ResponseStatus.Failed, err.message, null, err.statusCode);
     return handleApiResponse(apiResponse, res);
   }
@@ -28,6 +32,9 @@ const sendResponseError: ErrorRequestHandler = (err, _req, res, _next) => {
     null,
     StatusCodes.INTERNAL_SERVER_ERROR
   );
+  // logger.error(err);
+  console.error(err);
+  
   return handleApiResponse(apiResponse, res);
 };
 

@@ -1,4 +1,5 @@
-import { app, logger } from '@/server';
+import { app } from '@/server';
+import { logger } from '@/common/utils/serverLogger';
 
 import { buildTransporter, initTransporter } from './common/mailSender/mailSenderService';
 import { config } from './common/utils/config';

@@ -2,14 +2,13 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
-import { pino } from 'pino';
 
 import { healthCheckRouter } from '@/api/healthCheck/healthCheckRouter';
 import { userRouter } from '@/api/user/userRouter';
 import { openAPIRouter } from '@/api-docs/openAPIRouter';
 import { errorHandler, unexpectedRequest } from '@/common/middleware/errorHandler';
 import rateLimiter from '@/common/middleware/rateLimiter';
-import requestLogger from '@/common/middleware/requestLogger';
+import requestLogger from '@/common/utils/requestLogger';
 
 import { authRouter } from './api/auth/authRouter';
 import { directorRouter } from './api/director/directorRouter';
@@ -18,7 +17,6 @@ import { teacherRouter } from './api/teacher/teacherRouter';
 import { sessionMiddleware } from './common/middleware/session';
 import { config } from './common/utils/config';
 
-const logger = pino({ name: 'server start', level: 'debug' });
 const app: Express = express();
 
 // Set the application to trust the reverse proxy
@@ -51,4 +49,4 @@ app.use(openAPIRouter);
 app.use(errorHandler());
 app.use('*', unexpectedRequest);
 
-export { app, logger };
+export { app };

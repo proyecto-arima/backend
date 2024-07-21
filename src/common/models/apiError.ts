@@ -1,5 +1,5 @@
-import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
+import { logger } from '@/common/utils/serverLogger';
 
 export const ApiErrorSchema = z.object({
   err: z.any().optional(),
@@ -21,8 +21,3 @@ export class ApiError extends Error implements z.infer<typeof ApiErrorSchema> {
     this.err = err;
   }
 }
-
-export const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
-export const INVALID_CREDENTIALS = new ApiError('Invalid credentials', StatusCodes.UNAUTHORIZED);
-export const UNEXPECTED_ERROR = (err: any) =>
-  new ApiError('An unexpected error occurred', StatusCodes.INTERNAL_SERVER_ERROR, err);

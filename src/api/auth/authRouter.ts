@@ -7,16 +7,22 @@ import { z } from 'zod';
 import { SessionToken, SessionTokenSchema, UserLoginSchema } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { sessionMiddleware, SessionRequest } from '@/common/middleware/session';
-import { INVALID_CREDENTIALS, UNAUTHORIZED, UNEXPECTED_ERROR } from '@/common/models/apiError';
+import { ApiError } from '@/common/models/apiError';
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 
 import { InvalidCredentialsError, PasswordResetSchema, PasswordSetSchema } from './authModel';
 import { authService } from './authService';
 
+import { logger } from '@/common/utils/serverLogger';
+
 export const authRegistry = new OpenAPIRegistry();
 
 authRegistry.register('Auth', UserLoginSchema);
+
+export const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
+export const INVALID_CREDENTIALS = new ApiError('Invalid credentials', StatusCodes.UNAUTHORIZED);
+export const UNEXPECTED_ERROR = new ApiError('An unexpected error occurred', StatusCodes.INTERNAL_SERVER_ERROR);
 
 export const authRouter: Router = (() => {
   const router = express.Router();
@@ -58,10 +64,12 @@ export const authRouter: Router = (() => {
         const response = new ApiResponse(ResponseStatus.Success, 'Password set successfully', null, StatusCodes.OK);
         return handleApiResponse(response, res);
       } catch (ex) {
+        // logger.error(ex);
+        console.error(ex);
         if (ex instanceof InvalidCredentialsError) {
           return next(INVALID_CREDENTIALS);
         }
-        return next(UNEXPECTED_ERROR(ex));
+        return next(UNEXPECTED_ERROR);
       }
     }
   );
@@ -78,7 +86,7 @@ export const authRouter: Router = (() => {
         if (ex instanceof TokenExpiredError) {
           return next(TokenExpiredError);
         }
-        return next(UNEXPECTED_ERROR(ex));
+        return next(UNEXPECTED_ERROR);
       }
     }
   );
@@ -93,7 +101,7 @@ export const authRouter: Router = (() => {
       if (ex instanceof InvalidCredentialsError) {
         return next(INVALID_CREDENTIALS);
       }
-      return next(UNEXPECTED_ERROR(ex));
+      return next(UNEXPECTED_ERROR);
     }
   });
 
