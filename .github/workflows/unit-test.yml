@@ -1,7 +1,5 @@
 # generate a trigger to run the unit tests on every push to any branch
 
-
-
 name: Unit Test
 
 on:
@@ -16,9 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-    # for current project on typescript
+      # for current project on typescript
       - name: Install dependencies
         run: npm install
 
       - name: Run unit tests
-        run: npm run test:dev
+        run: npm run test
