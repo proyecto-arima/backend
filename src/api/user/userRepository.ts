@@ -1,16 +1,36 @@
-import { User } from '@/api/user/userModel';
+import { User, UserCreation, UserCreationDTO, UserModel } from '@/api/user/userModel';
 
-export const users: User[] = [
-  { id: 1, name: 'Alice', email: 'alice@example.com', age: 42, createdAt: new Date(), updatedAt: new Date() },
-  { id: 2, name: 'Bob', email: 'bob@example.com', age: 21, createdAt: new Date(), updatedAt: new Date() },
-];
+import { UserNotFoundError } from '../auth/authModel';
 
 export const userRepository = {
-  findAllAsync: async (): Promise<User[]> => {
-    return users;
+  findAllAsync: async (): Promise<User[]> => UserModel.find<User>(),
+
+  findByIdAsync: async (id: string): Promise<User> => {
+    const user = await UserModel.findById<User>(id);
+    if (!user) {
+      return Promise.reject(new Error('User not found'));
+    }
+    return user;
   },
 
-  findByIdAsync: async (id: number): Promise<User | null> => {
-    return users.find((user) => user.id === id) || null;
+  create: async (user: UserCreation): Promise<User> => {
+    const newUser = await UserModel.create<UserCreationDTO>(user);
+    return userRepository.findByIdAsync(newUser.id);
+  },
+
+  findByEmail: async (email: string): Promise<User> => {
+    const user = await UserModel.findOne<User>({ email });
+    if (!user) {
+      throw new UserNotFoundError();
+    }
+    return user;
+  },
+
+  update: async (id: string, user: User): Promise<User> => {
+    const updatedUser = await UserModel.findByIdAndUpdate<User>(id, user, { new: true });
+    if (!updatedUser) {
+      return Promise.reject(new Error('User not found'));
+    }
+    return updatedUser;
   },
 };

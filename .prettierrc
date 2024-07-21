@@ -4,5 +4,6 @@
   "printWidth": 120,
   "singleQuote": true,
   "semi": true,
-  "endOfLine": "lf"
+  "endOfLine": "lf",
+  "importOrder": ["builtin", "external", "internal", "parent", "sibling", "index", "object", "type"]
 }
