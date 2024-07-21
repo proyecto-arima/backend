@@ -5,7 +5,6 @@ import { StatusCodes } from 'http-status-codes';
 import { UserCreationDTO, UserDTO } from '@/api/user/userModel';
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { Role } from '@/common/models/role';
-import { logger } from '@/server';
 
 import { userService } from '../user/userService';
 
@@ -21,7 +20,6 @@ export const teacherService = {
       return new ApiResponse(ResponseStatus.Success, 'Teacher registered', createdUser, StatusCodes.CREATED);
     } catch (ex) {
       const errorMessage = `Error registering user: ${(ex as Error).message}`;
-      logger.error(errorMessage);
       return new ApiResponse(ResponseStatus.Failed, errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   },

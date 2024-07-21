@@ -4,8 +4,10 @@ import { StatusCodes } from 'http-status-codes';
 
 import { UserCreationSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { ApiError } from '@/common/models/apiError';
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
+import { logger } from '@/common/utils/serverLogger';
 
 import { studentService } from './studentService';
 
@@ -25,14 +27,25 @@ export const studentRouter: Router = (() => {
   });
 
   router.post('/', validateRequest(UserCreationSchema), async (req: Request, res: Response) => {
-    const userDTO: UserDTO = await studentService.create(req.body);
-    const apiResponse = new ApiResponse(
-      ResponseStatus.Success,
-      'Student created successfully',
-      userDTO,
-      StatusCodes.CREATED
-    );
-    handleApiResponse(apiResponse, res);
+    try {
+      logger.trace('[StudentRouter] - [/] - Start');
+      logger.trace(`[StudentRouter] - [/] - Request to create student: ${JSON.stringify(req.body)}`);
+      const userDTO: UserDTO = await studentService.create(req.body);
+      logger.trace(`[StudentRouter] - [/] - Student created: ${JSON.stringify(userDTO)}. Sending response`);
+      const apiResponse = new ApiResponse(
+        ResponseStatus.Success,
+        'Student created successfully',
+        userDTO,
+        StatusCodes.CREATED
+      );
+      handleApiResponse(apiResponse, res);
+    } catch (error) {
+      logger.error(`[StudentRouter] - [/] - Error: ${error}`);
+      const apiError = new ApiError('Failed to create student', StatusCodes.INTERNAL_SERVER_ERROR, error);
+      return res.status(apiError.statusCode).json(apiError);
+    } finally {
+      logger.trace('[StudentRouter] - [/] - End');
+    }
   });
 
   return router;

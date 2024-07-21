@@ -1,10 +1,10 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { Request, Response, Router } from 'express';
 
-import { UserCreationSchema, UserDTOSchema } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 
+import { UserCreationSchema, UserDTOSchema } from '../user/userModel';
 import { teacherService } from './teacherService';
 
 export const teacherRegistry = new OpenAPIRegistry();
