@@ -10,6 +10,7 @@ import { ApiError } from '@/common/models/apiError';
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
+
 import { InvalidCredentialsError, PasswordSetSchema } from './authModel';
 import { authService } from './authService';
 
@@ -85,7 +86,7 @@ export const authRouter: Router = (() => {
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       logger.trace('[AuthRouter] - [/setPassword] - Start');
       try {
-        logger.trace('[AuthRouter] - [/setPassword] - Setting password...');  
+        logger.trace('[AuthRouter] - [/setPassword] - Setting password...');
         logger.trace(`TOKEN ENCONTRADO ${req.query['token']}`);
         await authService.passwordSet(req.query['token']?.toString() ?? '', req.body);
         logger.trace('[AuthRouter] - [/setPassword] - Password set successfully');
@@ -103,6 +104,22 @@ export const authRouter: Router = (() => {
       }
     }
   );
+
+  router.post('/passwordRecovery', (req: Request, res: Response, next: NextFunction) => {
+    logger.trace('[AuthRouter] - [/passwordRecovery] - Start');
+    try {
+      logger.trace('[AuthRouter] - [/passwordReset] - Received password recovery');
+      authService.passwordRecovery(req.body.email);
+      logger.trace('[AuthRouter] - [/passwordRecovery] - Password recovery done');
+      const response = new ApiResponse(ResponseStatus.Success, 'Password reset email sent', null, StatusCodes.OK);
+      return handleApiResponse(response, res);
+    } catch (ex) {
+      logger.trace(`[AuthRouter] - [/passwordRecovery] - Error: ${ex}`);
+      return next(UNEXPECTED_ERROR);
+    } finally {
+      logger.trace('[AuthRouter] - [/passwordRecovery] - End');
+    }
+  });
 
   return router;
 })();

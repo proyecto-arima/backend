@@ -19,18 +19,18 @@ export const authService = {
     try {
       const foundUser: User = await userRepository.findByEmail(user.email);
       if (foundUser.forcePasswordReset) {
-        const token = jwt.sign({ email: user.email }, config.jwt.secret as string, { expiresIn: '15m' });
+        const token = jwt.sign({ email: user.email }, config.jwt.secret as string, { expiresIn: '1d' });
         // TODO: React view not implemented yet
         // React view > POST /setPassword
         const redirectLink = `http://${config.app.host}:${config.app.port}/auth/recoverPassword?token=${token}`;
-        // sendMailTo(
-        //   [user.email],
-        //   '[AdaptarIA] Account access',
-        //   `<p>Hi ${user.email},
-        //   Go to the next link ${redirectLink} and use the next password to access your account: 
-        //   <b>Password:</b> ${user.password}
-        //   </p>`
-        // );
+        sendMailTo(
+          [user.email],
+          '[AdaptarIA] Account access',
+          `<p>Hi ${user.email},
+          Go to the next link ${redirectLink} and use the next password to access your account: 
+          <b>Password:</b> ${user.password}
+          </p>`
+        );
       }
       const isPasswordValid = await bcrypt.compare(user.password, foundUser.password);
       if (!isPasswordValid) {
@@ -62,6 +62,26 @@ export const authService = {
     user.password = hash;
     user.forcePasswordReset = false;
     await userRepository.updateById(user.toDto().id, user);
+    return Promise.resolve();
+  },
+
+  passwordRecovery: async (email: string): Promise<void> => {
+    const user: User = await userRepository.findByEmail(email);
+    if (!user) {
+      throw new UserNotFoundError();
+    }
+    const token = jwt.sign({ email: user.email }, config.jwt.secret as string, { expiresIn: '15m' });
+    // TODO: React view not implemented yet
+    // React view > POST /setPassword
+    const redirectLink = `http://${config.app.host}:${config.app.port}/auth/recoverPassword?token=${token}`;
+    sendMailTo(
+      [user.email],
+      '[AdaptarIA] Account access',
+      `<p>Hi ${user.email},
+      Go to the next link ${redirectLink} and use the next password to access your account: 
+      <b>Password:</b> ${user.password}
+      </p>`
+    );
     return Promise.resolve();
   },
 };
