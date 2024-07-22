@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import { CourseCreationSchema, CourseDTO, CourseDTOSchema, GetCourseSchema } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
+import { UserDTO } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { roleMiddleware } from '@/common/middleware/roleMiddleware';
 import { sessionMiddleware } from '@/common/middleware/session';
@@ -37,7 +38,7 @@ export const courseRouter: Router = (() => {
     responses: createApiResponse(CourseDTOSchema, 'Success'),
   });
 
-  const hasAccessToCourse = (user: User, course: CourseDTO): boolean => {
+  const hasAccessToCourse = (user: UserDTO, course: CourseDTO): boolean => {
     if (user.role === Role.TEACHER) {
       return course.teacherId === user.id;
     } else if (user.role === Role.STUDENT) {
