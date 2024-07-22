@@ -3,6 +3,8 @@ import z from 'zod';
 
 dotenv.config();
 
+const isTestEnv = process.env.NODE_ENV === 'test';
+
 const smtpSchema = z.object({
   host: z.string(),
   port: z.number().min(1).max(65535),
@@ -15,7 +17,7 @@ const smtpSchema = z.object({
   sender: z.string().email(),
 });
 
-const smtp = process.env.NODE_ENV === 'test' ? smtpSchema.optional() : smtpSchema;
+const smtp = isTestEnv ? smtpSchema.optional() : smtpSchema;
 
 const ConfigSchema = z.object({
   smtp: smtp,
@@ -37,13 +39,17 @@ const ConfigSchema = z.object({
 });
 export type Config = z.infer<typeof ConfigSchema>;
 
+const smtpConfig = isTestEnv
+  ? undefined
+  : {
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT as string),
+      auth: smtpAuth(),
+      sender: process.env.SMTP_SENDER,
+    };
+
 export const config: Config = ConfigSchema.parse({
-  smtp: {
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT as string),
-    auth: smtpAuth(),
-    sender: process.env.SMTP_SENDER,
-  },
+  smtp: smtpConfig,
   mongodb: {
     uri: process.env.MONGODB_URI,
   },
