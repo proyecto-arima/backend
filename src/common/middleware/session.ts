@@ -18,14 +18,14 @@ export const sessionMiddleware = async (req: SessionRequest, res: Response, next
     // Header: Authorization: Bearer <token>
     // Cookie: access_token=<token>
     logger.trace('[Session Middleware] - Start');
-    logger.trace(`[Session Middleware] - Checking accessToken...`);
+    logger.trace(`[Session Middleware] - Checking if access token is present...`);
     const accessToken = req.cookies.access_token ?? req.headers.authorization?.split(' ')[1];
     if (!accessToken) {
       logger.trace(`[Session Middleware] - Access token is missing, sending error response`);
       return next(new ApiError('Failed to retrieve session', StatusCodes.UNAUTHORIZED, 'Access token is missing'));
     }
 
-    logger.trace(`[Session Middleware] - Verifying accessToken...`);
+    logger.trace(`[Session Middleware] - Access Token found. Verifying accessToken...`);
     if (!jwt.verify(accessToken, config.jwt.secret as string)) {
       logger.trace(`[Session Middleware] - Token is not valid, sending error response'`);
       return next(new ApiError('Failed to retrieve session', StatusCodes.UNAUTHORIZED, 'Token not valid'));
