@@ -11,6 +11,7 @@ export const studentService = {
     console.log(randomPassword);
 
     const hash = await bcrypt.hash(randomPassword, 10);
+    console.log(randomPassword);
     const createdUser: UserDTO = await userService.create({ ...user, password: hash, role: Role.STUDENT });
 
     // TODO: Send email to user notifying them of their registration

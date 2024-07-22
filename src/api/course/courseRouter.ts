@@ -5,8 +5,11 @@ import { StatusCodes } from 'http-status-codes';
 import { CourseCreationSchema, CourseDTO, CourseDTOSchema, GetCourseSchema } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { roleMiddleware } from '@/common/middleware/roleMiddleware';
+import { sessionMiddleware } from '@/common/middleware/session';
 import { ApiError } from '@/common/models/apiError';
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
+import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
 
@@ -36,6 +39,8 @@ export const courseRouter: Router = (() => {
 
   router.post(
     '/create',
+    sessionMiddleware,
+    roleMiddleware(Role.TEACHER),
     validateRequest(CourseCreationSchema),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
