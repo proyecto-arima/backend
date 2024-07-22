@@ -17,23 +17,24 @@ const addErrorToRequestLog: ErrorRequestHandler = (err, _req, res, next) => {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const sendResponseError: ErrorRequestHandler = (err, _req, res, _next) => {
+  logger.trace('[Error Handler] - Start');
   if (err instanceof ApiError) {
+    logger.trace(`[Error Handler] - Handling API Error`);
     const error = err as ApiError;
     res.locals.err = error.err;
-
     logger.error(error.err);
     const apiResponse = new ApiResponse(ResponseStatus.Failed, err.message, null, err.statusCode);
     return handleApiResponse(apiResponse, res);
   }
+  logger.trace(`[Error Handler] - Handling unexpected error`);
+  logger.error(err);
   const apiResponse = new ApiResponse(
     ResponseStatus.Failed,
     'An unexpected error occurred',
     null,
     StatusCodes.INTERNAL_SERVER_ERROR
   );
-  // logger.error(err);
-  console.error(err);
-
+  logger.trace('[Error Handler] - End');
   return handleApiResponse(apiResponse, res);
 };
 

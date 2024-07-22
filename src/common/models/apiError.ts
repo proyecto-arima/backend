@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { logger } from '@/common/utils/serverLogger';
 
 export const ApiErrorSchema = z.object({
   err: z.any().optional(),
