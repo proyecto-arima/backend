@@ -37,6 +37,15 @@ export const courseRouter: Router = (() => {
     responses: createApiResponse(CourseDTOSchema, 'Success'),
   });
 
+  const hasAccessToCourse = (user: User, course: CourseDTO): boolean => {
+    if (user.role === Role.TEACHER) {
+      return course.teacherId === user.id;
+    } else if (user.role === Role.STUDENT) {
+      return course.students.some((student) => student.id === user.id);
+    }
+    return false; // En caso de roles desconocidos
+  };
+
   router.post(
     '/create',
     sessionMiddleware,
@@ -46,7 +55,13 @@ export const courseRouter: Router = (() => {
       try {
         logger.trace('[CourseRouter] - [/create] - Start');
         logger.trace('[CourseRouter] - [/create] - Creating course...');
-        const createdCourse: CourseDTO = await courseService.create(req.body);
+
+        const courseData = {
+          ...req.body,
+          teacherId: req.sessionContext.user.id,
+        };
+
+        const createdCourse: CourseDTO = await courseService.create(courseData);
         logger.trace(`[CourseRouter] - [/create] - Course created: ${JSON.stringify(createdCourse)}. Sending response`);
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
@@ -75,8 +90,16 @@ export const courseRouter: Router = (() => {
         logger.trace('[CourseRouter] - [/:id] - Start');
         const courseReq = GetCourseSchema.parse({ params: req.params });
         logger.trace(`[CourseRouter] - [/:id] - Retrieving course with id: ${courseReq.params.id}...`);
+
         const course: CourseDTO = await courseService.findById(courseReq.params.id.toString());
         logger.trace(`[CourseRouter] - [/:id] - Course found: ${JSON.stringify(course)}. Sending response`);
+
+        const user = req.sessionContext.user;
+
+        if (!hasAccessToCourse(user, course)) {
+          throw new ApiError('Forbidden', StatusCodes.FORBIDDEN, 'User does not have access to this course');
+        }
+
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
           'Course retrieved successfully',
@@ -85,14 +108,18 @@ export const courseRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (e) {
-        logger.error(`[CourseRouter] - [/:id] - Error: ${e}`);
-        const apiError = new ApiError('Failed to retrieve course', StatusCodes.INTERNAL_SERVER_ERROR, e);
-        return next(apiError);
+        if (e instanceof ApiError) {
+          logger.warn(`[CourseRouter] - [/:id] - ApiError: ${e.message}`);
+          return next(e);
+        } else {
+          logger.error(`[CourseRouter] - [/:id] - Error: ${e}`);
+          const apiError = new ApiError('Failed to retrieve course', StatusCodes.INTERNAL_SERVER_ERROR, e);
+          return next(apiError);
+        }
       } finally {
         logger.trace('[CourseRouter] - [/:id] - End');
       }
     }
   );
-
   return router;
 })();

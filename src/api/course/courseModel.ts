@@ -16,6 +16,7 @@ export const CourseDTOSchema = z.object({
   description: z.string(),
   image: z.string().url(),
   matriculationCode: z.string(),
+  teacherId: z.string(),
   students: z.array(
     z.object({
       id: z.string(),
@@ -65,6 +66,7 @@ const courseModelSchemaDefinition = {
   description: { type: String, required: true },
   image: { type: String, required: true },
   matriculationCode: { type: String, required: true },
+  teacherId: { type: String },
   students: { type: [studentSchemaDefinition], required: true },
   sections: { type: [sectionSchemaDefinition], required: true },
 };
@@ -111,6 +113,7 @@ courseModelSchema.method('toDto', function (): CourseDTO {
     description: this.description.toString(),
     image: this.image.toString(),
     matriculationCode: this.matriculationCode.toString(),
+    teacherId: this.teacherId.toString(),
     students: this.students.map((student) => ({
       id: student.id.toString(),
       firstName: student.firstName.toString(),
