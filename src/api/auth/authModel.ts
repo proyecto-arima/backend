@@ -10,20 +10,12 @@ extendZodWithOpenApi(z);
 
 export const PasswordSetSchema = z.object({
   body: z.object({
-    initPassword: z.string(),
+    email: z.string().email(),
     newPassword: z.string(),
     newPasswordConfirmation: z.string(),
   }),
 });
 export type PasswordSet = z.infer<typeof PasswordSetSchema.shape.body>;
-
-export const PasswordResetSchema = z.object({
-  body: z.object({
-    newPassword: z.string(),
-    newPasswordConfirmation: z.string(),
-  }),
-});
-export type PasswordResetSchema = z.infer<typeof PasswordResetSchema.shape.body>;
 
 export const SessionContextSchema = z.object({
   user: z.custom<UserDTO>().optional(),

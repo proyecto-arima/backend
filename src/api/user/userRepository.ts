@@ -26,11 +26,11 @@ export const userRepository = {
     return user;
   },
 
-  update: async (id: string, user: User): Promise<User> => {
+  updateById: async (id: string, user: User): Promise<User> => {
     const updatedUser = await UserModel.findByIdAndUpdate<User>(id, user, { new: true });
     if (!updatedUser) {
       return Promise.reject(new Error('User not found'));
     }
     return updatedUser;
-  },
+  }
 };

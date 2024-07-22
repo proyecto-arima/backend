@@ -8,7 +8,7 @@ import { userService } from '../user/userService';
 export const studentService = {
   create: async (user: UserCreationDTO): Promise<UserDTO> => {
     const randomPassword = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
-    console.log(randomPassword);
+    process.env.NODE_ENV === 'development' ? console.log(randomPassword) : null;
 
     const hash = await bcrypt.hash(randomPassword, 10);
     const createdUser: UserDTO = await userService.create({ ...user, password: hash, role: Role.STUDENT });
