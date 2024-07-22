@@ -8,7 +8,7 @@ export const userRepository = {
   findByIdAsync: async (id: string): Promise<User> => {
     const user = await UserModel.findById<User>(id);
     if (!user) {
-      return Promise.reject(new Error('User not found'));
+      throw new UserNotFoundError();
     }
     return user;
   },
@@ -29,7 +29,7 @@ export const userRepository = {
   update: async (id: string, user: User): Promise<User> => {
     const updatedUser = await UserModel.findByIdAndUpdate<User>(id, user, { new: true });
     if (!updatedUser) {
-      return Promise.reject(new Error('User not found'));
+      throw new UserNotFoundError();
     }
     return updatedUser;
   },

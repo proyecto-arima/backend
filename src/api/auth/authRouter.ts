@@ -72,7 +72,7 @@ export const authRouter: Router = (() => {
           logger.trace('[AuthRouter] - [/setPassword] - Invalid credentials');
           return next(INVALID_CREDENTIALS);
         }
-        return next(UNEXPECTED_ERROR);
+        return next(ex);
       } finally {
         logger.trace('[AuthRouter] - [/setPassword] - End');
       }
@@ -96,7 +96,7 @@ export const authRouter: Router = (() => {
           logger.trace('[AuthRouter] - [/resetPassword] - Token expired');
           return next(TokenExpiredError);
         }
-        return next(UNEXPECTED_ERROR);
+        return next(ex);
       } finally {
         logger.trace('[AuthRouter] - [/resetPassword] - End');
       }
@@ -106,6 +106,7 @@ export const authRouter: Router = (() => {
   router.post('/', validateRequest(UserLoginSchema), async (req: Request, res: Response, next: NextFunction) => {
     try {
       logger.trace('[AuthRouter] - [/] - Start');
+      logger.trace(`[AuthRouter] - [/] - Request to log in user ${req.body.email}`);
       const session: SessionToken = await authService.login(req.body);
       logger.trace('[AuthRouter] - [/] - User logged in');
       logger.trace('[AuthRouter] - [/] - Setting access token cookie');
@@ -120,7 +121,7 @@ export const authRouter: Router = (() => {
         return next(INVALID_CREDENTIALS);
       }
       logger.trace('[AuthRouter] - [/] - Unexpected error');
-      return next(UNEXPECTED_ERROR);
+      return next(ex);
     } finally {
       logger.trace('[AuthRouter] - [/] - End');
     }

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { logger } from '@/common/utils/serverLogger';
 
 export enum ResponseStatus {
   Success,
