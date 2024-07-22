@@ -23,7 +23,6 @@ export const teacherRouter: Router = (() => {
   });
 
   router.post('/', validateRequest(UserCreationSchema), async (req: Request, res: Response) => {
-    console.log('entro al post router');
     const serviceResponse = await teacherService.create(req.body);
     handleApiResponse(serviceResponse, res);
   });
