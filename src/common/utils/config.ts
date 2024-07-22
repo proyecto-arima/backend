@@ -3,22 +3,18 @@ import z from 'zod';
 
 dotenv.config();
 
-const smtpSchema = z.object({
-  host: z.string(),
-  port: z.number().min(1).max(65535),
-  auth: z
-    .object({
-      user: z.string().optional(),
-      pass: z.string().optional(),
-    })
-    .optional(),
-  sender: z.string().email(),
-});
-
-const smtp = process.env.NODE_ENV === 'test' ? smtpSchema.optional() : smtpSchema;
-
 const ConfigSchema = z.object({
-  smtp: smtp,
+  smtp: z.object({
+    host: z.string(),
+    port: z.number().min(1).max(65535),
+    auth: z
+      .object({
+        user: z.string().optional(),
+        pass: z.string().optional(),
+      })
+      .optional(),
+    sender: z.string().email(),
+  }),
   mongodb: z.object({
     uri: z.string(),
   }),
@@ -32,12 +28,11 @@ const ConfigSchema = z.object({
     port: z.number().min(1).max(65535).default(8080),
     rate_limit_max_requests: z.number().default(100),
     rate_limit_window_ms: z.number().default(15 * 60 * 1000),
-    frontendUrl: z.string(),
   }),
 });
 export type Config = z.infer<typeof ConfigSchema>;
 
-export const config: Config = ConfigSchema.parse({
+const envConfig = {
   smtp: {
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT as string),
@@ -57,9 +52,33 @@ export const config: Config = ConfigSchema.parse({
     node_env: process.env.NODE_ENV,
     rate_limit_max_requests: parseInt(process.env.COMMON_RATE_LIMIT_MAX_REQUESTS as string),
     rate_limit_window_ms: parseInt(process.env.COMMON_RATE_LIMIT_WINDOW_MS as string),
-    frontendUrl: process.env.FRONTEND_URL,
   },
-});
+};
+
+const testConfig = {
+  smtp: {
+    host: 'smtp.test.com',
+    port: 587,
+    sender: 'test@test.com',
+  },
+  mongodb: {
+    uri: 'mongodb://localhost:27017/test',
+  },
+  jwt: {
+    secret: 'secret',
+  },
+  cors_origin: 'http://localhost:3000',
+  app: {
+    host: 'localhost',
+    port: 8080,
+    node_env: 'test',
+    rate_limit_max_requests: 100,
+    rate_limit_window_ms: 900000,
+  },
+};
+
+export const config: Config =
+  process.env.NODE_ENV === 'test' ? ConfigSchema.parse(testConfig) : ConfigSchema.parse(envConfig);
 
 function smtpAuth() {
   return process.env.SMTP_USER || process.env.SMTP_PASS
