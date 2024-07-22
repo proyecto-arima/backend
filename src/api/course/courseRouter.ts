@@ -40,7 +40,7 @@ export const courseRouter: Router = (() => {
   router.post(
     '/create',
     sessionMiddleware,
-    roleMiddleware(Role.TEACHER),
+    roleMiddleware([Role.TEACHER]),
     validateRequest(CourseCreationSchema),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -65,28 +65,34 @@ export const courseRouter: Router = (() => {
     }
   );
 
-  router.get('/:id', validateRequest(GetCourseSchema), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      logger.trace('[CourseRouter] - [/:id] - Start');
-      const courseReq = GetCourseSchema.parse({ params: req.params });
-      logger.trace(`[CourseRouter] - [/:id] - Retrieving course with id: ${courseReq.params.id}...`);
-      const course: CourseDTO = await courseService.findById(courseReq.params.id.toString());
-      logger.trace(`[CourseRouter] - [/:id] - Course found: ${JSON.stringify(course)}. Sending response`);
-      const apiResponse = new ApiResponse(
-        ResponseStatus.Success,
-        'Course retrieved successfully',
-        course,
-        StatusCodes.OK
-      );
-      handleApiResponse(apiResponse, res);
-    } catch (e) {
-      logger.error(`[CourseRouter] - [/:id] - Error: ${e}`);
-      const apiError = new ApiError('Failed to retrieve course', StatusCodes.INTERNAL_SERVER_ERROR, e);
-      return next(apiError);
-    } finally {
-      logger.trace('[CourseRouter] - [/:id] - End');
+  router.get(
+    '/:id',
+    sessionMiddleware,
+    roleMiddleware([Role.TEACHER, Role.STUDENT]),
+    validateRequest(GetCourseSchema),
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        logger.trace('[CourseRouter] - [/:id] - Start');
+        const courseReq = GetCourseSchema.parse({ params: req.params });
+        logger.trace(`[CourseRouter] - [/:id] - Retrieving course with id: ${courseReq.params.id}...`);
+        const course: CourseDTO = await courseService.findById(courseReq.params.id.toString());
+        logger.trace(`[CourseRouter] - [/:id] - Course found: ${JSON.stringify(course)}. Sending response`);
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Course retrieved successfully',
+          course,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        logger.error(`[CourseRouter] - [/:id] - Error: ${e}`);
+        const apiError = new ApiError('Failed to retrieve course', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      } finally {
+        logger.trace('[CourseRouter] - [/:id] - End');
+      }
     }
-  });
+  );
 
   return router;
 })();
