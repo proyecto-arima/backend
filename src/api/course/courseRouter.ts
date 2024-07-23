@@ -4,8 +4,8 @@ import { StatusCodes } from 'http-status-codes';
 
 import { CourseCreationSchema, CourseDTO, CourseDTOSchema, GetCourseSchema } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
-import { UserDTO } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { hasAccessToCourseMiddleware } from '@/common/middleware/hasAccessToCourse';
 import { roleMiddleware } from '@/common/middleware/roleMiddleware';
 import { sessionMiddleware, SessionRequest } from '@/common/middleware/session';
 import { ApiError } from '@/common/models/apiError';
@@ -38,15 +38,6 @@ export const courseRouter: Router = (() => {
     request: { params: GetCourseSchema.shape.params },
     responses: createApiResponse(CourseDTOSchema, 'Success'),
   });
-
-  const hasAccessToCourse = (user: UserDTO, course: CourseDTO): boolean => {
-    if (user.role === Role.TEACHER) {
-      return course.teacherId === user.id;
-    } else if (user.role === Role.STUDENT) {
-      return course.students.some((student) => student.id === user.id);
-    }
-    return false; // En caso de roles desconocidos
-  };
 
   router.post(
     '/create',
@@ -91,6 +82,7 @@ export const courseRouter: Router = (() => {
   router.get(
     '/:id',
     sessionMiddleware,
+    hasAccessToCourseMiddleware('id'),
     roleMiddleware([Role.TEACHER, Role.STUDENT]),
     validateRequest(GetCourseSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
@@ -107,12 +99,6 @@ export const courseRouter: Router = (() => {
 
         const course: CourseDTO = await courseService.findById(courseReq.params.id.toString());
         logger.trace(`[CourseRouter] - [/:id] - Course found: ${JSON.stringify(course)}. Sending response`);
-
-        const user = sessionContext.user;
-
-        if (!hasAccessToCourse(user, course)) {
-          next(new ApiError('User does not have access to this course', StatusCodes.FORBIDDEN));
-        }
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,

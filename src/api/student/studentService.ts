@@ -19,6 +19,7 @@ export const studentService = {
     }
     logger.trace(`[StudentService] - [create] - Hashing password...`);
     const hash = await bcrypt.hash(randomPassword, 10);
+
     logger.trace(`[StudentService] - [create] - Password hashed.`);
     logger.trace(`[StudentService] - [create] - Creating user...`);
     const createdUser: UserDTO = await userService.create({ ...user, password: hash, role: Role.STUDENT });
