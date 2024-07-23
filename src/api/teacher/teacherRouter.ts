@@ -25,7 +25,6 @@ export const teacherRouter: Router = (() => {
     responses: createApiResponse(UserDTOSchema, 'Success'),
   });
 
-
   router.post('/', validateRequest(UserCreationSchema), async (req: Request, res: Response, next: NextFunction) => {
     try {
       logger.trace('[TeacherRouter] - [/] - Start');

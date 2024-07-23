@@ -1,5 +1,5 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
-import express, { NextFunction, Request, Response, Router } from 'express';
+import express, { NextFunction, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
 import { CourseCreationSchema, CourseDTO, CourseDTOSchema, GetCourseSchema } from '@/api/course/courseModel';
@@ -7,13 +7,14 @@ import { courseService } from '@/api/course/courseService';
 import { UserDTO } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { roleMiddleware } from '@/common/middleware/roleMiddleware';
-import { sessionMiddleware } from '@/common/middleware/session';
+import { sessionMiddleware, SessionRequest } from '@/common/middleware/session';
 import { ApiError } from '@/common/models/apiError';
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
 
+const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
 export const courseRegistry = new OpenAPIRegistry();
 courseRegistry.register('Course', CourseDTOSchema);
 
@@ -52,14 +53,20 @@ export const courseRouter: Router = (() => {
     sessionMiddleware,
     roleMiddleware([Role.TEACHER]),
     validateRequest(CourseCreationSchema),
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        logger.trace('[AuthRouter] - [/setPassword] - Session context is missing, sending error response');
+        return next(UNAUTHORIZED);
+      }
+
       try {
         logger.trace('[CourseRouter] - [/create] - Start');
         logger.trace('[CourseRouter] - [/create] - Creating course...');
 
         const courseData = {
           ...req.body,
-          teacherId: req.sessionContext.user.id,
+          teacherId: sessionContext.user.id,
         };
 
         const createdCourse: CourseDTO = await courseService.create(courseData);
@@ -86,7 +93,13 @@ export const courseRouter: Router = (() => {
     sessionMiddleware,
     roleMiddleware([Role.TEACHER, Role.STUDENT]),
     validateRequest(GetCourseSchema),
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        logger.trace('[AuthRouter] - [/setPassword] - Session context is missing, sending error response');
+        return next(UNAUTHORIZED);
+      }
+
       try {
         logger.trace('[CourseRouter] - [/:id] - Start');
         const courseReq = GetCourseSchema.parse({ params: req.params });
@@ -95,10 +108,10 @@ export const courseRouter: Router = (() => {
         const course: CourseDTO = await courseService.findById(courseReq.params.id.toString());
         logger.trace(`[CourseRouter] - [/:id] - Course found: ${JSON.stringify(course)}. Sending response`);
 
-        const user = req.sessionContext.user;
+        const user = sessionContext.user;
 
         if (!hasAccessToCourse(user, course)) {
-          throw new ApiError('Forbidden', StatusCodes.FORBIDDEN, 'User does not have access to this course');
+          next(new ApiError('User does not have access to this course', StatusCodes.FORBIDDEN));
         }
 
         const apiResponse = new ApiResponse(

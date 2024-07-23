@@ -26,13 +26,13 @@ export const CourseDTOSchema = z.object({
   ),
   sections: z.array(
     z.object({
-      id: z.string(),
-      sectionName: z.string(),
-      sectionDescription: z.string(),
+      id: z.string().optional(),
+      name: z.string(),
+      description: z.string(),
       content: z.array(
         z.object({
-          id: z.string(),
-          contentName: z.string(),
+          id: z.string().optional(),
+          name: z.string(),
         })
       ),
     })
@@ -43,21 +43,22 @@ export type CourseDTO = z.infer<typeof CourseDTOSchema>;
 /**
  * Course Model Schema Definition
  */
-const studentSchemaDefinition = new Schema({
-  id: { type: String, required: true },
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-});
+const studentSchemaDefinition = new Schema(
+  {
+    id: { type: String, required: true },
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
+  },
+  { _id: false }
+);
 
 const contentSchemaDefinition = new Schema({
-  id: { type: String, required: true },
-  contentName: { type: String, required: true },
+  name: { type: String, required: true },
 });
 
 const sectionSchemaDefinition = new Schema({
-  id: { type: String, required: true },
-  sectionName: { type: String, required: true },
-  sectionDescription: { type: String, required: true },
+  name: { type: String, required: true },
+  description: { type: String, required: true },
   content: { type: [contentSchemaDefinition], required: true },
 });
 
@@ -73,12 +74,12 @@ const courseModelSchemaDefinition = {
 
 // Type used to tell mongoose the shape of the schema available
 type ICourseSchemaDefinition = typeof courseModelSchemaDefinition & {
-  students: Array<{ id: string; firstName: string; lastName: string }>;
+  students: Array<{ _id: string; firstName: string; lastName: string }>;
   sections: Array<{
-    id: string;
-    sectionName: string;
-    sectionDescription: string;
-    content: Array<{ id: string; contentName: string }>;
+    _id: string;
+    name: string;
+    description: string;
+    content: Array<{ _id: string; name: string }>;
   }>;
 };
 
@@ -115,17 +116,17 @@ courseModelSchema.method('toDto', function (): CourseDTO {
     matriculationCode: this.matriculationCode.toString(),
     teacherId: this.teacherId.toString(),
     students: this.students.map((student) => ({
-      id: student.id.toString(),
+      id: student._id?.toString(),
       firstName: student.firstName.toString(),
       lastName: student.lastName.toString(),
     })),
     sections: this.sections.map((section) => ({
-      id: section.id.toString(),
-      sectionName: section.sectionName.toString(),
-      sectionDescription: section.sectionDescription.toString(),
+      id: section._id.toString(),
+      name: section.name.toString(),
+      description: section.description.toString(),
       content: section.content.map((contentItem) => ({
-        id: contentItem.id.toString(),
-        contentName: contentItem.contentName.toString(),
+        id: contentItem._id.toString(),
+        name: contentItem.name.toString(),
       })),
     })),
   };
@@ -160,13 +161,11 @@ export const CourseCreationSchema = z.object({
     ),
     sections: z.array(
       z.object({
-        id: z.string(),
-        sectionName: z.string(),
-        sectionDescription: z.string(),
+        name: z.string(),
+        description: z.string(),
         content: z.array(
           z.object({
-            id: z.string(),
-            contentName: z.string(),
+            name: z.string(),
           })
         ),
       })
