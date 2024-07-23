@@ -11,6 +11,7 @@ import rateLimiter from '@/common/middleware/rateLimiter';
 import requestLogger from '@/common/utils/requestLogger';
 
 import { authRouter } from './api/auth/authRouter';
+import { courseRouter } from './api/course/courseRouter';
 import { directorRouter } from './api/director/directorRouter';
 import { studentRouter } from './api/student/studentRouter';
 import { teacherRouter } from './api/teacher/teacherRouter';
@@ -41,6 +42,7 @@ app.use('/auth', authRouter);
 app.use('/students', studentRouter);
 app.use('/teachers', teacherRouter);
 app.use('/directors', directorRouter);
+app.use('/courses', courseRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

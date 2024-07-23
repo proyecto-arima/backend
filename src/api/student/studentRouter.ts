@@ -1,16 +1,21 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
-import express, { Request, Response, Router } from 'express';
+import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
+import { CourseModel } from '@/api/course/courseModel';
 import { UserCreationSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { roleMiddleware } from '@/common/middleware/roleMiddleware';
+import { sessionMiddleware, SessionRequest } from '@/common/middleware/session';
 import { ApiError } from '@/common/models/apiError';
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
+import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
 
 import { studentService } from './studentService';
 
+const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
 export const studentRegistry = new OpenAPIRegistry();
 
 studentRegistry.register('Student', UserDTOSchema);
@@ -47,6 +52,45 @@ export const studentRouter: Router = (() => {
       logger.trace('[StudentRouter] - [/] - End');
     }
   });
+
+  router.get(
+    '/me/courses',
+    sessionMiddleware,
+    roleMiddleware([Role.STUDENT]),
+
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      try {
+        const sessionContext = req.sessionContext;
+        if (!sessionContext?.user?.id) {
+          logger.trace('[StudentRouter] - [/me/courses] - Session context is missing, sending error response');
+          return next(UNAUTHORIZED);
+        }
+
+        logger.trace(
+          `[StudentRouter] - [/me/courses] - Retrieving courses for student with id: ${sessionContext.user.id}`
+        );
+
+        // Buscar todos los cursos donde el id del estudiante está en el array de students
+        const courses = await CourseModel.find({ 'students.id': sessionContext.user.id }).exec();
+        logger.trace(`[StudentRouter] - [/me/courses] - Found courses: ${JSON.stringify(courses)}`);
+
+        // Convertir los cursos a su formato DTO
+        const coursesDTO = courses.map((course) => course.toDto());
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Courses retrieved successfully',
+          coursesDTO,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        logger.error(`[StudentRouter] - [/me/courses] - Error: ${error}`);
+        const apiError = new ApiError('Failed to retrieve courses', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
+      }
+    }
+  );
 
   return router;
 })();
