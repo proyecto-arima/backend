@@ -1,4 +1,4 @@
-import { Course, CourseCreation, CourseDTO } from '@/api/course/courseModel';
+import { Course, CourseCreation, CourseDTO, CourseModel } from '@/api/course/courseModel';
 import { courseRepository } from '@/api/course/courseRepository';
 
 export const courseService = {
@@ -15,5 +15,10 @@ export const courseService = {
   create: async (course: CourseCreation): Promise<CourseDTO> => {
     const createdCourse: Course = await courseRepository.create(course);
     return createdCourse.toDto();
+  },
+
+  async findCoursesByTeacherId(teacherId: string): Promise<CourseDTO[]> {
+    const courses = await CourseModel.find({ teacherId }).exec();
+    return courses.map((course) => course.toDto());
   },
 };
