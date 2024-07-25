@@ -11,7 +11,7 @@ import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
 
-import { UserNotFoundError } from '../auth/authModel';
+import { InvalidCredentialsError } from '../auth/authModel';
 
 export const userRegistry = new OpenAPIRegistry();
 userRegistry.register('User', UserDTOSchema);
@@ -67,7 +67,7 @@ export const userRouter: Router = (() => {
       handleApiResponse(apiResponse, res);
     } catch (e) {
       logger.error(`[UserRouter] - [/:id] - Error: ${e}`);
-      if (e instanceof UserNotFoundError) {
+      if (e instanceof InvalidCredentialsError) {
         logger.error(`[UserRouter] - [/:id] - User not found`);
         const apiError = new ApiError('User not found', StatusCodes.NOT_FOUND, e);
         return next(apiError);
