@@ -26,8 +26,18 @@ export const courseService = {
   async addSectionToCourse(courseId: string, sectionData: SectionCreationDTO): Promise<CourseDTO> {
     const course = await CourseModel.findById(courseId).exec();
     if (!course) {
-      throw new Error('Course not found'); // You can replace this with a more specific error if needed
+      throw new Error('Course not found');
     }
     return await courseRepository.addSectionToCourse(course, sectionData);
+  },
+
+  async getSectionsOfCourse(courseId: string): Promise<any> {
+    const course = await CourseModel.findById(courseId).exec();
+
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    return await courseRepository.getSectionsOfCourse(courseId);
   },
 };

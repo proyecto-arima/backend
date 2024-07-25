@@ -126,9 +126,16 @@ export const courseRouter: Router = (() => {
   router.post(
     '/:courseId/section',
     sessionMiddleware,
+    hasAccessToCourseMiddleware('courseId'),
     roleMiddleware([Role.TEACHER]),
     validateRequest(SectionCreationSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        logger.trace('[AuthRouter] - [/setPassword] - Session context is missing, sending error response');
+        return next(UNAUTHORIZED);
+      }
+
       const { courseId } = req.params;
       const sectionData = req.body;
 
@@ -157,6 +164,46 @@ export const courseRouter: Router = (() => {
         }
       } finally {
         logger.trace('[CourseRouter] - [/:courseId/section] - End');
+      }
+    }
+  );
+
+  router.get(
+    '/:courseId/sections',
+    sessionMiddleware,
+    hasAccessToCourseMiddleware('courseId'),
+    roleMiddleware([Role.TEACHER, Role.STUDENT]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        logger.trace('[AuthRouter] - [/setPassword] - Session context is missing, sending error response');
+        return next(UNAUTHORIZED);
+      }
+
+      const { courseId } = req.params;
+
+      try {
+        logger.trace('[CourseRouter] - [/:courseId/sections] - Start');
+        const course = await courseService.getSectionsOfCourse(courseId);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Sections retrieved successfully',
+          course.sections,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        if (e instanceof ApiError) {
+          logger.warn(`[CourseRouter] - [/:courseId/sections] - ApiError: ${e.message}`);
+          return next(e);
+        } else {
+          logger.error(`[CourseRouter] - [/:courseId/sections] - Error: ${e}`);
+          const apiError = new ApiError('Failed to retrieve sections', StatusCodes.INTERNAL_SERVER_ERROR, e);
+          return next(apiError);
+        }
+      } finally {
+        logger.trace('[CourseRouter] - [/:courseId/sections] - End');
       }
     }
   );

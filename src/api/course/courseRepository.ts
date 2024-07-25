@@ -45,4 +45,13 @@ export const courseRepository = {
       return Promise.reject(error);
     }
   },
+
+  getSectionsOfCourse: async (courseId: string): Promise<Course | null> => {
+    try {
+      const course = await CourseModel.findById(courseId).populate('sections').exec();
+      return course;
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  },
 };
