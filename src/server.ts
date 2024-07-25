@@ -36,7 +36,6 @@ app.use(requestLogger);
 // Routes
 app.use('/health-check', healthCheckRouter);
 app.use('/users', sessionMiddleware, userRouter);
-//app.use('/users', userRouter);
 
 app.use('/auth', authRouter);
 app.use('/students', studentRouter);

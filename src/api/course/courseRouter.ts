@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import { CourseCreationSchema, CourseDTO, CourseDTOSchema, GetCourseSchema } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
+import { SectionCreationSchema } from '@/api/course/section/sectionModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { hasAccessToCourseMiddleware } from '@/common/middleware/hasAccessToCourse';
 import { roleMiddleware } from '@/common/middleware/roleMiddleware';
@@ -121,5 +122,44 @@ export const courseRouter: Router = (() => {
       }
     }
   );
+
+  router.post(
+    '/:courseId/section',
+    sessionMiddleware,
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(SectionCreationSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { courseId } = req.params;
+      const sectionData = req.body;
+
+      try {
+        logger.trace('[CourseRouter] - [/:courseId/section] - Start');
+        const courseReq = GetCourseSchema.parse({ params: req.params });
+        logger.trace(`[CourseRouter] - [/:courseId/section] - Retrieving course with id: ${courseReq.params.id}...`);
+
+        const updatedCourse = await courseService.addSectionToCourse(courseId, sectionData);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Section added to course successfully',
+          updatedCourse,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        if (e instanceof ApiError) {
+          logger.warn(`[CourseRouter] - [/:courseId/section] - ApiError: ${e.message}`);
+          return next(e);
+        } else {
+          logger.error(`[CourseRouter] - [/:courseId/section] - Error: ${e}`);
+          const apiError = new ApiError('Failed to add section to course', StatusCodes.INTERNAL_SERVER_ERROR, e);
+          return next(apiError);
+        }
+      } finally {
+        logger.trace('[CourseRouter] - [/:courseId/section] - End');
+      }
+    }
+  );
+
   return router;
 })();

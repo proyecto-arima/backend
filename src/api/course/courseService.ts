@@ -1,5 +1,6 @@
 import { Course, CourseCreation, CourseDTO, CourseModel } from '@/api/course/courseModel';
 import { courseRepository } from '@/api/course/courseRepository';
+import { SectionCreationDTO } from '@/api/course/section/sectionModel';
 
 export const courseService = {
   // Retrieves a course by its ID
@@ -20,5 +21,13 @@ export const courseService = {
   async findCoursesByTeacherId(teacherId: string): Promise<CourseDTO[]> {
     const courses = await CourseModel.find({ teacherId }).exec();
     return courses.map((course) => course.toDto());
+  },
+
+  async addSectionToCourse(courseId: string, sectionData: SectionCreationDTO): Promise<CourseDTO> {
+    const course = await CourseModel.findById(courseId).exec();
+    if (!course) {
+      throw new Error('Course not found'); // You can replace this with a more specific error if needed
+    }
+    return await courseRepository.addSectionToCourse(course, sectionData);
   },
 };
