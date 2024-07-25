@@ -6,6 +6,7 @@ import { CourseCreationSchema, CourseDTO, CourseDTOSchema, GetCourseSchema } fro
 import { courseService } from '@/api/course/courseService';
 import { SectionCreationSchema } from '@/api/course/section/sectionModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { checkSessionContext } from '@/common/middleware/checkSessionContext';
 import { hasAccessToCourseMiddleware } from '@/common/middleware/hasAccessToCourse';
 import { roleMiddleware } from '@/common/middleware/roleMiddleware';
 import { sessionMiddleware, SessionRequest } from '@/common/middleware/session';
@@ -15,7 +16,6 @@ import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
 
-const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
 export const courseRegistry = new OpenAPIRegistry();
 courseRegistry.register('Course', CourseDTOSchema);
 
@@ -43,14 +43,11 @@ export const courseRouter: Router = (() => {
   router.post(
     '/create',
     sessionMiddleware,
+    checkSessionContext,
     roleMiddleware([Role.TEACHER]),
     validateRequest(CourseCreationSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const sessionContext = req.sessionContext;
-      if (!sessionContext?.user?.id) {
-        logger.trace('[AuthRouter] - [/setPassword] - Session context is missing, sending error response');
-        return next(UNAUTHORIZED);
-      }
 
       try {
         logger.trace('[CourseRouter] - [/create] - Start');
@@ -58,7 +55,7 @@ export const courseRouter: Router = (() => {
 
         const courseData = {
           ...req.body,
-          teacherId: sessionContext.user.id,
+          teacherId: sessionContext?.user?.id,
         };
 
         const createdCourse: CourseDTO = await courseService.create(courseData);
@@ -83,16 +80,11 @@ export const courseRouter: Router = (() => {
   router.get(
     '/:id',
     sessionMiddleware,
+    checkSessionContext,
     hasAccessToCourseMiddleware('id'),
     roleMiddleware([Role.TEACHER, Role.STUDENT]),
     validateRequest(GetCourseSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
-      const sessionContext = req.sessionContext;
-      if (!sessionContext?.user?.id) {
-        logger.trace('[AuthRouter] - [/setPassword] - Session context is missing, sending error response');
-        return next(UNAUTHORIZED);
-      }
-
       try {
         logger.trace('[CourseRouter] - [/:id] - Start');
         const courseReq = GetCourseSchema.parse({ params: req.params });
@@ -126,16 +118,11 @@ export const courseRouter: Router = (() => {
   router.post(
     '/:courseId/section',
     sessionMiddleware,
+    checkSessionContext,
     hasAccessToCourseMiddleware('courseId'),
     roleMiddleware([Role.TEACHER]),
     validateRequest(SectionCreationSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
-      const sessionContext = req.sessionContext;
-      if (!sessionContext?.user?.id) {
-        logger.trace('[AuthRouter] - [/setPassword] - Session context is missing, sending error response');
-        return next(UNAUTHORIZED);
-      }
-
       const { courseId } = req.params;
       const sectionData = req.body;
 
@@ -171,15 +158,10 @@ export const courseRouter: Router = (() => {
   router.get(
     '/:courseId/sections',
     sessionMiddleware,
+    checkSessionContext,
     hasAccessToCourseMiddleware('courseId'),
     roleMiddleware([Role.TEACHER, Role.STUDENT]),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
-      const sessionContext = req.sessionContext;
-      if (!sessionContext?.user?.id) {
-        logger.trace('[AuthRouter] - [/setPassword] - Session context is missing, sending error response');
-        return next(UNAUTHORIZED);
-      }
-
       const { courseId } = req.params;
 
       try {
