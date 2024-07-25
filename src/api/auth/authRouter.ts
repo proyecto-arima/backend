@@ -11,7 +11,7 @@ import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
 
-import { InvalidCredentialsError, PasswordSetSchema } from './authModel';
+import { InvalidCredentialsError, PasswordChangeRequiredError, PasswordSetSchema } from './authModel';
 import { authService } from './authService';
 
 export const authRegistry = new OpenAPIRegistry();
@@ -41,7 +41,7 @@ export const authRouter: Router = (() => {
   });
 
   authRegistry.registerPath({
-    method: 'patch',
+    method: 'post',
     path: '/auth/setPassword',
     tags: ['PasswordSet'],
     request: { body: { content: { 'application/json': { schema: PasswordSetSchema.shape.body } }, description: '' } },
@@ -61,10 +61,11 @@ export const authRouter: Router = (() => {
     } catch (ex: unknown) {
       logger.trace(`[AuthRouter] - [/] - Error: ${ex}`);
       if (ex instanceof InvalidCredentialsError) {
-        logger.trace('[AuthRouter] - [/] - Invalid credentials');
         return next(INVALID_CREDENTIALS);
       }
-      logger.trace('[AuthRouter] - [/] - Unexpected error');
+      if (ex instanceof PasswordChangeRequiredError) {
+        return next(UNAUTHORIZED);
+      }
       return next(UNEXPECTED_ERROR);
     } finally {
       logger.trace('[AuthRouter] - [/] - End');
@@ -87,7 +88,6 @@ export const authRouter: Router = (() => {
       logger.trace('[AuthRouter] - [/setPassword] - Start');
       try {
         logger.trace('[AuthRouter] - [/setPassword] - Setting password...');
-        logger.trace(`TOKEN ENCONTRADO ${req.query['token']}`);
         await authService.passwordSet(req.query['token']?.toString() ?? '', req.body);
         logger.trace('[AuthRouter] - [/setPassword] - Password set successfully');
         const response = new ApiResponse(ResponseStatus.Success, 'Password set successfully', null, StatusCodes.OK);
@@ -95,7 +95,6 @@ export const authRouter: Router = (() => {
       } catch (ex) {
         logger.trace(`[AuthRouter] - [/setPassword] - Error: ${ex}`);
         if (ex instanceof InvalidCredentialsError) {
-          logger.trace('[AuthRouter] - [/setPassword] - Invalid credentials');
           return next(INVALID_CREDENTIALS);
         }
         return next(UNEXPECTED_ERROR);
@@ -115,6 +114,9 @@ export const authRouter: Router = (() => {
       return handleApiResponse(response, res);
     } catch (ex) {
       logger.trace(`[AuthRouter] - [/passwordRecovery] - Error: ${ex}`);
+      if (ex instanceof InvalidCredentialsError) {
+        return next(INVALID_CREDENTIALS);
+      }
       return next(UNEXPECTED_ERROR);
     } finally {
       logger.trace('[AuthRouter] - [/passwordRecovery] - End');

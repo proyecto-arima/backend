@@ -22,22 +22,35 @@ export const SessionContextSchema = z.object({
 });
 export type SessionContext = z.infer<typeof SessionContextSchema>;
 
-// Info in JWT token
 export const SessionPayloadSchema = z.object({
   id: z.custom<ObjectId>((v: string): ObjectId => new mongoose.Types.ObjectId(v)),
 });
 export type SessionPayload = z.infer<typeof SessionPayloadSchema>;
 
-export class UserNotFoundError extends Error {
-  constructor(message?: string) {
-    super(message);
-    this.name = 'UserNotFoundError';
-  }
-}
-
 export class InvalidCredentialsError extends Error {
   constructor(message?: string) {
     super(message);
     this.name = 'InvalidCredentialsError';
+  }
+}
+
+export class PasswordChangeRequiredError extends Error {
+  constructor(message?: string) {
+    super(message);
+    this.name = 'PasswordChangeRequired';
+  }
+}
+
+export class PasswordNotSecureError extends Error {
+  constructor(message?: string) {
+    super(message);
+    this.name = 'PasswordNotSecureError';
+  }
+}
+
+export class PasswordsDoNotMatchError extends Error {
+  constructor(message?: string) {
+    super(message);
+    this.name = 'PasswordsDoNotMatchError';
   }
 }

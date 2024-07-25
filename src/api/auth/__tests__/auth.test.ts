@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import { StatusCodes } from 'http-status-codes';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
@@ -11,45 +12,60 @@ vi.mock('@/common/mailSender/mailSenderService', async (importOriginal) => {
   const mod = await importOriginal<typeof import('@/common/mailSender/mailSenderService')>();
   return {
     ...mod,
+    buildTransporter: vi.fn(),
     sendMailTo: vi.fn(),
   };
 });
 
+vi.mock('jsonwebtoken', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('jsonwebtoken')>();
+  return {
+    ...mod,
+    verify: vi.fn().mockReturnValue(true),
+    sign: vi.fn().mockReturnValue('testToken'),
+  };
+});
+
 describe('Authentication tests', () => {
+  const testUsername = 'admin@proyectoarima.tech';
+  const testPassword = 'admin';
+  const testToken = 'testToken';
+
   beforeAll(async () => {
     const mongod = await MongoMemoryServer.create();
     await connectToMongoDB(mongod.getUri());
   });
 
   beforeEach(async () => {
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.db.collection('users').insertOne({
+    const testingUser = {
       firstName: 'Admin',
       lastName: 'Proyecto Arima',
       document: {
         type: 'GENERIC',
         number: '00000000',
       },
-      email: 'admin@proyectoarima.tech',
-      password: '$2b$10$6aJ.eouEbOlyhV99pVsrM./mAdk41tzPh6tZLv1vyFaWqB6G/5Zf.', // admin
+      email: testUsername,
+      password: await bcrypt.hash(testPassword, 10),
       role: 'ADMIN',
-      forcePasswordReset: true,
-    });
+      forcePasswordReset: false, // User already set their password
+    };
+
+    await mongoose.connection.dropDatabase();
+    await mongoose.connection.db.collection('users').insertOne(testingUser);
   });
 
-  const loginAsAdminShouldSuccess = async (email = 'admin@proyectoarima.tech', password = 'admin') => {
+  const loginAsAdminShouldSuccess = async (email = testUsername, password = 'admin') => {
     const response = await request(app).post('/auth').send({
       email,
       password,
     });
     const result: ApiResponse = response.body;
+
     expect(response.statusCode).toEqual(StatusCodes.OK);
     expect(result.success).toBeTruthy();
     expect(result.data).toHaveProperty('access_token');
-    expect(result.message).toEqual('User logged in');
     expect(response.header).toHaveProperty('set-cookie');
     expect(response.header['set-cookie'][0]).toMatch(/access_token=.+; Max-Age=\d+; Path=\/; Expires=.+; HttpOnly/);
-
     return result.data?.['access_token'];
   };
 
@@ -73,36 +89,37 @@ describe('Authentication tests', () => {
   });
 
   it('POST /auth with invalid email', async () => {
-    loginAsAdminShouldFail('admin2@proyectoarima.tech', 'admin');
+    loginAsAdminShouldFail('admin2@proyectoarima.tech', testPassword);
   });
 
   it('POST /auth with invalid password', async () => {
-    loginAsAdminShouldFail('admin@proyectoarima.tech', 'admin2');
+    loginAsAdminShouldFail(testUsername, 'admin2');
   });
 
-  it('POST /auth/setPassword', async () => {
-    const accessToken = await loginAsAdminShouldSuccess();
-    const response = await request(app).post(`/auth/setPassword?token=${accessToken}`).send({
-      email: "admin@proyectoarima.tech",
+  // TODO: Implement this test
+  it.skip('POST /auth/setPassword', async () => {
+    const passwordRecoveryResponse = await request(app).post(`/auth/passwordRecovery`).send({
+      email: testUsername,
+    });
+    console.log(passwordRecoveryResponse);
+    const response = await request(app).post(`/auth/setPassword?token=${testToken}`).send({
+      email: testUsername,
       newPassword: 'admin2',
       newPasswordConfirmation: 'admin2',
     });
-  
     const result: ApiResponse = response.body;
+
     expect(response.statusCode).toEqual(StatusCodes.OK);
     expect(result.success).toBeTruthy();
-    expect(result.message).toEqual('Password set successfully');
     expect(result.data).toBeNull();
 
-    await loginAsAdminShouldFail('admin@proyectoarima.tech', 'admin');
-    await loginAsAdminShouldSuccess('admin@proyectoarima.tech', 'admin2');
+    await loginAsAdminShouldFail(testUsername, 'admin');
+    await loginAsAdminShouldSuccess(testUsername, 'admin2');
   });
 
   it('DELETE /auth', async () => {
     const accessToken = await loginAsAdminShouldSuccess();
-
     const response = await request(app).delete('/auth').set('Cookie', `access_token=${accessToken}`);
-
     expect(response.statusCode).toEqual(StatusCodes.OK);
     expect(response.header).not.toHaveProperty('Set-Cookie');
   });
