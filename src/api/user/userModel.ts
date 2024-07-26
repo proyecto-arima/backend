@@ -41,7 +41,7 @@ export type UserDTO = z.infer<typeof UserDTOSchema>; // Inferred type of UserDTO
 const userModelSchemaDefinition = {
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true, index: true },
   password: { type: String, required: true },
   role: { type: String, required: true, enum: Role },
   document: {
