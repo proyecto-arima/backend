@@ -1,6 +1,7 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import { JsonWebTokenError } from 'jsonwebtoken';
 import { z } from 'zod';
 
 import { SessionToken, SessionTokenSchema, UserLoginSchema } from '@/api/user/userModel';
@@ -11,7 +12,14 @@ import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
 
-import { InvalidCredentialsError, PasswordChangeRequiredError, PasswordSetSchema } from './authModel';
+import {
+  InvalidCredentialsError,
+  PasswordChangeRequiredError,
+  PasswordNotSecureError,
+  PasswordResetSchema,
+  PasswordsDoNotMatchError,
+  PasswordSetSchema,
+} from './authModel';
 import { authService } from './authService';
 
 export const authRegistry = new OpenAPIRegistry();
@@ -19,8 +27,11 @@ export const authRegistry = new OpenAPIRegistry();
 authRegistry.register('Auth', UserLoginSchema);
 
 export const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
+export const JWT_MISSING = new ApiError('JWT missing', StatusCodes.UNAUTHORIZED);
 export const INVALID_CREDENTIALS = new ApiError('Invalid credentials', StatusCodes.UNAUTHORIZED);
 export const UNEXPECTED_ERROR = new ApiError('An unexpected error occurred', StatusCodes.INTERNAL_SERVER_ERROR);
+export const PASSWORD_NOT_SECURE = new ApiError('Password not secure', StatusCodes.BAD_REQUEST);
+export const PASSWORDS_DO_NOT_MATCH = new ApiError('Passwords do not match', StatusCodes.BAD_REQUEST);
 
 export const authRouter: Router = (() => {
   const router = express.Router();
@@ -45,6 +56,14 @@ export const authRouter: Router = (() => {
     path: '/auth/setPassword',
     tags: ['PasswordSet'],
     request: { body: { content: { 'application/json': { schema: PasswordSetSchema.shape.body } }, description: '' } },
+    responses: createApiResponse(z.object({}), 'Success'),
+  });
+
+  authRegistry.registerPath({
+    method: 'post',
+    path: '/auth/passwordRecovery',
+    tags: ['PasswordReset'],
+    request: { body: { content: { 'application/json': { schema: PasswordResetSchema.shape.body } }, description: '' } },
     responses: createApiResponse(z.object({}), 'Success'),
   });
 
@@ -88,14 +107,23 @@ export const authRouter: Router = (() => {
       logger.trace('[AuthRouter] - [/setPassword] - Start');
       try {
         logger.trace('[AuthRouter] - [/setPassword] - Setting password...');
-        await authService.passwordSet(req.query['token']?.toString() ?? '', req.body);
+        await authService.passwordSet(req.query['token']?.toString() ?? undefined, req.body);
         logger.trace('[AuthRouter] - [/setPassword] - Password set successfully');
         const response = new ApiResponse(ResponseStatus.Success, 'Password set successfully', null, StatusCodes.OK);
         return handleApiResponse(response, res);
-      } catch (ex) {
+      } catch (ex: unknown) {
         logger.trace(`[AuthRouter] - [/setPassword] - Error: ${ex}`);
         if (ex instanceof InvalidCredentialsError) {
           return next(INVALID_CREDENTIALS);
+        }
+        if (ex instanceof JsonWebTokenError) {
+          return next(JWT_MISSING);
+        }
+        if (ex instanceof PasswordsDoNotMatchError) {
+          return next(PASSWORDS_DO_NOT_MATCH);
+        }
+        if (ex instanceof PasswordNotSecureError) {
+          return next(PASSWORD_NOT_SECURE);
         }
         return next(UNEXPECTED_ERROR);
       } finally {
@@ -104,15 +132,15 @@ export const authRouter: Router = (() => {
     }
   );
 
-  router.post('/passwordRecovery', (req: Request, res: Response, next: NextFunction) => {
+  router.post('/passwordRecovery', async (req: Request, res: Response, next: NextFunction) => {
     logger.trace('[AuthRouter] - [/passwordRecovery] - Start');
     try {
       logger.trace('[AuthRouter] - [/passwordReset] - Received password recovery');
-      authService.passwordRecovery(req.body.email);
+      await authService.passwordRecovery(req.body);
       logger.trace('[AuthRouter] - [/passwordRecovery] - Password recovery done');
-      const response = new ApiResponse(ResponseStatus.Success, 'Password reset email sent', null, StatusCodes.OK);
+      const response = new ApiResponse(ResponseStatus.Success, 'Password recovery done', null, StatusCodes.OK);
       return handleApiResponse(response, res);
-    } catch (ex) {
+    } catch (ex: unknown) {
       logger.trace(`[AuthRouter] - [/passwordRecovery] - Error: ${ex}`);
       if (ex instanceof InvalidCredentialsError) {
         return next(INVALID_CREDENTIALS);

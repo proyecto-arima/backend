@@ -12,17 +12,7 @@ vi.mock('@/common/mailSender/mailSenderService', async (importOriginal) => {
   const mod = await importOriginal<typeof import('@/common/mailSender/mailSenderService')>();
   return {
     ...mod,
-    buildTransporter: vi.fn(),
     sendMailTo: vi.fn(),
-  };
-});
-
-vi.mock('jsonwebtoken', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('jsonwebtoken')>();
-  return {
-    ...mod,
-    verify: vi.fn().mockReturnValue(true),
-    sign: vi.fn().mockReturnValue('testToken'),
   };
 });
 
@@ -51,7 +41,17 @@ describe('Authentication tests', () => {
     };
 
     await mongoose.connection.dropDatabase();
-    await mongoose.connection.db.collection('users').insertOne(testingUser);
+    const testingUserId = (await mongoose.connection.db.collection('users').insertOne(testingUser)).insertedId;
+
+    vi.doMock('jsonwebtoken', async (importOriginal) => {
+      const mod = await importOriginal<typeof import('jsonwebtoken')>();
+      return {
+        ...mod,
+        verify: vi.fn().mockReturnValue(true),
+        sign: vi.fn().mockReturnValue(testToken),
+        decode: vi.fn().mockReturnValue({ id: testingUserId }),
+      };
+    });
   });
 
   const loginAsAdminShouldSuccess = async (email = testUsername, password = 'admin') => {
@@ -96,16 +96,17 @@ describe('Authentication tests', () => {
     loginAsAdminShouldFail(testUsername, 'admin2');
   });
 
-  // TODO: Implement this test
+  // TODO: SMTP mock WIP
   it.skip('POST /auth/setPassword', async () => {
-    const passwordRecoveryResponse = await request(app).post(`/auth/passwordRecovery`).send({
+    const newPassword = 'admin2';
+    await request(app).post(`/auth/passwordRecovery`).send({
       email: testUsername,
     });
-    console.log(passwordRecoveryResponse);
+
     const response = await request(app).post(`/auth/setPassword?token=${testToken}`).send({
       email: testUsername,
-      newPassword: 'admin2',
-      newPasswordConfirmation: 'admin2',
+      newPassword: newPassword,
+      newPasswordConfirmation: newPassword,
     });
     const result: ApiResponse = response.body;
 
