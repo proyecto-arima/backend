@@ -25,7 +25,15 @@ export const CourseDTOSchema = z.object({
       lastName: z.string(),
     })
   ),
-  sections: z.array(z.string()), // Usa el DTO de Section
+  sections: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        description: z.string(),
+      })
+    )
+    .optional(),
 });
 export type CourseDTO = z.infer<typeof CourseDTOSchema>;
 
@@ -41,15 +49,24 @@ const studentSchemaDefinition = new Schema(
   { _id: false }
 );
 
+const sectionSchemaDefinition = new Schema(
+  {
+    id: { type: Schema.Types.ObjectId, ref: 'Section' },
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+  },
+  { _id: false }
+);
+
 // Usa el schema definido en sectionModel
 const courseModelSchemaDefinition = {
   title: { type: String, required: true },
   description: { type: String, required: true },
   image: { type: String, required: true },
-  matriculationCode: { type: String, required: true },
+  matriculationCode: { type: String },
   teacherId: { type: String },
   students: { type: [studentSchemaDefinition], required: true },
-  sections: [{ type: Schema.Types.ObjectId, ref: 'Section', required: false }], // Usa el schema de Section
+  sections: { type: [sectionSchemaDefinition], required: false }, // Usa el schema de Section
 };
 
 // Type used to tell mongoose the shape of the schema available
@@ -60,7 +77,7 @@ type ICourseSchemaDefinition = {
   matriculationCode: string;
   teacherId: string;
   students: Array<{ _id: string; firstName: string; lastName: string }>;
-  sections: Array<mongoose.Types.ObjectId>;
+  sections?: Array<{ id: mongoose.Types.ObjectId; name: string; description: string }>;
 };
 
 // Type used to add methods to the schema
@@ -89,18 +106,24 @@ const courseModelSchema = new Schema<ICourseSchemaDefinition, CourseModelDefinit
  */
 courseModelSchema.method('toDto', function (): CourseDTO {
   return {
-    id: this._id.toString(),
-    title: this.title.toString(),
-    description: this.description.toString(),
-    image: this.image.toString(),
-    matriculationCode: this.matriculationCode.toString(),
-    teacherId: this.teacherId.toString(),
-    students: this.students.map((student) => ({
-      id: student._id?.toString(),
-      firstName: student.firstName.toString(),
-      lastName: student.lastName.toString(),
-    })),
-    sections: this.sections.map((sectionId) => sectionId.toString()),
+    id: this._id?.toString(),
+    title: this.title?.toString() || '',
+    description: this.description?.toString() || '',
+    image: this.image?.toString() || '',
+    matriculationCode: this.matriculationCode?.toString() || '',
+    teacherId: this.teacherId?.toString() || '',
+    students:
+      this.students?.map((student) => ({
+        id: student._id?.toString() || '',
+        firstName: student.firstName?.toString() || '',
+        lastName: student.lastName?.toString() || '',
+      })) || [],
+    sections:
+      this.sections?.map((section) => ({
+        id: section.id?.toString() || '',
+        name: section.name?.toString() || '',
+        description: section.description?.toString() || '',
+      })) || [],
   };
 });
 
@@ -121,17 +144,17 @@ export const GetCourseSchema = z.object({
 export const CourseCreationSchema = z.object({
   body: z.object({
     title: z.string(),
-    description: z.string(),
-    image: z.string().url(),
-    matriculationCode: z.string(),
-    students: z.array(
-      z.object({
-        id: z.string(),
-        firstName: z.string(),
-        lastName: z.string(),
-      })
-    ),
-    //sections: z.array(z.string()),
+    description: z.string().optional(),
+    image: z.string().url().optional(),
+    students: z
+      .array(
+        z.object({
+          id: z.string(),
+          firstName: z.string(),
+          lastName: z.string(),
+        })
+      )
+      .optional(),
   }),
 });
 export type CourseCreationDTO = z.infer<typeof CourseCreationSchema.shape.body>;

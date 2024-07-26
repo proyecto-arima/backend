@@ -22,7 +22,7 @@ export const courseRepository = {
     return courseRepository.findByIdAsync(newCourse.id);
   },
 
-  addSectionToCourse: async (course: Course, sectionData: SectionCreationDTO): Promise<any> => {
+  addSectionToCourse: async (courseId: string, sectionData: SectionCreationDTO): Promise<any> => {
     try {
       // Crear la nueva sección
       const newSection = new SectionModel({
@@ -31,11 +31,20 @@ export const courseRepository = {
         visible: sectionData.visible,
       });
 
-      // Guardar la nueva sección
-      await newSection.save();
+      const course = await CourseModel.findById(courseId).exec();
 
-      // Agregar la nueva sección al curso
-      course.sections.push(newSection._id as Types.ObjectId); // Usar _id en lugar de objeto completo
+      if (!course) {
+        throw new Error('Course not found');
+      }
+
+      course.sections = course.sections || [];
+
+      course.sections.push({
+        id: newSection._id as Types.ObjectId,
+        name: newSection.name,
+        description: newSection.description ?? '',
+      });
+
       await course.save();
 
       // Retornar la sección recién creada en formato DTO

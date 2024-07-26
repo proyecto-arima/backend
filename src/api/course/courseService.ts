@@ -2,6 +2,10 @@ import { Course, CourseCreation, CourseDTO, CourseModel } from '@/api/course/cou
 import { courseRepository } from '@/api/course/courseRepository';
 import { SectionCreationDTO } from '@/api/course/section/sectionModel';
 
+const generateMatriculationCode = (): string => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
 export const courseService = {
   // Retrieves a course by its ID
   findById: async (id: string): Promise<CourseDTO> => {
@@ -14,7 +18,10 @@ export const courseService = {
 
   // Creates a new course
   create: async (course: CourseCreation): Promise<CourseDTO> => {
-    const createdCourse: Course = await courseRepository.create(course);
+    const matriculationCode = generateMatriculationCode();
+    const courseWithCode = { ...course, matriculationCode };
+
+    const createdCourse: Course = await courseRepository.create(courseWithCode);
     return createdCourse.toDto();
   },
 
@@ -24,20 +31,10 @@ export const courseService = {
   },
 
   async addSectionToCourse(courseId: string, sectionData: SectionCreationDTO): Promise<CourseDTO> {
-    const course = await CourseModel.findById(courseId).exec();
-    if (!course) {
-      throw new Error('Course not found');
-    }
-    return await courseRepository.addSectionToCourse(course, sectionData);
+    return await courseRepository.addSectionToCourse(courseId, sectionData);
   },
 
   async getSectionsOfCourse(courseId: string): Promise<any> {
-    const course = await CourseModel.findById(courseId).exec();
-
-    if (!course) {
-      throw new Error('Course not found');
-    }
-
     return await courseRepository.getSectionsOfCourse(courseId);
   },
 };
