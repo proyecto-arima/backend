@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import mongoose from 'mongoose';
 
 import { Course, CourseCreation, CourseCreationDTO, CourseModel } from '@/api/course/courseModel';
 import { SectionCreationDTO, SectionModel } from '@/api/course/section/sectionModel';
@@ -31,6 +32,8 @@ export const courseRepository = {
         visible: sectionData.visible,
       });
 
+      const savedSection = await newSection.save();
+
       const course = await CourseModel.findById(courseId).exec();
 
       if (!course) {
@@ -40,7 +43,7 @@ export const courseRepository = {
       course.sections = course.sections || [];
 
       course.sections.push({
-        id: newSection._id as Types.ObjectId,
+        id: savedSection._id as Types.ObjectId,
         name: newSection.name,
         description: newSection.description ?? '',
       });
@@ -55,10 +58,38 @@ export const courseRepository = {
     }
   },
 
-  getSectionsOfCourse: async (courseId: string): Promise<Course | null> => {
+  getSectionsOfCourse: async (courseId: string): Promise<any[]> => {
     try {
+      // Buscar el curso por ID y popular las secciones
       const course = await CourseModel.findById(courseId).populate('sections').exec();
-      return course;
+
+      if (!course) {
+        throw new Error('Course not found');
+      }
+
+      // Obtener los IDs de las secciones
+      const sectionIds = course.sections?.map((section) => section.id);
+      console.log('ID DE SECCIONES:', sectionIds);
+
+      // Crear ObjectId a partir de cada ID en sectionIds
+      const objectIdArray = sectionIds?.map((id) => new mongoose.Types.ObjectId(id));
+      console.log('OBJECT ID ARRAY:', objectIdArray);
+
+      // Buscar las secciones en la base de datos usando ObjectId
+      const sections = await SectionModel.find({ _id: { $in: objectIdArray } }).exec();
+      console.log('SECTIONS:', sections);
+
+      // Devolver las secciones encontradas
+      const sectionDtos = sections.map((section) => ({
+        id: section.id.toString(),
+        name: section.name,
+        description: section.description,
+        visible: section.visible, // Asegúrate de que este campo esté en tu esquema de sección
+      }));
+
+      console.log('SECTION DTOS:', sectionDtos);
+
+      return sectionDtos;
     } catch (error) {
       return Promise.reject(error);
     }

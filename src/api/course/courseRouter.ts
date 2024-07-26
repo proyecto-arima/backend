@@ -166,12 +166,12 @@ export const courseRouter: Router = (() => {
 
       try {
         logger.trace('[CourseRouter] - [/:courseId/sections] - Start');
-        const course = await courseService.getSectionsOfCourse(courseId);
+        const sections = await courseService.getSectionsOfCourse(courseId);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
           'Sections retrieved successfully',
-          course.sections,
+          sections,
           StatusCodes.OK
         );
         handleApiResponse(apiResponse, res);
