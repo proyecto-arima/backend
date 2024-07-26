@@ -1,22 +1,33 @@
 import nodemailer from 'nodemailer';
 
-import { config } from '../utils/config';
+import { logger } from '@/common/utils/serverLogger';
 
-// TODO: Check configuracion de SMTP server to debug emails to send
+import { config } from '../utils/config';
 
 let transporter: nodemailer.Transporter;
 
-export async function initTransporter(t: nodemailer.Transporter) {
-  transporter = t;
-}
-
+// BUG: Typescript lo detecta como error de sintaxis, pero el SMTP lleva este tipo de objeto
 export const buildTransporter = () =>
   nodemailer.createTransport({
     host: config.smtp.host,
     port: config.smtp.port,
-    secure: false,
+    greetingTimeout: 5000,
+    secure: config.smtp.auth.secure,
     auth: config.smtp.auth,
   });
+
+export async function initTransporter(t: nodemailer.Transporter) {
+  logger.info('Initializing SMTP Server');
+  t.verify((error) => {
+    if (error) {
+      logger.error('Error while connecting to SMTP Server: %s', error);
+      return Promise.reject(error);
+    }
+    transporter = t;
+    logger.info('SMTP Server ready');
+    return Promise.resolve('SMTP Server ready');
+  });
+}
 
 async function sendMailTo(mails: Array<string>, subject: string, html: string) {
   const info = await transporter.sendMail({
@@ -25,10 +36,7 @@ async function sendMailTo(mails: Array<string>, subject: string, html: string) {
     subject: subject,
     html: html,
   });
-  console.log('Message sent: %s', info.messageId);
-  // Message sent: <d786aa62-4e0a-070a-47ed-0b0666549519@ethereal.email>
+  logger.info(`[MailSenderService] - [sendMailTo] - Email sent: ${info.messageId}`);
 }
 
 export default sendMailTo;
-
-// main().catch(console.error);

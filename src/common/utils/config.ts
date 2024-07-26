@@ -5,14 +5,14 @@ dotenv.config();
 
 const ConfigSchema = z.object({
   smtp: z.object({
-    host: z.string(),
+    host: z.string().default('localhost'),
     port: z.number().min(1).max(65535),
-    auth: z
-      .object({
-        user: z.string().optional(),
-        pass: z.string().optional(),
-      })
-      .optional(),
+    auth: z.object({
+      type: z.enum(['login', 'plain']).default('plain'),
+      secure: z.boolean().default(false),
+      user: z.string(),
+      pass: z.string(),
+    }),
     sender: z.string().email(),
   }),
   mongodb: z.object({
@@ -36,7 +36,8 @@ export const config: Config = ConfigSchema.parse({
   smtp: {
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT as string),
-    auth: smtpAuth(),
+    auth: setSmtpAuth(),
+    secure: setTLS(),
     sender: process.env.SMTP_SENDER,
   },
   mongodb: {
@@ -55,11 +56,18 @@ export const config: Config = ConfigSchema.parse({
   },
 });
 
-function smtpAuth() {
-  return process.env.SMTP_USER || process.env.SMTP_PASS
+export function setSmtpAuth() {
+  return process.env.SMTP_AUTH_TYPE == 'login'
     ? {
+        type: process.env.SMTP_AUTH_TYPE,
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       }
-    : undefined;
+    : {
+        type: 'plain',
+      };
+}
+
+export function setTLS() {
+  return process.env.SMTP_TLS == 'on' ? true : false;
 }

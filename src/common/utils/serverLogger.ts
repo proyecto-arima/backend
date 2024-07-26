@@ -1,7 +1,7 @@
 import { pino } from 'pino';
 
 const logger = pino(
-  { name: 'server-logger', level: 'trace', timestamp: pino.stdTimeFunctions.isoTime, },
+  { name: 'server-logger', level: 'trace', timestamp: pino.stdTimeFunctions.isoTime },
   pino.transport({
     targets: [
       // File log
@@ -9,7 +9,7 @@ const logger = pino(
         target: 'pino/file',
         options: {
           destination: `./app.log`,
-          append: false
+          append: false,
         },
       },
       // Console log
@@ -17,7 +17,7 @@ const logger = pino(
         target: 'pino-pretty',
         options: {
           destination: 1,
-          colorize: true
+          colorize: true,
         },
         level: 'trace',
       },
