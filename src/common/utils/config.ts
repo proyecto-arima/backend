@@ -32,7 +32,7 @@ const ConfigSchema = z.object({
 });
 export type Config = z.infer<typeof ConfigSchema>;
 
-export const config: Config = ConfigSchema.parse({
+const envConfig = {
   smtp: {
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT as string),
@@ -54,7 +54,32 @@ export const config: Config = ConfigSchema.parse({
     rate_limit_max_requests: parseInt(process.env.COMMON_RATE_LIMIT_MAX_REQUESTS as string),
     rate_limit_window_ms: parseInt(process.env.COMMON_RATE_LIMIT_WINDOW_MS as string),
   },
-});
+};
+
+const testConfig = {
+  smtp: {
+    host: 'smtp.test.com',
+    port: 587,
+    sender: 'test@test.com',
+  },
+  mongodb: {
+    uri: 'mongodb://localhost:27017/test',
+  },
+  jwt: {
+    secret: 'secret',
+  },
+  cors_origin: 'http://localhost:3000',
+  app: {
+    host: 'localhost',
+    port: 8080,
+    node_env: 'test',
+    rate_limit_max_requests: 100,
+    rate_limit_window_ms: 900000,
+  },
+};
+
+export const config: Config =
+  process.env.NODE_ENV === 'test' ? ConfigSchema.parse(testConfig) : ConfigSchema.parse(envConfig);
 
 export function setSmtpAuth() {
   return process.env.SMTP_AUTH_TYPE == 'login'

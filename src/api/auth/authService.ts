@@ -21,20 +21,27 @@ import {
 export const authService = {
   login: async (user: UserLoginDTO): Promise<SessionToken> => {
     try {
+      logger.trace('[AuthService] - [login] - Start');
+      logger.trace(`[AuthService] - [login] - Finding user by email: ${user.email}...`);
       const foundUser = await userRepository.findByEmail(user.email);
       if (!foundUser) {
         throw new InvalidCredentialsError();
       }
-
+      logger.trace(`[AuthService] - [login] - User found: ${JSON.stringify(foundUser)}`);
+      
+      logger.trace(`[AuthService] - [login] - Comparing passwords...`);
       const isPasswordValid = await bcrypt.compare(user.password, foundUser.password);
       if (!isPasswordValid) {
+        logger.trace(`[AuthService] - [login] - Password is not valid, throwing InvalidCredentialsError`);
         throw new InvalidCredentialsError();
       }
 
+      logger.trace(`[AuthService] - [login] - Checking if user needs to reset password...`);
       if (foundUser.forcePasswordReset) {
         throw new PasswordChangeRequiredError();
       }
-
+      
+      logger.trace(`[AuthService] - [login] - User is valid, creating session token`);
       const token: SessionPayload = SessionPayloadSchema.parse({ id: foundUser.toDto().id });
       const access_token = jwt.sign(token, config.jwt.secret as string, { expiresIn: '12h' });
 

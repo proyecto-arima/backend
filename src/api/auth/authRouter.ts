@@ -70,6 +70,7 @@ export const authRouter: Router = (() => {
   router.post('/', validateRequest(UserLoginSchema), async (req: Request, res: Response, next: NextFunction) => {
     try {
       logger.trace('[AuthRouter] - [/] - Start');
+      logger.trace(`[AuthRouter] - [/] - Request to log in user ${req.body.email}`);
       const session: SessionToken = await authService.login(req.body);
       logger.trace('[AuthRouter] - [/] - User logged in');
       logger.trace('[AuthRouter] - [/] - Setting access token cookie');
@@ -85,6 +86,7 @@ export const authRouter: Router = (() => {
       if (ex instanceof PasswordChangeRequiredError) {
         return next(UNAUTHORIZED);
       }
+      logger.trace('[AuthRouter] - [/] - Unexpected error');
       return next(UNEXPECTED_ERROR);
     } finally {
       logger.trace('[AuthRouter] - [/] - End');
