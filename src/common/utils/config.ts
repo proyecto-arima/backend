@@ -28,6 +28,7 @@ const ConfigSchema = z.object({
     port: z.number().min(1).max(65535).default(8080),
     rate_limit_max_requests: z.number().default(100),
     rate_limit_window_ms: z.number().default(15 * 60 * 1000),
+    frontendUrl: z.string(),
   }),
 });
 export type Config = z.infer<typeof ConfigSchema>;
@@ -52,6 +53,7 @@ const envConfig = {
     node_env: process.env.NODE_ENV,
     rate_limit_max_requests: parseInt(process.env.COMMON_RATE_LIMIT_MAX_REQUESTS as string),
     rate_limit_window_ms: parseInt(process.env.COMMON_RATE_LIMIT_WINDOW_MS as string),
+    frontendUrl: process.env.FRONTEND_URL,
   },
 };
 
@@ -74,6 +76,7 @@ const testConfig = {
     node_env: 'test',
     rate_limit_max_requests: 100,
     rate_limit_window_ms: 900000,
+    frontendUrl: 'http://localhost:3000',
   },
 };
 
