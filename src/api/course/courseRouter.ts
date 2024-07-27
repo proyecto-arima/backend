@@ -2,6 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
+import { ContentCreationSchema } from '@/api/course/content/contentModel';
 import { CourseCreationSchema, CourseDTO, CourseDTOSchema, GetCourseSchema } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
 import { SectionCreationSchema } from '@/api/course/section/sectionModel';
@@ -186,6 +187,53 @@ export const courseRouter: Router = (() => {
         }
       } finally {
         logger.trace('[CourseRouter] - [/:courseId/sections] - End');
+      }
+    }
+  );
+
+  router.post(
+    '/:courseId/sections/:sectionId/content',
+    sessionMiddleware,
+    checkSessionContext,
+    hasAccessToCourseMiddleware('courseId'),
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(ContentCreationSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { courseId, sectionId } = req.params;
+      const contentData = req.body;
+
+      try {
+        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Start');
+        const courseReq = GetCourseSchema.parse({ params: { id: courseId } });
+        const sectionReq = GetCourseSchema.parse({ params: { id: sectionId } });
+        logger.trace(
+          `[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Retrieving course with id: ${courseReq.params.id}...`
+        );
+        logger.trace(
+          `[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Retrieving section with id: ${sectionReq.params.id}...`
+        );
+
+        console.log('addContentToSection', courseId, sectionId, contentData);
+        const newContent = await courseService.addContentToSection(courseId, sectionId, contentData);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Content added to section successfully',
+          newContent,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        if (e instanceof ApiError) {
+          logger.warn(`[CourseRouter] - [/:courseId/sections/:sectionId/contents] - ApiError: ${e.message}`);
+          return next(e);
+        } else {
+          logger.error(`[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Error: ${e}`);
+          const apiError = new ApiError('Failed to add content to section', StatusCodes.INTERNAL_SERVER_ERROR, e);
+          return next(apiError);
+        }
+      } finally {
+        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - End');
       }
     }
   );

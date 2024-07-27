@@ -31,6 +31,14 @@ export const CourseDTOSchema = z.object({
         id: z.string(),
         name: z.string(),
         description: z.string(),
+        contents: z
+          .array(
+            z.object({
+              id: z.string(),
+              title: z.string(),
+            })
+          )
+          .optional(),
       })
     )
     .optional(),
@@ -49,11 +57,20 @@ const studentSchemaDefinition = new Schema(
   { _id: false }
 );
 
+const contentSchemaDefinition = new Schema(
+  {
+    id: { type: Schema.Types.ObjectId, required: true },
+    title: { type: String, required: true },
+  },
+  { _id: false }
+);
+
 const sectionSchemaDefinition = new Schema(
   {
     id: { type: Schema.Types.ObjectId, ref: 'Section' },
     name: { type: String, required: true },
     description: { type: String, required: true },
+    contents: { type: [contentSchemaDefinition], required: true },
   },
   { _id: false }
 );
@@ -77,7 +94,12 @@ type ICourseSchemaDefinition = {
   matriculationCode: string;
   teacherId: string;
   students: Array<{ id: string; firstName: string; lastName: string }>;
-  sections?: Array<{ id: mongoose.Types.ObjectId; name: string; description: string }>;
+  sections?: Array<{
+    id: mongoose.Types.ObjectId;
+    name: string;
+    description: string;
+    contents: Array<{ id: mongoose.Types.ObjectId; title: string }>;
+  }>;
 };
 
 // Type used to add methods to the schema
@@ -123,6 +145,10 @@ courseModelSchema.method('toDto', function (): CourseDTO {
         id: section.id?.toString() || '',
         name: section.name?.toString() || '',
         description: section.description?.toString() || '',
+        /*contents: section.contents.map((content: any) => ({
+          id: content.id.toString(),
+          title: content.title.toString(),
+        })),*/
       })) || [],
   };
 });

@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 
+import { ContentCreationDTO, ContentDTO } from '@/api/course/content/contentModel';
 import { Course, CourseCreation, CourseDTO } from '@/api/course/courseModel';
 import { courseRepository } from '@/api/course/courseRepository';
 import { SectionCreationDTO } from '@/api/course/section/sectionModel';
@@ -48,5 +49,10 @@ export const courseService = {
 
   async getSectionsOfCourse(courseId: string): Promise<any> {
     return await courseRepository.getSectionsOfCourse(courseId);
+  },
+
+  async addContentToSection(courseId: string, sectionId: string, contentData: ContentCreationDTO): Promise<ContentDTO> {
+    console.log('[courseService] - [addContentToSection] - Parameters:', { courseId, sectionId, contentData });
+    return await courseRepository.addContentToSection(courseId, sectionId, contentData);
   },
 };

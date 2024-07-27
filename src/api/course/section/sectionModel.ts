@@ -1,7 +1,7 @@
 // sectionModel.ts
 
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import mongoose, { Document, Model, Schema } from 'mongoose';
+import mongoose, { Document, Model, Schema, Types } from 'mongoose';
 import { z } from 'zod';
 
 // Extiende Zod con OpenAPI
@@ -13,14 +13,31 @@ export const SectionDTOSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   visible: z.boolean(),
+  contents: z
+    .array(
+      z.object({
+        id: z.instanceof(Types.ObjectId),
+        title: z.string(),
+      })
+    )
+    .optional(),
 });
 export type SectionDTO = z.infer<typeof SectionDTOSchema>;
+
+const contentSchemaDefinition = new Schema(
+  {
+    id: { type: Schema.Types.ObjectId, required: true },
+    title: { type: String, required: true },
+  },
+  { _id: false }
+);
 
 // Section Model Schema Definition
 const sectionModelSchemaDefinition: Record<keyof Omit<SectionDTO, 'id'>, any> = {
   name: { type: String, required: true },
   description: { type: String, required: false },
   visible: { type: Boolean, required: true },
+  contents: { type: [contentSchemaDefinition], required: true },
 };
 
 // Type used to tell mongoose the shape of the schema available
@@ -54,6 +71,10 @@ sectionModelSchema.method('toDto', function (): SectionDTO {
     name: this.name.toString(),
     description: this.description?.toString(),
     visible: this.visible,
+    contents: this.contents?.map((content: any) => ({
+      id: content.id.toString(),
+      title: content.title.toString(),
+    })),
   };
 });
 

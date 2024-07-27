@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import mongoose from 'mongoose';
 
+import { ContentCreationDTO, ContentModel } from '@/api/course/content/contentModel';
 import { Course, CourseCreation, CourseCreationDTO, CourseDTO, CourseModel } from '@/api/course/courseModel';
 import { SectionCreationDTO, SectionModel } from '@/api/course/section/sectionModel';
 import { UserModel } from '@/api/user/userModel';
@@ -56,6 +57,7 @@ export const courseRepository = {
         id: savedSection._id as Types.ObjectId,
         name: newSection.name,
         description: newSection.description ?? '',
+        contents: [],
       });
 
       await course.save();
@@ -92,10 +94,48 @@ export const courseRepository = {
         name: section.name,
         description: section.description,
         visible: section.visible,
+        contents: section.contents?.map((content) => ({
+          id: content.id.toString(),
+          title: content.title,
+        })),
       }));
 
       return sectionDtos;
     } catch (error) {
+      return Promise.reject(error);
+    }
+  },
+
+  addContentToSection: async (courseId: string, sectionId: string, contentData: ContentCreationDTO): Promise<any> => {
+    try {
+      const newContent = new ContentModel({
+        title: contentData.title,
+        sectionId, // Asegúrate de que `sectionId` se pase aquí
+        publicationType: contentData.publicationType,
+        publicationDate: contentData.publicationDate,
+        file: contentData.file,
+      });
+
+      const savedContent = newContent.save();
+
+      const section = await SectionModel.findById(sectionId).exec();
+
+      if (!section) {
+        throw new Error('Section not found');
+      }
+
+      section.contents = section?.contents || [];
+
+      section.contents.push({
+        id: (await savedContent)._id as Types.ObjectId,
+        title: (await savedContent).title,
+      });
+
+      await section.save();
+
+      return newContent.toDto();
+    } catch (error) {
+      // Manejo de errores
       return Promise.reject(error);
     }
   },
