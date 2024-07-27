@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 
 import { Course, CourseCreation, CourseCreationDTO, CourseModel } from '@/api/course/courseModel';
 import { SectionCreationDTO, SectionModel } from '@/api/course/section/sectionModel';
+import { UserModel } from '@/api/user/userModel';
 
 export const courseRepository = {
   // Retrieves all courses from the database
@@ -15,6 +16,10 @@ export const courseRepository = {
       return Promise.reject(new Error('Course not found'));
     }
     return course;
+  },
+
+  async findStudentsByEmails(emails: string[]): Promise<any[]> {
+    return UserModel.find({ email: { $in: emails } }, { _id: 1, firstName: 1, lastName: 1 });
   },
 
   // Creates a new course

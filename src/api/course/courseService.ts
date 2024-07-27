@@ -1,3 +1,5 @@
+import { Types } from 'mongoose';
+
 import { Course, CourseCreation, CourseDTO, CourseModel } from '@/api/course/courseModel';
 import { courseRepository } from '@/api/course/courseRepository';
 import { SectionCreationDTO } from '@/api/course/section/sectionModel';
@@ -16,10 +18,21 @@ export const courseService = {
     return course.toDto();
   },
 
-  // Creates a new course
   create: async (course: CourseCreation): Promise<CourseDTO> => {
     const matriculationCode = generateMatriculationCode();
-    const courseWithCode = { ...course, matriculationCode };
+    const { studentEmails = [], ...courseData } = course;
+
+    // Buscar estudiantes por emails usando el repository
+    const students = await courseRepository.findStudentsByEmails(studentEmails);
+    const courseWithCode = {
+      ...courseData,
+      matriculationCode,
+      students: students.map((student) => ({
+        id: student._id as Types.ObjectId,
+        firstName: student.firstName,
+        lastName: student.lastName,
+      })),
+    };
 
     const createdCourse: Course = await courseRepository.create(courseWithCode);
     return createdCourse.toDto();

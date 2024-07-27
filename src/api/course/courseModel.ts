@@ -76,7 +76,7 @@ type ICourseSchemaDefinition = {
   image: string;
   matriculationCode: string;
   teacherId: string;
-  students: Array<{ _id: string; firstName: string; lastName: string }>;
+  students: Array<{ id: string; firstName: string; lastName: string }>;
   sections?: Array<{ id: mongoose.Types.ObjectId; name: string; description: string }>;
 };
 
@@ -114,7 +114,7 @@ courseModelSchema.method('toDto', function (): CourseDTO {
     teacherId: this.teacherId?.toString() || '',
     students:
       this.students?.map((student) => ({
-        id: student._id?.toString() || '',
+        id: student.id?.toString() || '',
         firstName: student.firstName?.toString() || '',
         lastName: student.lastName?.toString() || '',
       })) || [],
@@ -146,15 +146,7 @@ export const CourseCreationSchema = z.object({
     title: z.string(),
     description: z.string().optional(),
     image: z.string().url().optional(),
-    students: z
-      .array(
-        z.object({
-          id: z.string(),
-          firstName: z.string(),
-          lastName: z.string(),
-        })
-      )
-      .optional(),
+    studentEmails: z.array(z.string().email()).optional(), // Array de emails
   }),
 });
 export type CourseCreationDTO = z.infer<typeof CourseCreationSchema.shape.body>;
