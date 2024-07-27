@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import mongoose from 'mongoose';
 
-import { Course, CourseCreation, CourseCreationDTO, CourseModel } from '@/api/course/courseModel';
+import { Course, CourseCreation, CourseCreationDTO, CourseDTO, CourseModel } from '@/api/course/courseModel';
 import { SectionCreationDTO, SectionModel } from '@/api/course/section/sectionModel';
 import { UserModel } from '@/api/user/userModel';
 
@@ -26,6 +26,11 @@ export const courseRepository = {
   create: async (course: CourseCreation): Promise<Course> => {
     const newCourse = await CourseModel.create<CourseCreationDTO>(course);
     return courseRepository.findByIdAsync(newCourse.id);
+  },
+
+  async findCoursesByTeacherId(teacherId: string): Promise<CourseDTO[]> {
+    const courses = await CourseModel.find({ teacherId }).exec();
+    return courses.map((course) => course.toDto());
   },
 
   addSectionToCourse: async (courseId: string, sectionData: SectionCreationDTO): Promise<any> => {
