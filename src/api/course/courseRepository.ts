@@ -79,25 +79,20 @@ export const courseRepository = {
 
       // Obtener los IDs de las secciones
       const sectionIds = course.sections?.map((section) => section.id);
-      console.log('ID DE SECCIONES:', sectionIds);
 
       // Crear ObjectId a partir de cada ID en sectionIds
       const objectIdArray = sectionIds?.map((id) => new mongoose.Types.ObjectId(id));
-      console.log('OBJECT ID ARRAY:', objectIdArray);
 
       // Buscar las secciones en la base de datos usando ObjectId
       const sections = await SectionModel.find({ _id: { $in: objectIdArray } }).exec();
-      console.log('SECTIONS:', sections);
 
       // Devolver las secciones encontradas
       const sectionDtos = sections.map((section) => ({
         id: section.id.toString(),
         name: section.name,
         description: section.description,
-        visible: section.visible, // Asegúrate de que este campo esté en tu esquema de sección
+        visible: section.visible,
       }));
-
-      console.log('SECTION DTOS:', sectionDtos);
 
       return sectionDtos;
     } catch (error) {
