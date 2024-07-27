@@ -57,7 +57,7 @@ export const courseRepository = {
         id: savedSection._id as Types.ObjectId,
         name: newSection.name,
         description: newSection.description ?? '',
-        contents: [],
+        //contents: [],
       });
 
       await course.save();

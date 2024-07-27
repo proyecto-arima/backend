@@ -31,6 +31,7 @@ export const CourseDTOSchema = z.object({
         id: z.string(),
         name: z.string(),
         description: z.string(),
+        /*
         contents: z
           .array(
             z.object({
@@ -38,7 +39,7 @@ export const CourseDTOSchema = z.object({
               title: z.string(),
             })
           )
-          .optional(),
+          .optional(),*/
       })
     )
     .optional(),
@@ -56,7 +57,7 @@ const studentSchemaDefinition = new Schema(
   },
   { _id: false }
 );
-
+/*
 const contentSchemaDefinition = new Schema(
   {
     id: { type: Schema.Types.ObjectId, required: true },
@@ -64,13 +65,13 @@ const contentSchemaDefinition = new Schema(
   },
   { _id: false }
 );
-
+*/
 const sectionSchemaDefinition = new Schema(
   {
     id: { type: Schema.Types.ObjectId, ref: 'Section' },
     name: { type: String, required: true },
     description: { type: String, required: true },
-    contents: { type: [contentSchemaDefinition], required: true },
+    //contents: { type: [contentSchemaDefinition], required: true },
   },
   { _id: false }
 );
@@ -98,7 +99,7 @@ type ICourseSchemaDefinition = {
     id: mongoose.Types.ObjectId;
     name: string;
     description: string;
-    contents: Array<{ id: mongoose.Types.ObjectId; title: string }>;
+    //contents: Array<{ id: mongoose.Types.ObjectId; title: string }>;
   }>;
 };
 
