@@ -2,7 +2,13 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
-import { CourseCreationSchema, CourseDTO, CourseDTOSchema, GetCourseSchema } from '@/api/course/courseModel';
+import {
+  AddStudentsSchema,
+  CourseCreationSchema,
+  CourseDTO,
+  CourseDTOSchema,
+  GetCourseSchema,
+} from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
 import { SectionCreationSchema } from '@/api/course/section/sectionModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
@@ -186,6 +192,42 @@ export const courseRouter: Router = (() => {
         }
       } finally {
         logger.trace('[CourseRouter] - [/:courseId/sections] - End');
+      }
+    }
+  );
+
+  router.post(
+    '/:courseId/students',
+    sessionMiddleware,
+    checkSessionContext,
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(AddStudentsSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { courseId } = req.params;
+      const { studentEmails } = req.body;
+
+      try {
+        logger.trace('[CourseRouter] - [/:courseId/students] - Start');
+        const updatedCourse = await courseService.addStudentsToCourse(courseId, studentEmails);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Students added to course successfully',
+          updatedCourse,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        if (e instanceof ApiError) {
+          logger.warn(`[CourseRouter] - [/:courseId/students] - ApiError: ${e.message}`);
+          return next(e);
+        } else {
+          logger.error(`[CourseRouter] - [/:courseId/students] - Error: ${e}`);
+          const apiError = new ApiError('Failed to add students to course', StatusCodes.INTERNAL_SERVER_ERROR, e);
+          return next(apiError);
+        }
+      } finally {
+        logger.trace('[CourseRouter] - [/:courseId/students] - End');
       }
     }
   );

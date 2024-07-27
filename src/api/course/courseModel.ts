@@ -140,6 +140,13 @@ export const GetCourseSchema = z.object({
   params: z.object({ id: commonValidations.id }),
 });
 
+// Esquema para validar la solicitud de agregar estudiantes a un curso
+export const AddStudentsSchema = z.object({
+  body: z.object({
+    studentEmails: z.array(z.string().email()).nonempty(), // Array de emails, no vacío
+  }),
+});
+
 // Input Validation for 'POST courses/create' endpoint
 export const CourseCreationSchema = z.object({
   body: z.object({
