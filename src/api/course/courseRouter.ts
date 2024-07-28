@@ -102,14 +102,9 @@ export const courseRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (e) {
-        if (e instanceof ApiError) {
-          logger.warn(`[CourseRouter] - [/:id] - ApiError: ${e.message}`);
-          return next(e);
-        } else {
-          logger.error(`[CourseRouter] - [/:id] - Error: ${e}`);
-          const apiError = new ApiError('Failed to retrieve course', StatusCodes.INTERNAL_SERVER_ERROR, e);
-          return next(apiError);
-        }
+        logger.error(`[CourseRouter] - [/:id] - Error: ${e}`);
+        const apiError = new ApiError('Failed to retrieve course', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
       } finally {
         logger.trace('[CourseRouter] - [/:id] - End');
       }
@@ -142,14 +137,9 @@ export const courseRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (e) {
-        if (e instanceof ApiError) {
-          logger.warn(`[CourseRouter] - [/:courseId/section] - ApiError: ${e.message}`);
-          return next(e);
-        } else {
-          logger.error(`[CourseRouter] - [/:courseId/section] - Error: ${e}`);
-          const apiError = new ApiError('Failed to add section to course', StatusCodes.INTERNAL_SERVER_ERROR, e);
-          return next(apiError);
-        }
+        logger.error(`[CourseRouter] - [/:courseId/section] - Error: ${e}`);
+        const apiError = new ApiError('Failed to add section to course', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
       } finally {
         logger.trace('[CourseRouter] - [/:courseId/section] - End');
       }
@@ -177,14 +167,9 @@ export const courseRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (e) {
-        if (e instanceof ApiError) {
-          logger.warn(`[CourseRouter] - [/:courseId/sections] - ApiError: ${e.message}`);
-          return next(e);
-        } else {
-          logger.error(`[CourseRouter] - [/:courseId/sections] - Error: ${e}`);
-          const apiError = new ApiError('Failed to retrieve sections', StatusCodes.INTERNAL_SERVER_ERROR, e);
-          return next(apiError);
-        }
+        logger.error(`[CourseRouter] - [/:courseId/sections] - Error: ${e}`);
+        const apiError = new ApiError('Failed to retrieve sections', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
       } finally {
         logger.trace('[CourseRouter] - [/:courseId/sections] - End');
       }
@@ -224,14 +209,9 @@ export const courseRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (e) {
-        if (e instanceof ApiError) {
-          logger.warn(`[CourseRouter] - [/:courseId/sections/:sectionId/contents] - ApiError: ${e.message}`);
-          return next(e);
-        } else {
-          logger.error(`[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Error: ${e}`);
-          const apiError = new ApiError('Failed to add content to section', StatusCodes.INTERNAL_SERVER_ERROR, e);
-          return next(apiError);
-        }
+        logger.error(`[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Error: ${e}`);
+        const apiError = new ApiError('Failed to add content to section', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
       } finally {
         logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - End');
       }

@@ -1,8 +1,9 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import { z } from 'zod';
 
-import { CourseDTO } from '@/api/course/courseModel';
+import { CourseDTO, CourseDTOSchema } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { roleMiddleware } from '@/common/middleware/roleMiddleware';
@@ -21,6 +22,7 @@ const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
 export const teacherRegistry = new OpenAPIRegistry();
 
 teacherRegistry.register('Teacher', UserDTOSchema);
+teacherRegistry.register('Course', CourseDTOSchema);
 
 export const teacherRouter: Router = (() => {
   const router = express.Router();
@@ -55,6 +57,12 @@ export const teacherRouter: Router = (() => {
     }
   });
 
+  teacherRegistry.registerPath({
+    method: 'get',
+    path: '/me/courses/',
+    tags: ['Teacher'],
+    responses: createApiResponse(z.array(CourseDTOSchema), 'Success'),
+  });
   router.get(
     '/me/courses',
     sessionMiddleware,

@@ -35,108 +35,92 @@ export const courseRepository = {
   },
 
   addSectionToCourse: async (courseId: string, sectionData: SectionCreationDTO): Promise<any> => {
-    try {
-      // Crear la nueva sección
-      const newSection = new SectionModel({
-        name: sectionData.name,
-        description: sectionData.description,
-        visible: sectionData.visible,
-      });
+    // Crear la nueva sección
+    const newSection = new SectionModel({
+      name: sectionData.name,
+      description: sectionData.description,
+      visible: sectionData.visible,
+    });
 
-      const savedSection = await newSection.save();
+    const savedSection = await newSection.save();
 
-      const course = await CourseModel.findById(courseId).exec();
+    const course = await CourseModel.findById(courseId).exec();
 
-      if (!course) {
-        throw new Error('Course not found');
-      }
-
-      course.sections = course.sections || [];
-
-      course.sections.push({
-        id: savedSection._id as Types.ObjectId,
-        name: newSection.name,
-        description: newSection.description ?? '',
-        //contents: [],
-      });
-
-      await course.save();
-
-      // Retornar la sección recién creada en formato DTO
-      return newSection.toDto();
-    } catch (error) {
-      // Manejo de errores
-      return Promise.reject(error);
+    if (!course) {
+      throw new Error('Course not found');
     }
+
+    course.sections = course.sections || [];
+
+    course.sections.push({
+      id: savedSection._id as Types.ObjectId,
+      name: newSection.name,
+      description: newSection.description ?? '',
+    });
+
+    await course.save();
+    // Retornar la sección recién creada en formato DTO
+    return newSection.toDto();
   },
 
   getSectionsOfCourse: async (courseId: string): Promise<any[]> => {
-    try {
-      // Buscar el curso por ID y popular las secciones
-      const course = await CourseModel.findById(courseId).populate('sections').exec();
+    // Buscar el curso por ID y popular las secciones
+    const course = await CourseModel.findById(courseId).populate('sections').exec();
 
-      if (!course) {
-        throw new Error('Course not found');
-      }
-
-      // Obtener los IDs de las secciones
-      const sectionIds = course.sections?.map((section) => section.id);
-
-      // Crear ObjectId a partir de cada ID en sectionIds
-      const objectIdArray = sectionIds?.map((id) => new mongoose.Types.ObjectId(id));
-
-      // Buscar las secciones en la base de datos usando ObjectId
-      const sections = await SectionModel.find({ _id: { $in: objectIdArray } }).exec();
-
-      // Devolver las secciones encontradas
-      const sectionDtos = sections.map((section) => ({
-        id: section.id.toString(),
-        name: section.name,
-        description: section.description,
-        visible: section.visible,
-        contents: section.contents?.map((content) => ({
-          id: content.id.toString(),
-          title: content.title,
-        })),
-      }));
-
-      return sectionDtos;
-    } catch (error) {
-      return Promise.reject(error);
+    if (!course) {
+      throw new Error('Course not found');
     }
+
+    // Obtener los IDs de las secciones
+    const sectionIds = course.sections?.map((section) => section.id);
+
+    // Crear ObjectId a partir de cada ID en sectionIds
+    const objectIdArray = sectionIds?.map((id) => new mongoose.Types.ObjectId(id));
+
+    // Buscar las secciones en la base de datos usando ObjectId
+    const sections = await SectionModel.find({ _id: { $in: objectIdArray } }).exec();
+
+    // Devolver las secciones encontradas
+    const sectionDtos = sections.map((section) => ({
+      id: section.id.toString(),
+      name: section.name,
+      description: section.description,
+      visible: section.visible,
+      contents: section.contents?.map((content) => ({
+        id: content.id.toString(),
+        title: content.title,
+      })),
+    }));
+
+    return sectionDtos;
   },
 
   addContentToSection: async (courseId: string, sectionId: string, contentData: ContentCreationDTO): Promise<any> => {
-    try {
-      const newContent = new ContentModel({
-        title: contentData.title,
-        sectionId, // Asegúrate de que `sectionId` se pase aquí
-        publicationType: contentData.publicationType,
-        publicationDate: contentData.publicationDate,
-        file: contentData.file,
-      });
+    const newContent = new ContentModel({
+      title: contentData.title,
+      sectionId, // Asegúrate de que `sectionId` se pase aquí
+      publicationType: contentData.publicationType,
+      publicationDate: contentData.publicationDate,
+      file: contentData.file,
+    });
 
-      const savedContent = newContent.save();
+    const savedContent = newContent.save();
 
-      const section = await SectionModel.findById(sectionId).exec();
+    const section = await SectionModel.findById(sectionId).exec();
 
-      if (!section) {
-        throw new Error('Section not found');
-      }
-
-      section.contents = section?.contents || [];
-
-      section.contents.push({
-        id: (await savedContent)._id as Types.ObjectId,
-        title: (await savedContent).title,
-      });
-
-      await section.save();
-
-      return newContent.toDto();
-    } catch (error) {
-      // Manejo de errores
-      return Promise.reject(error);
+    if (!section) {
+      throw new Error('Section not found');
     }
+
+    section.contents = section?.contents || [];
+
+    section.contents.push({
+      id: (await savedContent)._id as Types.ObjectId,
+      title: (await savedContent).title,
+    });
+
+    await section.save();
+
+    return newContent.toDto();
   },
 };

@@ -1,8 +1,9 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import { z } from 'zod';
 
-import { CourseModel } from '@/api/course/courseModel';
+import { CourseDTOSchema, CourseModel } from '@/api/course/courseModel';
 import { UserCreationSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { checkSessionContext } from '@/common/middleware/checkSessionContext';
@@ -19,6 +20,7 @@ import { studentService } from './studentService';
 export const studentRegistry = new OpenAPIRegistry();
 
 studentRegistry.register('Student', UserDTOSchema);
+studentRegistry.register('Course', CourseDTOSchema);
 
 export const studentRouter: Router = (() => {
   const router = express.Router();
@@ -51,6 +53,13 @@ export const studentRouter: Router = (() => {
     } finally {
       logger.trace('[StudentRouter] - [/] - End');
     }
+  });
+
+  studentRegistry.registerPath({
+    method: 'get',
+    path: '/me/courses/',
+    tags: ['Student'],
+    responses: createApiResponse(z.array(CourseDTOSchema), 'Success'),
   });
 
   router.get(
