@@ -1,4 +1,4 @@
-import { User, UserCreation, UserCreationDTO, UserModel } from '@/api/user/userModel';
+import { User, UserCreation, UserCreationDTO, UserModel, UserNotFoundError } from '@/api/user/userModel';
 
 export const userRepository = {
   findAllAsync: async (): Promise<User[]> => UserModel.find<User>(),
@@ -6,7 +6,7 @@ export const userRepository = {
   findByIdAsync: async (id: string): Promise<User> => {
     const user = await UserModel.findById<User>(id);
     if (!user) {
-      return Promise.reject();
+      throw new UserNotFoundError('User not found');
     }
     return user;
   },

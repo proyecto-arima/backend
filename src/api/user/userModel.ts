@@ -143,3 +143,10 @@ export const SessionTokenSchema = z.object({
   access_token: z.string(),
 });
 export type SessionToken = z.infer<typeof SessionTokenSchema>;
+
+export class UserNotFoundError extends Error {
+  constructor(message?: string) {
+    super(message);
+    this.name = 'UserNotFoundError';
+  }
+}

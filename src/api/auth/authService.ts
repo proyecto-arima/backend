@@ -103,25 +103,7 @@ export const authService = {
       return Promise.resolve();
     } catch (ex) {
       logger.trace(`[AuthService] - [passwordSet] - Error found: ${ex}`);
-      if (ex instanceof JsonWebTokenError) {
-        logger.trace('[AuthService] - [passwordSet] - Payload invalid');
-        throw new JsonWebTokenError('Payload invalid');
-      }
-      if (ex instanceof PasswordsDoNotMatchError) {
-        logger.trace('[AuthService] - [passwordSet] - Passwords do not match');
-        throw new PasswordsDoNotMatchError('Passwords do not match');
-      }
-      if (ex instanceof InvalidCredentialsError) {
-        logger.trace('[AuthService] - [passwordSet] - Invalid user to set password');
-        throw new InvalidCredentialsError('Invalid user to set password');
-      }
-      if (ex instanceof PasswordNotSecureError) {
-        logger.trace('[AuthService] - [passwordSet] - Password not secure');
-        throw new PasswordNotSecureError('Password not secure');
-      } else {
-        logger.error(`[AuthService] - [passwordSet] - Internal error: ${ex}`);
-        throw new Error(`Internal error ${ex}`);
-      }
+      throw new Error(`Internal error ${ex}`);
     } finally {
       logger.trace(`[AuthService] - [passwordSet] - End`);
     }
