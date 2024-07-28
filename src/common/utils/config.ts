@@ -7,12 +7,13 @@ const ConfigSchema = z.object({
   smtp: z.object({
     host: z.string().default('localhost'),
     port: z.number().min(1).max(65535),
-    auth: z.object({
-      type: z.enum(['login', 'plain']).default('plain'),
-      secure: z.boolean().default(false),
-      user: z.string(),
-      pass: z.string(),
-    }),
+    secure: z.boolean().default(false),
+    auth: z
+      .object({
+        user: z.string(),
+        pass: z.string(),
+      })
+      .optional(),
     sender: z.string().email(),
   }),
   mongodb: z.object({
@@ -87,13 +88,10 @@ export const config: Config =
 export function setSmtpAuth() {
   return process.env.SMTP_AUTH_TYPE == 'login'
     ? {
-        type: process.env.SMTP_AUTH_TYPE,
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       }
-    : {
-        type: 'plain',
-      };
+    : undefined;
 }
 
 export function setTLS() {

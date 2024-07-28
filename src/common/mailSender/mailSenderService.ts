@@ -12,7 +12,7 @@ export const buildTransporter = () =>
     host: config.smtp.host,
     port: config.smtp.port,
     greetingTimeout: 5000,
-    secure: config.smtp.auth.secure,
+    secure: config.smtp.secure,
     auth: config.smtp.auth,
   });
 
