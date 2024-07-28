@@ -81,7 +81,12 @@ export const ContentCreationSchema = z.object({
   body: z.object({
     title: z.string(),
     publicationType: z.enum([PublicationType.AUTOMATIC, PublicationType.DEFERRED]),
-    publicationDate: z.date().nullable().optional(),
+    publicationDate: z.preprocess((arg) => {
+      if (typeof arg === 'string' || arg instanceof Date) {
+        return new Date(arg);
+      }
+      return null;
+    }, z.date().nullable().optional()),
     file: z.string(),
   }),
 });
