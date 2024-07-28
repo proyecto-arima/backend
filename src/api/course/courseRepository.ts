@@ -130,15 +130,27 @@ export const courseRepository = {
       throw new Error('Course not found');
     }
 
-    // Convertir ObjectId a string
     const formattedStudents = students.map((student) => ({
-      id: student.id.toString(), // Convertir a string
+      id: student.id.toString(),
       firstName: student.firstName,
       lastName: student.lastName,
     }));
 
-    course.students.push(...formattedStudents);
-    await course.save();
+    // Backup de los estudiantes actuales
+    const currentStudents = [...course.students];
+
+    try {
+      course.students.push(...formattedStudents);
+      await course.save();
+    } catch (error) {
+      // Restaurar los estudiantes a su estado original en caso de error
+      course.students = currentStudents;
+      throw Error('No students were added');
+    }
+    if (course.students.length === currentStudents.length) {
+      throw new Error('No students were added');
+    }
+
     return course;
   },
 };

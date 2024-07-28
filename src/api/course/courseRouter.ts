@@ -246,14 +246,9 @@ export const courseRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (e) {
-        if (e instanceof ApiError) {
-          logger.warn(`[CourseRouter] - [/:courseId/students] - ApiError: ${e.message}`);
-          return next(e);
-        } else {
-          logger.error(`[CourseRouter] - [/:courseId/students] - Error: ${e}`);
-          const apiError = new ApiError('Failed to add students to course', StatusCodes.INTERNAL_SERVER_ERROR, e);
-          return next(apiError);
-        }
+        logger.error(`[CourseRouter] - [/:courseId/students] - Error: ${e}`);
+        const apiError = new ApiError('Failed to add students to course', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
       } finally {
         logger.trace('[CourseRouter] - [/:courseId/students] - End');
       }
