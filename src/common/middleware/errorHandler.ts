@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import { ApiError } from '../models/apiError';
 import { ApiResponse, ResponseStatus } from '../models/apiResponse';
 import { handleApiResponse } from '../utils/httpHandlers';
+import { logger } from '../utils/serverLogger';
 
 export const unexpectedRequest: RequestHandler = (_req, res) => {
   res.sendStatus(StatusCodes.NOT_FOUND);

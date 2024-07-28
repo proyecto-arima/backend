@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import request from 'supertest';
+import jwt from 'jsonwebtoken';
 
 import { ApiResponse } from '@/common/models/apiResponse';
 import { connectToMongoDB, disconnectFromMongoDB } from '@/common/utils/mongodb';
@@ -19,7 +20,9 @@ vi.mock('@/common/mailSender/mailSenderService', async (importOriginal) => {
 describe('Authentication tests', () => {
   const testUsername = 'admin@proyectoarima.tech';
   const testPassword = 'admin';
-  const testToken = 'testToken';
+  let testToken = '';
+
+  
 
   beforeAll(async () => {
     const mongod = await MongoMemoryServer.create();
@@ -42,6 +45,7 @@ describe('Authentication tests', () => {
 
     await mongoose.connection.dropDatabase();
     const testingUserId = (await mongoose.connection.db.collection('users').insertOne(testingUser)).insertedId;
+    testToken = jwt.sign({ id: testingUserId }, 'secret' as string, { expiresIn: '15m' });
 
     vi.doMock('jsonwebtoken', async (importOriginal) => {
       const mod = await importOriginal<typeof import('jsonwebtoken')>();
@@ -97,7 +101,7 @@ describe('Authentication tests', () => {
   });
 
   it('POST /auth/setPassword', async () => {
-    const newPassword = 'admin2';
+    const newPassword = 'superadmin123!';
     await request(app).post(`/auth/passwordRecovery`).send({
       email: testUsername,
     });
@@ -114,7 +118,7 @@ describe('Authentication tests', () => {
     expect(result.data).toBeNull();
 
     await loginAsAdminShouldFail(testUsername, 'admin');
-    await loginAsAdminShouldSuccess(testUsername, 'admin2');
+    await loginAsAdminShouldSuccess(testUsername, newPassword);
   });
 
   it('DELETE /auth', async () => {
