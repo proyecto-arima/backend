@@ -74,7 +74,12 @@ export const authRouter: Router = (() => {
       const session: SessionToken = await authService.login(req.body);
       logger.trace('[AuthRouter] - [/] - User logged in');
       logger.trace('[AuthRouter] - [/] - Setting access token cookie');
-      res.cookie('access_token', session.access_token, { httpOnly: true, maxAge: 12 * 60 * 60 * 1000 });
+      res.cookie('access_token', session.access_token, {
+        httpOnly: true,
+        maxAge: 12 * 60 * 60 * 1000,
+        sameSite: 'lax',
+        secure: false,
+      });
       logger.trace('[AuthRouter] - [/] - Sending response');
       const response = new ApiResponse(ResponseStatus.Success, 'User logged in', session, StatusCodes.OK);
       handleApiResponse(response, res);
@@ -151,6 +156,15 @@ export const authRouter: Router = (() => {
     } finally {
       logger.trace('[AuthRouter] - [/passwordRecovery] - End');
     }
+
+  /*
+    Check if the user is logged in or token is valid
+  */
+  router.get('/', sessionMiddleware, async (req: Request, res: Response) => {
+    logger.trace('[AuthRouter] - [/] - Start');
+    logger.trace('[AuthRouter] - [/] - Sending response');
+    const response = new ApiResponse(ResponseStatus.Success, 'User logged in', null, StatusCodes.OK);
+    return handleApiResponse(response, res);
   });
 
   return router;
