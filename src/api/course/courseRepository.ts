@@ -59,28 +59,22 @@ export const courseRepository = {
     });
 
     await course.save();
-    // Retornar la sección recién creada en formato DTO
     return newSection.toDto();
   },
 
   getSectionsOfCourse: async (courseId: string): Promise<any[]> => {
-    // Buscar el curso por ID y popular las secciones
     const course = await CourseModel.findById(courseId).populate('sections').exec();
 
     if (!course) {
       throw new Error('Course not found');
     }
 
-    // Obtener los IDs de las secciones
     const sectionIds = course.sections?.map((section) => section.id);
 
-    // Crear ObjectId a partir de cada ID en sectionIds
     const objectIdArray = sectionIds?.map((id) => new mongoose.Types.ObjectId(id));
 
-    // Buscar las secciones en la base de datos usando ObjectId
     const sections = await SectionModel.find({ _id: { $in: objectIdArray } }).exec();
 
-    // Devolver las secciones encontradas
     const sectionDtos = sections.map((section) => ({
       id: section.id.toString(),
       name: section.name,
@@ -95,10 +89,10 @@ export const courseRepository = {
     return sectionDtos;
   },
 
-  addContentToSection: async (courseId: string, sectionId: string, contentData: ContentCreationDTO): Promise<any> => {
+  addContentToSection: async (sectionId: string, contentData: ContentCreationDTO): Promise<any> => {
     const newContent = new ContentModel({
       title: contentData.title,
-      sectionId, // Asegúrate de que `sectionId` se pase aquí
+      sectionId,
       publicationType: contentData.publicationType,
       publicationDate: contentData.publicationDate,
       file: contentData.file,
@@ -130,26 +124,8 @@ export const courseRepository = {
       throw new Error('Course not found');
     }
 
-    const formattedStudents = students.map((student) => ({
-      id: student.id.toString(),
-      firstName: student.firstName,
-      lastName: student.lastName,
-    }));
-
-    // Backup de los estudiantes actuales
-    const currentStudents = [...course.students];
-
-    try {
-      course.students.push(...formattedStudents);
-      await course.save();
-    } catch (error) {
-      // Restaurar los estudiantes a su estado original en caso de error
-      course.students = currentStudents;
-      throw Error('No students were added');
-    }
-    if (course.students.length === currentStudents.length) {
-      throw new Error('No students were added');
-    }
+    course.students.push(...students);
+    await course.save();
 
     return course;
   },

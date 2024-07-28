@@ -14,7 +14,7 @@ export const courseService = {
   findById: async (id: string): Promise<CourseDTO> => {
     const course: Course | null = await courseRepository.findByIdAsync(id);
     if (!course) {
-      throw new Error('Course not found'); // You can replace this with a more specific error if needed
+      throw new Error('Course not found');
     }
     return course.toDto();
   },
@@ -23,7 +23,6 @@ export const courseService = {
     const matriculationCode = generateMatriculationCode();
     const { studentEmails = [], ...courseData } = course;
 
-    // Buscar estudiantes por emails usando el repository
     const students = await courseRepository.findStudentsByEmails(studentEmails);
     const courseWithCode = {
       ...courseData,
@@ -41,6 +40,11 @@ export const courseService = {
 
   async addStudentsToCourse(courseId: string, studentEmails: string[]): Promise<CourseDTO> {
     const students = await courseRepository.findStudentsByEmails(studentEmails);
+
+    if (students.length != studentEmails.length) {
+      throw new Error('One or more student emails do not exist');
+    }
+
     const studentData = students.map((student) => ({
       id: student.id.toString(),
       firstName: student.firstName,
@@ -63,8 +67,8 @@ export const courseService = {
     return await courseRepository.getSectionsOfCourse(courseId);
   },
 
-  async addContentToSection(courseId: string, sectionId: string, contentData: ContentCreationDTO): Promise<ContentDTO> {
-    console.log('[courseService] - [addContentToSection] - Parameters:', { courseId, sectionId, contentData });
-    return await courseRepository.addContentToSection(courseId, sectionId, contentData);
+  async addContentToSection(sectionId: string, contentData: ContentCreationDTO): Promise<ContentDTO> {
+    console.log('[courseService] - [addContentToSection] - Parameters:', { sectionId, contentData });
+    return await courseRepository.addContentToSection(sectionId, contentData);
   },
 };

@@ -190,22 +190,13 @@ export const courseRouter: Router = (() => {
     roleMiddleware([Role.TEACHER]),
     validateRequest(ContentCreationSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
-      const { courseId, sectionId } = req.params;
+      const { sectionId } = req.params;
       const contentData = req.body;
 
       try {
         logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Start');
-        const courseReq = GetCourseSchema.parse({ params: { id: courseId } });
-        const sectionReq = GetCourseSchema.parse({ params: { id: sectionId } });
-        logger.trace(
-          `[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Retrieving course with id: ${courseReq.params.id}...`
-        );
-        logger.trace(
-          `[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Retrieving section with id: ${sectionReq.params.id}...`
-        );
 
-        console.log('addContentToSection', courseId, sectionId, contentData);
-        const newContent = await courseService.addContentToSection(courseId, sectionId, contentData);
+        const newContent = await courseService.addContentToSection(sectionId, contentData);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
