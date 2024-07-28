@@ -39,6 +39,18 @@ export const courseService = {
     return createdCourse.toDto();
   },
 
+  async addStudentsToCourse(courseId: string, studentEmails: string[]): Promise<CourseDTO> {
+    const students = await courseRepository.findStudentsByEmails(studentEmails);
+    const studentData = students.map((student) => ({
+      id: student.id.toString(),
+      firstName: student.firstName,
+      lastName: student.lastName,
+    }));
+
+    const updatedCourse = await courseRepository.addStudentsToCourse(courseId, studentData);
+    return updatedCourse.toDto();
+  },
+
   async findCoursesByTeacherId(teacherId: string): Promise<CourseDTO[]> {
     return courseRepository.findCoursesByTeacherId(teacherId);
   },

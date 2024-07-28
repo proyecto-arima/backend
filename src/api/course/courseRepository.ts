@@ -123,4 +123,22 @@ export const courseRepository = {
 
     return newContent.toDto();
   },
+
+  async addStudentsToCourse(courseId: string, students: any[]): Promise<Course> {
+    const course = await CourseModel.findById(courseId);
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    // Convertir ObjectId a string
+    const formattedStudents = students.map((student) => ({
+      id: student.id.toString(), // Convertir a string
+      firstName: student.firstName,
+      lastName: student.lastName,
+    }));
+
+    course.students.push(...formattedStudents);
+    await course.save();
+    return course;
+  },
 };
