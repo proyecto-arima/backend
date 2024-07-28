@@ -28,7 +28,7 @@ export const authService = {
         throw new InvalidCredentialsError();
       }
       logger.trace(`[AuthService] - [login] - User found: ${JSON.stringify(foundUser)}`);
-      
+
       logger.trace(`[AuthService] - [login] - Comparing passwords...`);
       const isPasswordValid = await bcrypt.compare(user.password, foundUser.password);
       if (!isPasswordValid) {
@@ -40,7 +40,7 @@ export const authService = {
       if (foundUser.forcePasswordReset) {
         throw new PasswordChangeRequiredError();
       }
-      
+
       logger.trace(`[AuthService] - [login] - User is valid, creating session token`);
       const token: SessionPayload = SessionPayloadSchema.parse({ id: foundUser.toDto().id });
       const access_token = jwt.sign(token, config.jwt.secret as string, { expiresIn: '12h' });
@@ -81,9 +81,6 @@ export const authService = {
         throw new PasswordsDoNotMatchError();
       }
       const sessionPayload: SessionPayload = SessionPayloadSchema.parse(jwt.decode(token, { json: true }));
-      // test
-      logger.trace(`User to set password: ${JSON.stringify(sessionPayload)}`);
-
       const user = await userRepository.findByIdAsync(sessionPayload.id.toString());
       if (!user) {
         throw new InvalidCredentialsError();
@@ -122,13 +119,13 @@ export const authService = {
       // TODO: React view not implemented yet
       // React view > POST /setPassword
       const redirectLink = `http://${config.app.host}:${config.app.port}/auth/recoverPassword?token=${token}`;
-      sendMailTo(
-        [user.email],
-        '[AdaptarIA] Account access',
-        `<p>Hi ${user.email},
-        Go to the next link ${redirectLink} and use it to set your new password on adaptarIA
-        </p>`
-      );
+      // sendMailTo(
+      //   [user.email],
+      //   '[AdaptarIA] Account access',
+      //   `<p>Hi ${user.email},
+      //   Go to the next link ${redirectLink} and use it to set your new password on adaptarIA
+      //   </p>`
+      // );
       return Promise.resolve();
     } catch (ex) {
       logger.trace(`[AuthService] - [passwordRecovery] - Error found: ${ex}`);

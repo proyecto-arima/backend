@@ -30,13 +30,18 @@ export async function initTransporter(t: nodemailer.Transporter) {
 }
 
 async function sendMailTo(mails: Array<string>, subject: string, html: string) {
-  const info = await transporter.sendMail({
-    from: config.smtp.sender,
-    to: mails.join(','),
-    subject: subject,
-    html: html,
-  });
-  logger.info(`[MailSenderService] - [sendMailTo] - Email sent: ${info.messageId}`);
+  try {
+    const info = await transporter.sendMail({
+      from: config.smtp.sender,
+      to: mails.join(','),
+      subject: subject,
+      html: html,
+    });
+    logger.info(`[MailSenderService] - [sendMailTo] - Email sent: ${info.messageId}`);
+  } catch (error) {
+    logger.error(`[MailSenderService] - [sendMailTo] - Error: ${error}`);
+    throw Error('Error sending email');
+  }
 }
 
 export default sendMailTo;
