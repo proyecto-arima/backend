@@ -156,6 +156,7 @@ export const authRouter: Router = (() => {
     } finally {
       logger.trace('[AuthRouter] - [/passwordRecovery] - End');
     }
+  });
 
   /*
     Check if the user is logged in or token is valid

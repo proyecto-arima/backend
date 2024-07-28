@@ -96,8 +96,7 @@ describe('Authentication tests', () => {
     loginAsAdminShouldFail(testUsername, 'admin2');
   });
 
-  // TODO: SMTP mock WIP
-  it.skip('POST /auth/setPassword', async () => {
+  it('POST /auth/setPassword', async () => {
     const newPassword = 'admin2';
     await request(app).post(`/auth/passwordRecovery`).send({
       email: testUsername,
