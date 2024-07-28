@@ -129,4 +129,27 @@ export const courseRepository = {
 
     return course;
   },
+
+  getStudentsOfCourse: async (courseId: string): Promise<any[]> => {
+    const course = await CourseModel.findById(courseId).populate('students').exec();
+
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    const studentIds = course.students?.map((student) => student.id);
+
+    const objectIdArray = studentIds?.map((id) => new mongoose.Types.ObjectId(id));
+
+    const students = await UserModel.find({ _id: { $in: objectIdArray } }).exec();
+
+    const studentDtos = students.map((student) => ({
+      id: student.id.toString(),
+      firstName: student.firstName,
+      lastName: student.lastName,
+      email: student.email,
+    }));
+
+    return studentDtos;
+  },
 };

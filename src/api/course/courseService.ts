@@ -67,6 +67,10 @@ export const courseService = {
     return await courseRepository.getSectionsOfCourse(courseId);
   },
 
+  async getStudentsOfCourse(courseId: string): Promise<any> {
+    return await courseRepository.getStudentsOfCourse(courseId);
+  },
+
   async addContentToSection(sectionId: string, contentData: ContentCreationDTO): Promise<ContentDTO> {
     console.log('[courseService] - [addContentToSection] - Parameters:', { sectionId, contentData });
     return await courseRepository.addContentToSection(sectionId, contentData);

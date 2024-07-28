@@ -246,5 +246,35 @@ export const courseRouter: Router = (() => {
     }
   );
 
+  router.get(
+    '/:courseId/students',
+    sessionMiddleware,
+    checkSessionContext,
+    hasAccessToCourseMiddleware('courseId'),
+    roleMiddleware([Role.TEACHER]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { courseId } = req.params;
+
+      try {
+        logger.trace('[CourseRouter] - [/:courseId/students] - Start');
+        const students = await courseService.getStudentsOfCourse(courseId);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Students retrieved successfully',
+          students,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        logger.error(`[CourseRouter] - [/:courseId/students] - Error: ${e}`);
+        const apiError = new ApiError('Failed to retrieve students', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      } finally {
+        logger.trace('[CourseRouter] - [/:courseId/students] - End');
+      }
+    }
+  );
+
   return router;
 })();
