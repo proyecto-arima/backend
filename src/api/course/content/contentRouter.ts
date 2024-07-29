@@ -2,12 +2,18 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
-import { AddReactionsSchema, ContentCreationSchema, ContentDTOSchema } from '@/api/course/content/contentModel';
+import {
+  AddReactionsSchema,
+  ContentDTOSchema,
+  GetContentSchema,
+  ReactionsResponseSchema,
+} from '@/api/course/content/contentModel';
 import { contentService } from '@/api/course/content/contentService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { sessionMiddleware, SessionRequest } from '@/common/middleware/session';
 import { ApiError } from '@/common/models/apiError';
-import { validateRequest } from '@/common/utils/httpHandlers';
+import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
+import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
 import { roleMiddleware } from '@/common/middleware/roleMiddleware';
 import { Role } from '@/common/models/role';
@@ -24,7 +30,8 @@ export const contentRouter: Router = (() => {
     path: '/:contentId/reactions',
     tags: ['Content'],
     request: {
-      body: { content: { 'application/json': { schema: ContentCreationSchema.shape.body } }, description: '' },
+      params: AddReactionsSchema.shape.params,
+      body: { content: { 'application/json': { schema: AddReactionsSchema.shape.body } }, description: '' },
     },
     responses: createApiResponse(ContentDTOSchema, 'Success'),
   });
@@ -46,16 +53,30 @@ export const contentRouter: Router = (() => {
 
       try {
         const updatedContent = await contentService.addReactionToContent(contentId, isSatisfied, studentId);
-        if (!updatedContent) {
-          throw new ApiError('Content not found', StatusCodes.NOT_FOUND);
-        }
-        res.status(StatusCodes.OK).json(updatedContent);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Reaction added to content successfully',
+          updatedContent,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
       } catch (error) {
-        next(error);
+        const apiError = new ApiError('Failed to add reaction', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
       }
     }
   );
 
+  contentRegistry.registerPath({
+    method: 'get',
+    path: '/{contentId}/reactions',
+    tags: ['Content'],
+    request: {
+      params: GetContentSchema.shape.params,
+    },
+    responses: createApiResponse(ReactionsResponseSchema, 'Success'),
+  });
   router.get(
     '/:contentId/reactions',
     sessionMiddleware,
@@ -64,12 +85,16 @@ export const contentRouter: Router = (() => {
 
       try {
         const reactions = await contentService.getReactionsByContentId(contentId);
-        if (!reactions) {
-          throw new ApiError('Content not found', StatusCodes.NOT_FOUND);
-        }
-        res.status(StatusCodes.OK).json(reactions);
-      } catch (error) {
-        next(error);
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Reactions retrieved successfully',
+          reactions,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        const apiError = new ApiError('Failed to retrieve reactions', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
       }
     }
   );

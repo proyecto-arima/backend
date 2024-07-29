@@ -5,6 +5,7 @@ import mongoose, { Document, Model, Schema } from 'mongoose';
 import { z } from 'zod';
 
 import { PublicationType } from '@/common/models/publicationType';
+import { commonValidations } from '@/common/utils/commonValidation';
 
 extendZodWithOpenApi(z);
 
@@ -113,6 +114,22 @@ export const AddReactionsSchema = z.object({
     isSatisfied: z.boolean(),
   }),
 });
+
+export const GetContentSchema = z.object({
+  params: z.object({ id: commonValidations.id }),
+});
+
+// Definición del esquema de una reacción
+const ReactionSchema = z.object({
+  idStudent: z.string(),
+  isSatisfied: z.boolean(),
+});
+
+// Definición del esquema de la respuesta
+export const ReactionsResponseSchema = z.object({
+  reactions: z.array(ReactionSchema),
+});
+
 export type AddReactionsDTO = z.infer<typeof AddReactionsSchema.shape.body>;
 export type ContentCreationDTO = z.infer<typeof ContentCreationSchema.shape.body>;
 export type ContentCreation = ContentCreationDTO;

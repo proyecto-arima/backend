@@ -1,13 +1,13 @@
 import { OpenApiGeneratorV3, OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 
 import { authRegistry } from '@/api/auth/authRouter';
+import { contentRegistry } from '@/api/course/content/contentRouter';
 import { courseRegistry } from '@/api/course/courseRouter';
 import { directorRegistry } from '@/api/director/directorRouter';
 import { healthCheckRegistry } from '@/api/healthCheck/healthCheckRouter';
 import { studentRegistry } from '@/api/student/studentRouter';
 import { teacherRegistry } from '@/api/teacher/teacherRouter';
 import { userRegistry } from '@/api/user/userRouter';
-//import { contentRouter } from '@/api/course/content/contentRouter';
 
 export function generateOpenAPIDocument() {
   const registry = new OpenAPIRegistry([
@@ -18,6 +18,7 @@ export function generateOpenAPIDocument() {
     studentRegistry,
     teacherRegistry,
     courseRegistry,
+    contentRegistry,
   ]);
   const generator = new OpenApiGeneratorV3(registry.definitions);
 
