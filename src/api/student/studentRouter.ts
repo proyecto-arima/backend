@@ -61,7 +61,6 @@ export const studentRouter: Router = (() => {
     tags: ['Student'],
     responses: createApiResponse(z.array(CourseDTOSchema), 'Success'),
   });
-
   router.get(
     '/me/courses',
     sessionMiddleware,

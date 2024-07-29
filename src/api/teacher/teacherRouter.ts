@@ -91,16 +91,9 @@ export const teacherRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (e) {
-        if (e instanceof ApiError) {
-          logger.warn(`[TeacherRouter] - [/me/courses] - ApiError: ${e.message}`);
-          return next(e);
-        } else {
-          logger.error(`[TeacherRouter] - [/me/courses] - Error: ${e}`);
-          const apiError = new ApiError('Failed to retrieve courses', StatusCodes.INTERNAL_SERVER_ERROR, e);
-          return next(apiError);
-        }
-      } finally {
-        logger.trace('[TeacherRouter] - [/me/courses] - End');
+        logger.error(`[TeacherRouter] - [/me/courses] - Error: ${e}`);
+        const apiError = new ApiError('Failed to retrieve courses', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
       }
     }
   );

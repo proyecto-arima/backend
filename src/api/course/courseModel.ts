@@ -169,6 +169,9 @@ export const GetCourseSchema = z.object({
 
 // Esquema para validar la solicitud de agregar estudiantes a un curso
 export const AddStudentsSchema = z.object({
+  params: z.object({
+    courseId: z.string(),
+  }),
   body: z.object({
     studentEmails: z.array(z.string().email()).nonempty(), // Array de emails, no vacío
   }),

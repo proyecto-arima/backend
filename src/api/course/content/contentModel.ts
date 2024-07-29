@@ -89,6 +89,7 @@ export type Content = IContentSchemaDefinition & IContentSchemaDefinitionMethods
 
 export const ContentCreationSchema = z.object({
   params: z.object({
+    courseId: z.string(),
     sectionId: z.string(),
   }),
   body: z.object({
