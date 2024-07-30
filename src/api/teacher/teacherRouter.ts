@@ -59,7 +59,7 @@ export const teacherRouter: Router = (() => {
 
   teacherRegistry.registerPath({
     method: 'get',
-    path: '/me/courses/',
+    path: '/teachers/me/courses/',
     tags: ['Teacher'],
     responses: createApiResponse(z.array(CourseDTOSchema), 'Success'),
   });
