@@ -1,7 +1,7 @@
 import { User, UserCreation, UserDTO } from '@/api/user/userModel';
 import { userRepository } from '@/api/user/userRepository';
 
-import { UserNotFoundError } from '../auth/authModel';
+import { InvalidCredentialsError } from '../auth/authModel';
 
 export const userService = {
   // Retrieves all users from the database
@@ -14,7 +14,7 @@ export const userService = {
   findById: async (id: string): Promise<UserDTO> => {
     const user: User = await userRepository.findByIdAsync(id);
     if (!user) {
-      throw new UserNotFoundError();
+      throw new InvalidCredentialsError();
     }
     return user.toDto();
   },

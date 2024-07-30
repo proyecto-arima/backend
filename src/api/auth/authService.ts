@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
-import jwt, { TokenExpiredError } from 'jsonwebtoken';
+import jwt, { JsonWebTokenError } from 'jsonwebtoken';
 
-import { SessionToken, User, UserLoginDTO } from '@/api/user/userModel';
+import { SessionToken, UserLoginDTO } from '@/api/user/userModel';
 import { userRepository } from '@/api/user/userRepository';
 import sendMailTo from '@/common/mailSender/mailSenderService';
 import { config } from '@/common/utils/config';
@@ -9,10 +9,13 @@ import { logger } from '@/common/utils/serverLogger';
 
 import {
   InvalidCredentialsError,
+  PasswordChangeRequiredError,
+  PasswordNotSecureError,
+  PasswordReset,
+  PasswordsDoNotMatchError,
   PasswordSet,
   SessionPayload,
   SessionPayloadSchema,
-  UserNotFoundError,
 } from './authModel';
 
 export const authService = {
@@ -20,103 +23,133 @@ export const authService = {
     try {
       logger.trace('[AuthService] - [login] - Start');
       logger.trace(`[AuthService] - [login] - Finding user by email: ${user.email}...`);
-      const foundUser: User = await userRepository.findByEmail(user.email);
+      const foundUser = await userRepository.findByEmail(user.email);
+      if (!foundUser) {
+        throw new InvalidCredentialsError();
+      }
       logger.trace(`[AuthService] - [login] - User found: ${JSON.stringify(foundUser)}`);
+
       logger.trace(`[AuthService] - [login] - Comparing passwords...`);
       const isPasswordValid = await bcrypt.compare(user.password, foundUser.password);
       if (!isPasswordValid) {
         logger.trace(`[AuthService] - [login] - Password is not valid, throwing InvalidCredentialsError`);
         throw new InvalidCredentialsError();
       }
-      logger.trace(`[AuthService] - [login] - Password is valid, creating session token`);
-      const userDto = foundUser.toDto();
-      const token: SessionPayload = SessionPayloadSchema.parse({ id: userDto.id });
+
+      logger.trace(`[AuthService] - [login] - Checking if user needs to reset password...`);
+      if (foundUser.forcePasswordReset) {
+        throw new PasswordChangeRequiredError();
+      }
+
+      logger.trace(`[AuthService] - [login] - User is valid, creating session token`);
+      const token: SessionPayload = SessionPayloadSchema.parse({ id: foundUser.toDto().id });
       const access_token = jwt.sign(token, config.jwt.secret as string, { expiresIn: '12h' });
-      logger.trace(`[AuthService] - [login] - Session token created`);
+
+      logger.info(`[AuthService] - [login] - User ${getUsernameObfuscated(user.email)} logged in successfully`);
       return { access_token };
     } catch (ex) {
-      logger.trace(`[AuthService] - [login] - Error: ${ex}`);
-      if (ex instanceof UserNotFoundError) {
-        throw new InvalidCredentialsError(); // Map UserNotFoundError to InvalidCredentialsError for login!
+      logger.trace(`[AuthService] - [login] - Error found: ${ex}`);
+      if (ex instanceof InvalidCredentialsError) {
+        logger.trace(`[AuthService] - [login] - Invalid credentials for user ${getUsernameObfuscated(user.email)}`);
+        throw new InvalidCredentialsError('Invalid credentials');
       }
-      throw ex;
+      if (ex instanceof PasswordChangeRequiredError) {
+        logger.trace(
+          `[AuthService] - [login] - Password change required for user ${getUsernameObfuscated(user.email)}`
+        );
+        throw new PasswordChangeRequiredError(`The user ${getUsernameObfuscated(user.email)} is invalid`);
+      } else {
+        logger.error(`[AuthService] - [login] - Internal error: ${ex}`);
+        throw new Error(`Internal error: ${ex}`);
+      }
     }
   },
 
-  passwordSetAtFirstLogin: async (id: string, passwordSet: PasswordSet): Promise<void> => {
-    logger.trace('[AuthService] - [passwordSetAtFirstLogin] - Start');
-    logger.trace(`[AuthService] - [passwordSetAtFirstLogin] - Finding user by id: ${id}...`);
-    const user: User = await userRepository.findByIdAsync(id);
-    logger.trace(`[AuthService] - [passwordSetAtFirstLogin] - User found: ${JSON.stringify(user)}`);
-    logger.trace(`[AuthService] - [passwordSetAtFirstLogin] - Comparing passwords...`);
-    const oldPasswordValid = await bcrypt.compare(passwordSet.initPassword, user.password);
-    if (!oldPasswordValid) {
-      logger.trace(
-        `[AuthService] - [passwordSetAtFirstLogin] - Password is not valid, throwing InvalidCredentialsError`
+  passwordSet: async (token: string | undefined, passwordSet: PasswordSet): Promise<void> => {
+    try {
+      logger.trace(`[AuthService] - [passwordSet] - Start`);
+      if (!token) {
+        throw new JsonWebTokenError('Received token null');
+      }
+
+      const payload = jwt.verify(token, config.jwt.secret as string) as SessionPayload;
+      if (!payload) {
+        throw new JsonWebTokenError('Payload invalid');
+      }
+
+      if (passwordSet.newPassword !== passwordSet.newPasswordConfirmation) {
+        throw new PasswordsDoNotMatchError();
+      }
+      const sessionPayload: SessionPayload = SessionPayloadSchema.parse(jwt.decode(token, { json: true }));
+      const user = await userRepository.findByIdAsync(sessionPayload.id.toString());
+      if (!user) {
+        throw new InvalidCredentialsError();
+      }
+      const isPasswordSecure = checkPassword(passwordSet.newPassword);
+      if (!isPasswordSecure) {
+        throw new PasswordNotSecureError();
+      }
+
+      const hash = await bcrypt.hash(passwordSet.newPassword, 10);
+      user.password = hash;
+      user.forcePasswordReset = false;
+      await userRepository.updateById(user.toDto().id, user);
+      logger.info(
+        `[AuthService] - [passwordSet] - Password set successfully for user ${getUsernameObfuscated(user.email)}`
       );
-      throw new InvalidCredentialsError();
+      return Promise.resolve();
+    } catch (ex) {
+      logger.trace(`[AuthService] - [passwordSet] - Error found: ${ex}`);
+      throw new Error(`Internal error ${ex}`);
+    } finally {
+      logger.trace(`[AuthService] - [passwordSet] - End`);
     }
-    if (passwordSet.newPassword !== passwordSet.newPasswordConfirmation) {
-      logger.trace(
-        `[AuthService] - [passwordSetAtFirstLogin] - New password and confirmation do not match, throwing InvalidCredentialsError`
-      );
-      throw new InvalidCredentialsError();
-    }
-    logger.trace(`[AuthService] - [passwordSetAtFirstLogin] - Setting new password...`);
-    const hash = await bcrypt.hash(passwordSet.newPassword, 10);
-    logger.trace(`[AuthService] - [passwordSetAtFirstLogin] - New password hashed`);
-    user.password = hash;
-    user.forcePasswordReset = false;
-    logger.trace(`[AuthService] - [passwordSetAtFirstLogin] - Updating user...`);
-    await userRepository.update(id, user);
-    logger.trace(`[AuthService] - [passwordSetAtFirstLogin] - User updated`);
-    return Promise.resolve();
   },
 
-  passwordResetRequest: async (email: string): Promise<void> => {
-    logger.trace('[AuthService] - [passwordResetRequest] - Start');
-    logger.trace(`[AuthService] - [passwordResetRequest] - Finding user by email: ${email}...`);
-    const user: User = await userRepository.findByEmail(email);
-    logger.trace(`[AuthService] - [passwordResetRequest] - User found: ${JSON.stringify(user)}`);
-    logger.trace(`[AuthService] - [passwordResetRequest] - Creating token...`);
-    const token = jwt.sign({ email: user.email }, config.jwt.secret as string, { expiresIn: '15m' });
-    logger.trace(`[AuthService] - [passwordResetRequest] - Token created`);
-    user.forcePasswordReset = true;
+  passwordRecovery: async (passwordReset: PasswordReset): Promise<void> => {
+    try {
+      logger.trace(`[AuthService] - [passwordRecovery] - Start`);
+      const user = await userRepository.findByEmail(passwordReset.email);
+      if (!user) {
+        throw new InvalidCredentialsError();
+      }
+      const token = jwt.sign({ id: user.toDto().id }, config.jwt.secret as string, { expiresIn: '15m' });
+      user.forcePasswordReset = true;
 
-    // TODO: Setup the correct link
-    const resetPasswordLink = `${config.app.frontendUrl}/auth/resetPassword?token=${token}`;
-    sendMailTo(
-      [user.email],
-      '[AdaptarIA] Account recovery',
-      `<p>Hi ${user.email}, you requested recently the recovery of your account
-      Please, copy and paste the next link on your browser to set your new password.
-      Be advise that this link will expire in 15 minutes.
-      <a href="${resetPasswordLink}">Link</a>
-      Do not share this link with anyone, ever for AdaptarIA staff!
-      </p>`
-    );
-    return Promise.resolve();
-  },
-
-  passwordResetResponse: async (id: string, token: string, newPassword: string): Promise<void> => {
-    logger.trace('[AuthService] - [passwordResetResponse] - Start');
-    logger.trace(`[AuthService] - [passwordResetResponse] - Verifying token...`);
-    const decoded = jwt.verify(token, config.jwt.secret as string);
-    logger.trace(`[AuthService] - [passwordResetResponse] - Token verified`);
-    if (!decoded) {
-      logger.trace(`[AuthService] - [passwordResetResponse] - Token not valid, throwing TokenExpiredError`);
-      throw new TokenExpiredError('Token not valid', new Date());
+      // TODO: React view not implemented yet
+      // React view > POST /setPassword
+      const redirectLink = `http://${config.app.host}:${config.app.port}/auth/recoverPassword?token=${token}`;
+      // sendMailTo(
+      //   [user.email],
+      //   '[AdaptarIA] Account access',
+      //   `<p>Hi ${user.email},
+      //   Go to the next link ${redirectLink} and use it to set your new password on adaptarIA
+      //   </p>`
+      // );
+      return Promise.resolve();
+    } catch (ex) {
+      logger.trace(`[AuthService] - [passwordRecovery] - Error found: ${ex}`);
+      if (ex instanceof InvalidCredentialsError) {
+        logger.trace('[AuthService] - [passwordRecovery] - Invalid user to recover password');
+        throw new InvalidCredentialsError('Invalid user to recover password');
+      } else {
+        logger.error(`[AuthService] - [passwordRecovery] - Internal error: ${ex}`);
+        throw new Error(`Internal error ${ex}`);
+      }
+    } finally {
+      logger.trace(`[AuthService] - [passwordRecovery] - End`);
     }
-    logger.trace(`[AuthService] - [passwordResetResponse] - Finding user by id: ${id}...`);
-    const user: User = await userRepository.findByIdAsync(id);
-    logger.trace(`[AuthService] - [passwordResetResponse] - User found: ${JSON.stringify(user)}`);
-    logger.trace(`[AuthService] - [passwordResetResponse] - Setting new password`);
-    const hash = await bcrypt.hash(newPassword, 10);
-    user.password = hash;
-    user.forcePasswordReset = false;
-    logger.trace(`[AuthService] - [passwordResetResponse] - Updating user...`);
-    await userRepository.update(id, user);
-    logger.trace(`[AuthService] - [passwordResetResponse] - User updated successfully`);
-    return Promise.resolve();
   },
 };
+
+export function checkPassword(password: string) {
+  const minLength = 8;
+  // const hastAtLeastOneEspecialCharacter = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password);
+  // const hasFourNumbers = /\d{4}/.test(password);
+  // const hasAtLeastOneUppercase = /[A-Z]+/.test(password);
+  return password.length >= minLength; // && hastAtLeastOneEspecialCharacter && hasFourNumbers && hasAtLeastOneUppercase;
+}
+
+export function getUsernameObfuscated(username: string) {
+  return `****@${username ? username.split('@')[1]?.slice(0, 100) : '****'}`;
+}

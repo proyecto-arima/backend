@@ -1,7 +1,7 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { TokenExpiredError } from 'jsonwebtoken';
+import { JsonWebTokenError } from 'jsonwebtoken';
 import { z } from 'zod';
 
 import { SessionToken, SessionTokenSchema, UserLoginSchema } from '@/api/user/userModel';
@@ -12,7 +12,14 @@ import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
 
-import { InvalidCredentialsError, PasswordResetSchema, PasswordSetSchema } from './authModel';
+import {
+  InvalidCredentialsError,
+  PasswordChangeRequiredError,
+  PasswordNotSecureError,
+  PasswordResetSchema,
+  PasswordsDoNotMatchError,
+  PasswordSetSchema,
+} from './authModel';
 import { authService } from './authService';
 
 export const authRegistry = new OpenAPIRegistry();
@@ -20,19 +27,14 @@ export const authRegistry = new OpenAPIRegistry();
 authRegistry.register('Auth', UserLoginSchema);
 
 export const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
+export const JWT_MISSING = new ApiError('JWT missing', StatusCodes.UNAUTHORIZED);
 export const INVALID_CREDENTIALS = new ApiError('Invalid credentials', StatusCodes.UNAUTHORIZED);
 export const UNEXPECTED_ERROR = new ApiError('An unexpected error occurred', StatusCodes.INTERNAL_SERVER_ERROR);
+export const PASSWORD_NOT_SECURE = new ApiError('Password not secure', StatusCodes.BAD_REQUEST);
+export const PASSWORDS_DO_NOT_MATCH = new ApiError('Passwords do not match', StatusCodes.BAD_REQUEST);
 
 export const authRouter: Router = (() => {
   const router = express.Router();
-
-  authRegistry.registerPath({
-    method: 'post',
-    path: '/auth/setPassword',
-    tags: ['Authentication'],
-    request: { body: { content: { 'application/json': { schema: PasswordSetSchema.shape.body } }, description: '' } },
-    responses: createApiResponse(z.object({}), 'Success'),
-  });
 
   authRegistry.registerPath({
     method: 'post',
@@ -49,67 +51,21 @@ export const authRouter: Router = (() => {
     responses: createApiResponse(z.object({}), 'Success'),
   });
 
-  // TODO: Temp
   authRegistry.registerPath({
-    method: 'get',
-    path: '/auth/',
-    tags: ['Authentication'],
+    method: 'post',
+    path: '/auth/setPassword',
+    tags: ['PasswordSet'],
+    request: { body: { content: { 'application/json': { schema: PasswordSetSchema.shape.body } }, description: '' } },
     responses: createApiResponse(z.object({}), 'Success'),
   });
 
-  router.post(
-    '/setPassword',
-    validateRequest(PasswordSetSchema),
-    sessionMiddleware,
-    async (req: SessionRequest, res: Response, next: NextFunction) => {
-      logger.trace('[AuthRouter] - [/setPassword] - Start');
-      const sessionContext = req.sessionContext;
-      if (!sessionContext?.user?.id) {
-        logger.trace('[AuthRouter] - [/setPassword] - Session context is missing, sending error response');
-        return next(UNAUTHORIZED);
-      }
-      try {
-        logger.trace('[AuthRouter] - [/setPassword] - Setting password...');
-        await authService.passwordSetAtFirstLogin(sessionContext?.user?.id, req.body);
-        logger.trace('[AuthRouter] - [/setPassword] - Password set successfully');
-        const response = new ApiResponse(ResponseStatus.Success, 'Password set successfully', null, StatusCodes.OK);
-        return handleApiResponse(response, res);
-      } catch (ex) {
-        logger.trace(`[AuthRouter] - [/setPassword] - Error: ${ex}`);
-        if (ex instanceof InvalidCredentialsError) {
-          logger.trace('[AuthRouter] - [/setPassword] - Invalid credentials');
-          return next(INVALID_CREDENTIALS);
-        }
-        return next(ex);
-      } finally {
-        logger.trace('[AuthRouter] - [/setPassword] - End');
-      }
-    }
-  );
-
-  router.post(
-    '/resetPassword',
-    validateRequest(PasswordResetSchema),
-    async (req: SessionRequest, res: Response, next: NextFunction) => {
-      logger.trace('[AuthRouter] - [/resetPassword] - Start');
-      try {
-        logger.trace('[AuthRouter] - [/resetPassword] - Requesting password reset...');
-        await authService.passwordResetRequest(req.body.email);
-        logger.trace('[AuthRouter] - [/resetPassword] - Password reset requested successfully');
-        const response = new ApiResponse(ResponseStatus.Success, 'Password reset successfully', null, StatusCodes.OK);
-        return handleApiResponse(response, res);
-      } catch (ex) {
-        logger.trace(`[AuthRouter] - [/resetPassword] - Error: ${ex}`);
-        if (ex instanceof TokenExpiredError) {
-          logger.trace('[AuthRouter] - [/resetPassword] - Token expired');
-          return next(TokenExpiredError);
-        }
-        return next(ex);
-      } finally {
-        logger.trace('[AuthRouter] - [/resetPassword] - End');
-      }
-    }
-  );
+  authRegistry.registerPath({
+    method: 'post',
+    path: '/auth/passwordRecovery',
+    tags: ['PasswordReset'],
+    request: { body: { content: { 'application/json': { schema: PasswordResetSchema.shape.body } }, description: '' } },
+    responses: createApiResponse(z.object({}), 'Success'),
+  });
 
   router.post('/', validateRequest(UserLoginSchema), async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -130,11 +86,13 @@ export const authRouter: Router = (() => {
     } catch (ex: unknown) {
       logger.trace(`[AuthRouter] - [/] - Error: ${ex}`);
       if (ex instanceof InvalidCredentialsError) {
-        logger.trace('[AuthRouter] - [/] - Invalid credentials');
         return next(INVALID_CREDENTIALS);
       }
+      if (ex instanceof PasswordChangeRequiredError) {
+        return next(UNAUTHORIZED);
+      }
       logger.trace('[AuthRouter] - [/] - Unexpected error');
-      return next(ex);
+      return next(UNEXPECTED_ERROR);
     } finally {
       logger.trace('[AuthRouter] - [/] - End');
     }
@@ -149,7 +107,60 @@ export const authRouter: Router = (() => {
     return handleApiResponse(response, res);
   });
 
-  // Check if the user is logged in or token is valid
+  router.post(
+    '/setPassword',
+    validateRequest(PasswordSetSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      logger.trace('[AuthRouter] - [/setPassword] - Start');
+      try {
+        logger.trace('[AuthRouter] - [/setPassword] - Setting password...');
+        await authService.passwordSet(req.query['token']?.toString() ?? undefined, req.body);
+        logger.trace('[AuthRouter] - [/setPassword] - Password set successfully');
+        const response = new ApiResponse(ResponseStatus.Success, 'Password set successfully', null, StatusCodes.OK);
+        return handleApiResponse(response, res);
+      } catch (ex: unknown) {
+        logger.trace(`[AuthRouter] - [/setPassword] - Error: ${ex}`);
+        if (ex instanceof InvalidCredentialsError) {
+          return next(INVALID_CREDENTIALS);
+        }
+        if (ex instanceof JsonWebTokenError) {
+          return next(JWT_MISSING);
+        }
+        if (ex instanceof PasswordsDoNotMatchError) {
+          return next(PASSWORDS_DO_NOT_MATCH);
+        }
+        if (ex instanceof PasswordNotSecureError) {
+          return next(PASSWORD_NOT_SECURE);
+        }
+        return next(UNEXPECTED_ERROR);
+      } finally {
+        logger.trace('[AuthRouter] - [/setPassword] - End');
+      }
+    }
+  );
+
+  router.post('/passwordRecovery', async (req: Request, res: Response, next: NextFunction) => {
+    logger.trace('[AuthRouter] - [/passwordRecovery] - Start');
+    try {
+      logger.trace('[AuthRouter] - [/passwordReset] - Received password recovery');
+      await authService.passwordRecovery(req.body);
+      logger.trace('[AuthRouter] - [/passwordRecovery] - Password recovery done');
+      const response = new ApiResponse(ResponseStatus.Success, 'Password recovery done', null, StatusCodes.OK);
+      return handleApiResponse(response, res);
+    } catch (ex: unknown) {
+      logger.trace(`[AuthRouter] - [/passwordRecovery] - Error: ${ex}`);
+      if (ex instanceof InvalidCredentialsError) {
+        return next(INVALID_CREDENTIALS);
+      }
+      return next(UNEXPECTED_ERROR);
+    } finally {
+      logger.trace('[AuthRouter] - [/passwordRecovery] - End');
+    }
+  });
+
+  /*
+    Check if the user is logged in or token is valid
+  */
   router.get('/', sessionMiddleware, async (req: Request, res: Response) => {
     logger.trace('[AuthRouter] - [/] - Start');
     logger.trace('[AuthRouter] - [/] - Sending response');

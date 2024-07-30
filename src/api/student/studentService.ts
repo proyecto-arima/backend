@@ -25,9 +25,6 @@ export const studentService = {
     const createdUser: UserDTO = await userService.create({ ...user, password: hash, role: Role.STUDENT });
     logger.trace(`[StudentService] - [create] - User created: ${JSON.stringify(createdUser)}`);
 
-    // TODO: Send email to user notifying them of their registration
-    // It should force the user to change their password on first login
-
     logger.trace(`[StudentService] - [create] - Sending email to user ${createdUser.email}...`);
     sendMailTo(
       [createdUser.email],
