@@ -79,7 +79,8 @@ export const authService = {
 
       if (passwordSet.newPassword !== passwordSet.newPasswordConfirmation) {
         throw new PasswordsDoNotMatchError();
-      }
+      } 
+
       const sessionPayload: SessionPayload = SessionPayloadSchema.parse(jwt.decode(token, { json: true }));
       const user = await userRepository.findByIdAsync(sessionPayload.id.toString());
       if (!user) {
@@ -111,14 +112,12 @@ export const authService = {
       logger.trace(`[AuthService] - [passwordRecovery] - Start`);
       const user = await userRepository.findByEmail(passwordReset.email);
       if (!user) {
-        throw new InvalidCredentialsError();
+        return Promise.resolve();
       }
       const token = jwt.sign({ id: user.toDto().id }, config.jwt.secret as string, { expiresIn: '15m' });
       user.forcePasswordReset = true;
-
-      // TODO: React view not implemented yet
-      // React view > POST /setPassword
-      const redirectLink = `http://${config.app.host}:${config.app.port}/auth/recoverPassword?token=${token}`;
+      const redirectLink = `${config.app.frontendUrl}/recoverPassword?token=${token}`;
+      // TODO: Fix SMTP testing on CI
       // sendMailTo(
       //   [user.email],
       //   '[AdaptarIA] Account access',
@@ -128,14 +127,8 @@ export const authService = {
       // );
       return Promise.resolve();
     } catch (ex) {
-      logger.trace(`[AuthService] - [passwordRecovery] - Error found: ${ex}`);
-      if (ex instanceof InvalidCredentialsError) {
-        logger.trace('[AuthService] - [passwordRecovery] - Invalid user to recover password');
-        throw new InvalidCredentialsError('Invalid user to recover password');
-      } else {
-        logger.error(`[AuthService] - [passwordRecovery] - Internal error: ${ex}`);
-        throw new Error(`Internal error ${ex}`);
-      }
+      logger.error(`[AuthService] - [passwordRecovery] - Internal error: ${ex}`);
+      throw new Error(`Internal error ${ex}`);
     } finally {
       logger.trace(`[AuthService] - [passwordRecovery] - End`);
     }
@@ -143,11 +136,14 @@ export const authService = {
 };
 
 export function checkPassword(password: string) {
-  const minLength = 8;
-  // const hastAtLeastOneEspecialCharacter = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password);
-  // const hasFourNumbers = /\d{4}/.test(password);
-  // const hasAtLeastOneUppercase = /[A-Z]+/.test(password);
-  return password.length >= minLength; // && hastAtLeastOneEspecialCharacter && hasFourNumbers && hasAtLeastOneUppercase;
+  const hasMinLength = password.length >= 8;
+  const hastAtLeastOneEspecialCharacter = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(password);
+  const hasNumbers = /\d{2}/.test(password);
+  const hasAtLeastOneUppercase = /[A-Z]+/.test(password);
+  if (config.app.node_env === 'development') {
+    return hasMinLength;
+  }
+  return hasMinLength && hastAtLeastOneEspecialCharacter && hasNumbers && hasAtLeastOneUppercase;
 }
 
 export function getUsernameObfuscated(username: string) {
