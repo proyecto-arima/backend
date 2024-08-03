@@ -27,11 +27,11 @@ export const authRegistry = new OpenAPIRegistry();
 authRegistry.register('Auth', UserLoginSchema);
 
 export const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
-export const JWT_MISSING = new ApiError('JWT missing', StatusCodes.UNAUTHORIZED);
+export const JWT_MISSING = new ApiError('JWT missing', StatusCodes.NOT_ACCEPTABLE);
 export const INVALID_CREDENTIALS = new ApiError('Invalid credentials', StatusCodes.UNAUTHORIZED);
 export const UNEXPECTED_ERROR = new ApiError('An unexpected error occurred', StatusCodes.INTERNAL_SERVER_ERROR);
-export const PASSWORD_NOT_SECURE = new ApiError('Password not secure', StatusCodes.BAD_REQUEST);
-export const PASSWORDS_DO_NOT_MATCH = new ApiError('Passwords do not match', StatusCodes.BAD_REQUEST);
+export const PASSWORD_NOT_SECURE = new ApiError('Password not secure', StatusCodes.OK);
+export const PASSWORDS_DO_NOT_MATCH = new ApiError('Passwords do not match', StatusCodes.OK);
 
 export const authRouter: Router = (() => {
   const router = express.Router();
@@ -149,9 +149,6 @@ export const authRouter: Router = (() => {
       return handleApiResponse(response, res);
     } catch (ex: unknown) {
       logger.trace(`[AuthRouter] - [/passwordRecovery] - Error: ${ex}`);
-      if (ex instanceof InvalidCredentialsError) {
-        return next(INVALID_CREDENTIALS);
-      }
       return next(UNEXPECTED_ERROR);
     } finally {
       logger.trace('[AuthRouter] - [/passwordRecovery] - End');

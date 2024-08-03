@@ -101,7 +101,7 @@ describe('Authentication tests', () => {
   });
 
   it('POST /auth/setPassword', async () => {
-    const newPassword = 'superadmin123!';
+    const newPassword = 'Superadmin123!';
     await request(app).post(`/auth/passwordRecovery`).send({
       email: testUsername,
     });
@@ -110,7 +110,7 @@ describe('Authentication tests', () => {
       email: testUsername,
       newPassword: newPassword,
       newPasswordConfirmation: newPassword,
-    });
+    });    
     const result: ApiResponse = response.body;
 
     expect(response.statusCode).toEqual(StatusCodes.OK);
