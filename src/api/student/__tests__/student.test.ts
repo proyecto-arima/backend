@@ -3,16 +3,11 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import request from 'supertest';
 
-import { generateStudentToken } from '@/common/utils/generateToken';
 import { connectToMongoDB, disconnectFromMongoDB } from '@/common/utils/mongodb';
 import { app } from '@/server';
 
 describe('Generic student tests', () => {
-  let studentToken: string;
-
   beforeAll(async () => {
-    studentToken = generateStudentToken();
-
     const mongod = await MongoMemoryServer.create();
     await connectToMongoDB(mongod.getUri());
   });
@@ -24,9 +19,9 @@ describe('Generic student tests', () => {
         title: 'Course 1',
         description: 'Course for the test student',
         image: 'https://example.com/image1.jpg',
-        teacherId: 'teacher1',
+        teacherUserId: 'teacher1',
         students: {
-          userId: 'student1',
+          userId: '6643eb8662e9b625cd5dda4f',
           firstName: 'christian',
           lastName: 'harper',
         },
@@ -35,14 +30,28 @@ describe('Generic student tests', () => {
         title: 'Course 2',
         description: 'Course for another student',
         image: 'https://example.com/image2.jpg',
-        teacherId: 'teacher2',
+        teacherUserId: 'teacher2',
         students: {
-          userId: 'student2',
+          userId: '6643eb8662e9b625cd5dda4g',
           firstName: 'Alex',
           lastName: 'Volkov',
         },
       },
     ]);
+
+    await mongoose.connection.db.collection('users').insertOne({
+      _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda4f'),
+      firstName: 'Student',
+      lastName: 'Proyecto Arima',
+      document: {
+        type: 'GENERIC',
+        number: '00000000',
+      },
+      email: 'student@proyectoarima.tech',
+      password: '$2b$10$6aJ.eouEbOlyhV99pVsrM./mAdk41tzPh6tZLv1vyFaWqB6G/5Zf.', // admin
+      role: 'STUDENT',
+      forcePasswordReset: false,
+    });
   });
 
   /*
@@ -64,17 +73,27 @@ describe('Generic student tests', () => {
     expect(result.data).toHaveProperty('id');
   });*/
 
-  const ShouldReturnOnlyCoursesForTheAuthenticatedStudent = async () => {
-    const response = await request(app).get('/me/courses').set('Authorization', `Bearer ${studentToken}`);
-
-    expect(response.status).toBe(StatusCodes.OK);
-    const courses = response.body;
-    expect(courses).toHaveLength(1);
-    expect(courses[0]).toHaveProperty('title', 'Course 1');
+  const login = async (email = 'student@proyectoarima.tech', password = 'admin') => {
+    const response = await request(app).post('/auth').send({
+      email,
+      password,
+    });
+    const result = response.body;
+    return result.data?.['access_token'];
   };
 
-  it.skip('GET /me/courses', async () => {
-    await ShouldReturnOnlyCoursesForTheAuthenticatedStudent();
+  it('GET /me/courses', async () => {
+    const token = await login();
+
+    const response = await request(app).get('/students/me/courses').set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(StatusCodes.OK);
+    const result = response.body;
+    console.log(result);
+    expect(result.success).toBe(true);
+    const courses = result.data;
+    expect(courses).toHaveLength(1);
+    expect(courses[0]).toHaveProperty('title', 'Course 1');
   });
 
   /*
