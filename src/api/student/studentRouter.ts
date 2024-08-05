@@ -78,7 +78,7 @@ export const studentRouter: Router = (() => {
         );
 
         // Buscar todos los cursos donde el id del estudiante está en el array de students
-        const courses = await CourseModel.find({ 'students.id': sessionContext?.user?.id }).exec();
+        const courses = await CourseModel.find({ 'students.userId': sessionContext?.user?.id }).exec();
         logger.trace(`[StudentRouter] - [/me/courses] - Found courses: ${JSON.stringify(courses)}`);
 
         // Convertir los cursos a su formato DTO

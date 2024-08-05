@@ -26,12 +26,13 @@ export const courseService = {
     const { studentEmails = [], ...courseData } = course;
 
     const userStudents = await courseRepository.findStudentsByEmails(studentEmails);
-    console.log('STUDENTS', userStudents);
+
     const courseWithCode = {
       ...courseData,
       matriculationCode,
+      teacherUserId,
       students: userStudents.map((student) => ({
-        id: student._id as Types.ObjectId,
+        userId: student._id as Types.ObjectId,
         firstName: student.firstName,
         lastName: student.lastName,
       })),
@@ -50,7 +51,6 @@ export const courseService = {
         id: createdCourse._id as Types.ObjectId,
         courseName: createdCourse.title,
       });
-      console.log('IDDDDD', userStudent._id);
     }
 
     return createdCourse.toDto();
@@ -64,7 +64,7 @@ export const courseService = {
     }
 
     const studentData = userStudents.map((student) => ({
-      id: student.id.toString(),
+      userId: student.id.toString(),
       firstName: student.firstName,
       lastName: student.lastName,
     }));
@@ -81,8 +81,8 @@ export const courseService = {
     return updatedCourse.toDto();
   },
 
-  async findCoursesByTeacherId(teacherId: string): Promise<CourseDTO[]> {
-    return courseRepository.findCoursesByTeacherId(teacherId);
+  async findCoursesByTeacherId(teacherUserId: string): Promise<CourseDTO[]> {
+    return courseRepository.findCoursesByTeacherId(teacherUserId);
   },
 
   async addSectionToCourse(courseId: string, sectionData: SectionCreationDTO): Promise<CourseDTO> {

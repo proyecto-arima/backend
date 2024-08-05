@@ -77,10 +77,10 @@ export const teacherRouter: Router = (() => {
 
       try {
         logger.trace('[TeacherRouter] - [/me/courses] - Start');
-        const teacherId = sessionContext.user.id;
+        const teacherUserId = sessionContext.user.id;
 
-        logger.trace(`[TeacherRouter] - [/me/courses] - Retrieving courses for teacher with id: ${teacherId}...`);
-        const courses: CourseDTO[] = await courseService.findCoursesByTeacherId(teacherId);
+        logger.trace(`[TeacherRouter] - [/me/courses] - Retrieving courses for teacher with id: ${teacherUserId}...`);
+        const courses: CourseDTO[] = await courseService.findCoursesByTeacherId(teacherUserId);
         logger.trace(`[TeacherRouter] - [/me/courses] - Courses found: ${JSON.stringify(courses)}. Sending response`);
 
         const apiResponse = new ApiResponse(

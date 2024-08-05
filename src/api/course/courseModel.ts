@@ -17,10 +17,10 @@ export const CourseDTOSchema = z.object({
   description: z.string(),
   image: z.string().url(),
   matriculationCode: z.string(),
-  teacherId: z.string(),
+  teacherUserId: z.string(),
   students: z.array(
     z.object({
-      id: z.string(),
+      userId: z.string(),
       firstName: z.string(),
       lastName: z.string(),
     })
@@ -51,7 +51,7 @@ export type CourseDTO = z.infer<typeof CourseDTOSchema>;
  */
 const studentSchemaDefinition = new Schema(
   {
-    id: { type: String, required: true },
+    userId: { type: String, required: true },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
   },
@@ -82,7 +82,7 @@ const courseModelSchemaDefinition = {
   description: { type: String, required: true },
   image: { type: String, required: true },
   matriculationCode: { type: String },
-  teacherId: { type: String },
+  teacherUserId: { type: String },
   students: { type: [studentSchemaDefinition], required: true },
   sections: { type: [sectionSchemaDefinition], required: false }, // Usa el schema de Section
 };
@@ -93,8 +93,8 @@ type ICourseSchemaDefinition = {
   description: string;
   image: string;
   matriculationCode: string;
-  teacherId: string;
-  students: Array<{ id: string; firstName: string; lastName: string }>;
+  teacherUserId: string;
+  students: Array<{ userId: string; firstName: string; lastName: string }>;
   sections?: Array<{
     id: mongoose.Types.ObjectId;
     name: string;
@@ -134,10 +134,10 @@ courseModelSchema.method('toDto', function (): CourseDTO {
     description: this.description?.toString() || '',
     image: this.image?.toString() || '',
     matriculationCode: this.matriculationCode?.toString() || '',
-    teacherId: this.teacherId?.toString() || '',
+    teacherUserId: this.teacherUserId?.toString() || '',
     students:
       this.students?.map((student) => ({
-        id: student.id?.toString() || '',
+        userId: student.userId?.toString() || '',
         firstName: student.firstName?.toString() || '',
         lastName: student.lastName?.toString() || '',
       })) || [],

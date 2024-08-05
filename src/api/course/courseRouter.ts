@@ -65,13 +65,13 @@ export const courseRouter: Router = (() => {
         logger.trace('[CourseRouter] - [/create] - Start');
         logger.trace('[CourseRouter] - [/create] - Creating course...');
 
-        const teacherId = sessionContext.user.id;
+        const teacherUserId = sessionContext.user.id;
 
         const courseData = {
           ...req.body,
         };
 
-        const createdCourse: CourseDTO = await courseService.create(courseData, teacherId);
+        const createdCourse: CourseDTO = await courseService.create(courseData, teacherUserId);
         logger.trace(`[CourseRouter] - [/create] - Course created: ${JSON.stringify(createdCourse)}. Sending response`);
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,

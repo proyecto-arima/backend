@@ -29,8 +29,8 @@ export const courseRepository = {
     return courseRepository.findByIdAsync(newCourse.id);
   },
 
-  async findCoursesByTeacherId(teacherId: string): Promise<CourseDTO[]> {
-    const courses = await CourseModel.find({ teacherId }).exec();
+  async findCoursesByTeacherId(teacherUserId: string): Promise<CourseDTO[]> {
+    const courses = await CourseModel.find({ teacherUserId: teacherUserId }).exec();
     return courses.map((course) => course.toDto());
   },
 
@@ -137,7 +137,7 @@ export const courseRepository = {
       throw new Error('Course not found');
     }
 
-    const studentIds = course.students?.map((student) => student.id);
+    const studentIds = course.students?.map((student) => student.userId);
 
     const objectIdArray = studentIds?.map((id) => new mongoose.Types.ObjectId(id));
 
