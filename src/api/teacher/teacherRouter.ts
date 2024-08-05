@@ -67,7 +67,6 @@ export const teacherRouter: Router = (() => {
     '/me/courses',
     sessionMiddleware,
     roleMiddleware([Role.TEACHER]),
-
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const sessionContext = req.sessionContext;
       if (!sessionContext?.user?.id) {
