@@ -4,6 +4,8 @@ import { ContentCreationDTO, ContentDTO } from '@/api/course/content/contentMode
 import { Course, CourseCreation, CourseDTO } from '@/api/course/courseModel';
 import { courseRepository } from '@/api/course/courseRepository';
 import { SectionCreationDTO } from '@/api/course/section/sectionModel';
+import { studentRepository } from '@/api/student/studentRepository';
+import { teacherRepository } from '@/api/teacher/teacherRepository';
 
 const generateMatriculationCode = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -19,15 +21,16 @@ export const courseService = {
     return course.toDto();
   },
 
-  create: async (course: CourseCreation): Promise<CourseDTO> => {
+  create: async (course: CourseCreation, teacherUserId: string): Promise<CourseDTO> => {
     const matriculationCode = generateMatriculationCode();
     const { studentEmails = [], ...courseData } = course;
 
-    const students = await courseRepository.findStudentsByEmails(studentEmails);
+    const userStudents = await courseRepository.findStudentsByEmails(studentEmails);
+    console.log('STUDENTS', userStudents);
     const courseWithCode = {
       ...courseData,
       matriculationCode,
-      students: students.map((student) => ({
+      students: userStudents.map((student) => ({
         id: student._id as Types.ObjectId,
         firstName: student.firstName,
         lastName: student.lastName,
@@ -35,23 +38,46 @@ export const courseService = {
     };
 
     const createdCourse: Course = await courseRepository.create(courseWithCode);
+
+    // Update teacher's courses
+    await teacherRepository.addCourseToTeacher(teacherUserId, {
+      id: createdCourse._id as Types.ObjectId,
+      courseName: createdCourse.title,
+    });
+
+    for (const userStudent of userStudents) {
+      await studentRepository.addCourseToStudent(userStudent._id, {
+        id: createdCourse._id as Types.ObjectId,
+        courseName: createdCourse.title,
+      });
+      console.log('IDDDDD', userStudent._id);
+    }
+
     return createdCourse.toDto();
   },
 
   async addStudentsToCourse(courseId: string, studentEmails: string[]): Promise<CourseDTO> {
-    const students = await courseRepository.findStudentsByEmails(studentEmails);
+    const userStudents = await courseRepository.findStudentsByEmails(studentEmails);
 
-    if (students.length != studentEmails.length) {
+    if (userStudents.length != studentEmails.length) {
       throw new Error('One or more student emails do not exist');
     }
 
-    const studentData = students.map((student) => ({
+    const studentData = userStudents.map((student) => ({
       id: student.id.toString(),
       firstName: student.firstName,
       lastName: student.lastName,
     }));
 
     const updatedCourse = await courseRepository.addStudentsToCourse(courseId, studentData);
+
+    for (const userStudent of userStudents) {
+      await studentRepository.addCourseToStudent(userStudent._id, {
+        id: updatedCourse._id as Types.ObjectId,
+        courseName: updatedCourse.title,
+      });
+    }
+
     return updatedCourse.toDto();
   },
 

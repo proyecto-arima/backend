@@ -1,7 +1,10 @@
 import bcrypt from 'bcrypt';
 
+import { StudentModel } from '@/api/student/studentModel';
+import { studentRepository } from '@/api/student/studentRepository';
 import { UserCreationDTO, UserDTO } from '@/api/user/userModel';
 import sendMailTo from '@/common/mailSender/mailSenderService';
+import { LearningProfile } from '@/common/models/learningProfile';
 import { Role } from '@/common/models/role';
 import { config } from '@/common/utils/config';
 import { logger } from '@/common/utils/serverLogger';
@@ -25,6 +28,17 @@ export const studentService = {
     const createdUser: UserDTO = await userService.create({ ...user, password: hash, role: Role.STUDENT });
     logger.trace(`[StudentService] - [create] - User created: ${JSON.stringify(createdUser)}`);
 
+    // Crear la entrada en la colección de estudiantes
+    logger.trace(`[StudentService] - [create] - Creating student entry...`);
+    const student = new StudentModel({
+      userId: createdUser.id,
+      learningProfile: LearningProfile.VISUAL,
+      courses: [],
+    });
+
+    await student.save();
+
+    logger.trace(`[StudentService] - [create] - Student entry created.`);
     // TODO: Send email to user notifying them of their registration
     // It should force the user to change their password on first login
 
@@ -40,5 +54,13 @@ export const studentService = {
     logger.trace(`[StudentService] - [create] - Email sent.`);
 
     return createdUser;
+  },
+
+  getLearningProfile: async (id: string): Promise<LearningProfile> => {
+    const student = await studentRepository.findById(id);
+    if (!student) {
+      throw new Error('Student not found');
+    }
+    return student.learningProfile;
   },
 };

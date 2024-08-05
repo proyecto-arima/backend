@@ -11,6 +11,7 @@ import { roleMiddleware } from '@/common/middleware/roleMiddleware';
 import { sessionMiddleware, SessionRequest } from '@/common/middleware/session';
 import { ApiError } from '@/common/models/apiError';
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
+import { LearningProfile } from '@/common/models/learningProfile';
 import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
@@ -93,6 +94,49 @@ export const studentRouter: Router = (() => {
       } catch (error) {
         logger.error(`[StudentRouter] - [/me/courses] - Error: ${error}`);
         const apiError = new ApiError('Failed to retrieve courses', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
+      }
+    }
+  );
+
+  studentRegistry.registerPath({
+    method: 'get',
+    path: '/:id/learning-profile',
+    tags: ['Student'],
+    parameters: [
+      {
+        name: 'id',
+        in: 'path',
+        required: true,
+        schema: { type: 'string' },
+        description: 'Student ID',
+      },
+    ],
+    responses: createApiResponse(z.object({ learningProfile: z.nativeEnum(LearningProfile) }), 'Success'),
+  });
+
+  router.get(
+    '/:id/learning-profile',
+
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const studentId = req.params.id;
+        logger.trace(
+          `[StudentRouter] - [/students/:id/learning-profile] - Retrieving learning profile for student with id: ${studentId}`
+        );
+
+        const learningProfile = await studentService.getLearningProfile(studentId);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Learning profile retrieved successfully',
+          { learningProfile },
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        logger.error(`[StudentRouter] - [/students/:id/learning-profile] - Error: ${error}`);
+        const apiError = new ApiError('Failed to retrieve learning profile', StatusCodes.INTERNAL_SERVER_ERROR, error);
         return next(apiError);
       }
     }

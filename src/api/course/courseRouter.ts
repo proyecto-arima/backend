@@ -22,6 +22,7 @@ import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
+const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
 
 export const courseRegistry = new OpenAPIRegistry();
 courseRegistry.register('Course', CourseDTOSchema);
@@ -55,17 +56,22 @@ export const courseRouter: Router = (() => {
     validateRequest(CourseCreationSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        logger.trace('[TeacherRouter] - [/me/courses] - Session context is missing, sending error response');
+        return next(UNAUTHORIZED);
+      }
 
       try {
         logger.trace('[CourseRouter] - [/create] - Start');
         logger.trace('[CourseRouter] - [/create] - Creating course...');
 
+        const teacherId = sessionContext.user.id;
+
         const courseData = {
           ...req.body,
-          teacherId: sessionContext?.user?.id,
         };
 
-        const createdCourse: CourseDTO = await courseService.create(courseData);
+        const createdCourse: CourseDTO = await courseService.create(courseData, teacherId);
         logger.trace(`[CourseRouter] - [/create] - Course created: ${JSON.stringify(createdCourse)}. Sending response`);
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
