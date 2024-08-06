@@ -6,12 +6,13 @@ import { z } from 'zod';
 import { GetUserSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
 import { userService } from '@/api/user/userService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { SessionRequest } from '@/common/middleware/session';
 import { ApiError } from '@/common/models/apiError';
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
 
-import { UserNotFoundError } from '../auth/authModel';
+import { InvalidCredentialsError } from '../auth/authModel';
 
 export const userRegistry = new OpenAPIRegistry();
 userRegistry.register('User', UserDTOSchema);
@@ -31,6 +32,13 @@ export const userRouter: Router = (() => {
     path: '/users/{id}',
     tags: ['User'],
     request: { params: GetUserSchema.shape.params },
+    responses: createApiResponse(UserDTOSchema, 'Success'),
+  });
+
+  userRegistry.registerPath({
+    method: 'get',
+    path: '/users/me',
+    tags: ['User'],
     responses: createApiResponse(UserDTOSchema, 'Success'),
   });
 
@@ -56,6 +64,26 @@ export const userRouter: Router = (() => {
     }
   });
 
+  router.get('/me', async (req: SessionRequest, res: Response, next: NextFunction) => {
+    logger.trace('[UserRouter] - [/me] - Start');
+    logger.trace('[UserRouter] - [/me] - Retrieving current user...');
+    try {
+      if (!req.sessionContext?.user?.id) {
+        logger.trace('[UserRouter] - [/me] - Session context is missing, sending error response');
+        return next(new ApiError('Session context is missing', StatusCodes.UNAUTHORIZED));
+      }
+      const user: UserDTO = await userService.findById(req.sessionContext?.user?.id);
+      logger.trace(`[UserRouter] - [/me] - User found: ${JSON.stringify(user)}. Sending response`);
+      const apiResponse = new ApiResponse(ResponseStatus.Success, 'User retrieved successfully', user, StatusCodes.OK);
+      handleApiResponse(apiResponse, res);
+    } catch (e) {
+      logger.error(`[UserRouter] - [/me] - Error: ${e}`);
+      return next(new ApiError('Failed to retrieve user', StatusCodes.INTERNAL_SERVER_ERROR, e));
+    } finally {
+      logger.trace('[UserRouter] - [/me] - End');
+    }
+  });
+
   router.get('/:id', validateRequest(GetUserSchema), async (req: Request, res: Response, next: NextFunction) => {
     try {
       logger.trace('[UserRouter] - [/:id] - Start');
@@ -67,7 +95,7 @@ export const userRouter: Router = (() => {
       handleApiResponse(apiResponse, res);
     } catch (e) {
       logger.error(`[UserRouter] - [/:id] - Error: ${e}`);
-      if (e instanceof UserNotFoundError) {
+      if (e instanceof InvalidCredentialsError) {
         logger.error(`[UserRouter] - [/:id] - User not found`);
         const apiError = new ApiError('User not found', StatusCodes.NOT_FOUND, e);
         return next(apiError);
