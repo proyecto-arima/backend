@@ -35,6 +35,7 @@ export const courseService = {
         userId: student._id as Types.ObjectId,
         firstName: student.firstName,
         lastName: student.lastName,
+        email: student.email,
       })),
     };
 

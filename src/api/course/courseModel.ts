@@ -23,6 +23,7 @@ export const CourseDTOSchema = z.object({
       userId: z.string(),
       firstName: z.string(),
       lastName: z.string(),
+      email: z.string(),
     })
   ),
   sections: z
@@ -54,6 +55,7 @@ const studentSchemaDefinition = new Schema(
     userId: { type: String, required: true },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
+    email: { type: String, required: false },
   },
   { _id: false }
 );
@@ -94,7 +96,7 @@ type ICourseSchemaDefinition = {
   image: string;
   matriculationCode: string;
   teacherUserId: string;
-  students: Array<{ userId: string; firstName: string; lastName: string }>;
+  students: Array<{ userId: string; firstName: string; lastName: string; email: string }>;
   sections?: Array<{
     id: mongoose.Types.ObjectId;
     name: string;
@@ -140,6 +142,7 @@ courseModelSchema.method('toDto', function (): CourseDTO {
         userId: student.userId?.toString() || '',
         firstName: student.firstName?.toString() || '',
         lastName: student.lastName?.toString() || '',
+        email: student.email?.toString() || '',
       })) || [],
     sections:
       this.sections?.map((section) => ({
