@@ -58,11 +58,10 @@ export const studentRouter: Router = (() => {
 
   studentRegistry.registerPath({
     method: 'get',
-    path: '/me/courses/',
+    path: '/students/me/courses/',
     tags: ['Student'],
     responses: createApiResponse(z.array(CourseDTOSchema), 'Success'),
   });
-
   router.get(
     '/me/courses',
     sessionMiddleware,

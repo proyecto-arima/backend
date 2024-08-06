@@ -1,8 +1,10 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import { z } from 'zod';
 
 import { ContentCreationSchema } from '@/api/course/content/contentModel';
+import { ContentDTOSchema } from '@/api/course/content/contentModel';
 import {
   AddStudentsSchema,
   CourseCreationSchema,
@@ -11,7 +13,8 @@ import {
   GetCourseSchema,
 } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
-import { SectionCreationSchema } from '@/api/course/section/sectionModel';
+import { SectionCreationSchema, SectionDTOSchema } from '@/api/course/section/sectionModel';
+import { StudentDTOSchema } from '@/api/student/studentModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { checkSessionContext } from '@/common/middleware/checkSessionContext';
 import { hasAccessToCourseMiddleware } from '@/common/middleware/hasAccessToCourse';
@@ -39,15 +42,6 @@ export const courseRouter: Router = (() => {
     },
     responses: createApiResponse(CourseDTOSchema, 'Success'),
   });
-
-  courseRegistry.registerPath({
-    method: 'get',
-    path: '/courses/{id}',
-    tags: ['Course'],
-    request: { params: GetCourseSchema.shape.params },
-    responses: createApiResponse(CourseDTOSchema, 'Success'),
-  });
-
   router.post(
     '/create',
     sessionMiddleware,
@@ -90,6 +84,13 @@ export const courseRouter: Router = (() => {
     }
   );
 
+  courseRegistry.registerPath({
+    method: 'get',
+    path: '/courses/{id}',
+    tags: ['Course'],
+    request: { params: GetCourseSchema.shape.params },
+    responses: createApiResponse(CourseDTOSchema, 'Success'),
+  });
   router.get(
     '/:id',
     sessionMiddleware,
@@ -123,6 +124,16 @@ export const courseRouter: Router = (() => {
     }
   );
 
+  courseRegistry.registerPath({
+    method: 'post',
+    path: '/courses/{courseId}/section',
+    tags: ['Course'],
+    request: {
+      params: SectionCreationSchema.shape.params,
+      body: { content: { 'application/json': { schema: SectionCreationSchema.shape.body } }, description: '' },
+    },
+    responses: createApiResponse(CourseDTOSchema, 'Success'),
+  });
   router.post(
     '/:courseId/section',
     sessionMiddleware,
@@ -158,18 +169,26 @@ export const courseRouter: Router = (() => {
     }
   );
 
+  courseRegistry.registerPath({
+    method: 'get',
+    path: '/courses/{id}/sections',
+    tags: ['Course'],
+    request: { params: GetCourseSchema.shape.params },
+    responses: createApiResponse(z.array(SectionDTOSchema), 'Success'),
+  });
   router.get(
-    '/:courseId/sections',
+    '/:id/sections',
     sessionMiddleware,
     checkSessionContext,
-    hasAccessToCourseMiddleware('courseId'),
+    hasAccessToCourseMiddleware('id'),
     roleMiddleware([Role.TEACHER, Role.STUDENT]),
+    validateRequest(GetCourseSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
-      const { courseId } = req.params;
+      const { id } = req.params;
 
       try {
-        logger.trace('[CourseRouter] - [/:courseId/sections] - Start');
-        const sections = await courseService.getSectionsOfCourse(courseId);
+        logger.trace('[CourseRouter] - [/:id/sections] - Start');
+        const sections = await courseService.getSectionsOfCourse(id);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
@@ -179,15 +198,25 @@ export const courseRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (e) {
-        logger.error(`[CourseRouter] - [/:courseId/sections] - Error: ${e}`);
+        logger.error(`[CourseRouter] - [/:id/sections] - Error: ${e}`);
         const apiError = new ApiError('Failed to retrieve sections', StatusCodes.INTERNAL_SERVER_ERROR, e);
         return next(apiError);
       } finally {
-        logger.trace('[CourseRouter] - [/:courseId/sections] - End');
+        logger.trace('[CourseRouter] - [/:id/sections] - End');
       }
     }
   );
 
+  courseRegistry.registerPath({
+    method: 'post',
+    path: '/courses/{courseId}/sections/{sectionId}/content',
+    tags: ['Course'],
+    request: {
+      params: ContentCreationSchema.shape.params,
+      body: { content: { 'application/json': { schema: ContentCreationSchema.shape.body } }, description: '' },
+    },
+    responses: createApiResponse(ContentDTOSchema, 'Success'),
+  });
   router.post(
     '/:courseId/sections/:sectionId/content',
     sessionMiddleware,
@@ -221,6 +250,16 @@ export const courseRouter: Router = (() => {
     }
   );
 
+  courseRegistry.registerPath({
+    method: 'post',
+    path: '/courses/{courseId}/students',
+    tags: ['Course'],
+    request: {
+      params: AddStudentsSchema.shape.params,
+      body: { content: { 'application/json': { schema: AddStudentsSchema.shape.body } }, description: '' },
+    },
+    responses: createApiResponse(CourseDTOSchema, 'Success'),
+  });
   router.post(
     '/:courseId/students',
     sessionMiddleware,
@@ -252,18 +291,27 @@ export const courseRouter: Router = (() => {
     }
   );
 
+  courseRegistry.registerPath({
+    method: 'get',
+    path: '/courses/{id}/students',
+    tags: ['Course'],
+    request: { params: GetCourseSchema.shape.params },
+    responses: createApiResponse(z.array(StudentDTOSchema), 'Success'),
+  });
+
   router.get(
-    '/:courseId/students',
+    '/:id/students',
     sessionMiddleware,
     checkSessionContext,
-    hasAccessToCourseMiddleware('courseId'),
+    hasAccessToCourseMiddleware('id'),
     roleMiddleware([Role.TEACHER]),
+    validateRequest(GetCourseSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
-      const { courseId } = req.params;
+      const { id } = req.params;
 
       try {
-        logger.trace('[CourseRouter] - [/:courseId/students] - Start');
-        const students = await courseService.getStudentsOfCourse(courseId);
+        logger.trace('[CourseRouter] - [/:id/students] - Start');
+        const students = await courseService.getStudentsOfCourse(id);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
@@ -273,11 +321,11 @@ export const courseRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (e) {
-        logger.error(`[CourseRouter] - [/:courseId/students] - Error: ${e}`);
+        logger.error(`[CourseRouter] - [/:id/students] - Error: ${e}`);
         const apiError = new ApiError('Failed to retrieve students', StatusCodes.INTERNAL_SERVER_ERROR, e);
         return next(apiError);
       } finally {
-        logger.trace('[CourseRouter] - [/:courseId/students] - End');
+        logger.trace('[CourseRouter] - [/:id/students] - End');
       }
     }
   );
