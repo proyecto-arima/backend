@@ -60,7 +60,6 @@ describe('Generic teacher tests', () => {
 
     expect(response.status).toBe(StatusCodes.OK);
     const result = response.body;
-    console.log(result);
     expect(result.success).toBe(true);
     const courses = result.data;
     expect(courses).toHaveLength(1);

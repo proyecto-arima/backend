@@ -52,6 +52,14 @@ describe('Generic student tests', () => {
       role: 'STUDENT',
       forcePasswordReset: false,
     });
+
+    await mongoose.connection.db.collection('students').insertOne({
+      _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda3c'),
+      userId: '6643eb8662e9b625cd5dda4f',
+      firstName: 'christian',
+      lastName: 'harper',
+      learningProfile: 'VISUAL',
+    });
   });
 
   /*
@@ -97,17 +105,19 @@ describe('Generic student tests', () => {
   });
 
   /*
-  it('should get student learning profile', async () => {
-    const studentId = 'someStudentId';
+  it('GET /students/:id/learning-profile', async () => {
+    const token = await login();
+    
+    const studentId = '6643eb8662e9b625cd5dda4f';
 
-    const response = await request(app)
-      .get(`/students/${studentId}/learning-profile`)
-      .set('Authorization', `Bearer ${studentToken}`);
+    const response = await request(app).get(`/students/${studentId}/learning-profile`).set('Authorization', `Bearer ${token}`);
+
+    console.log(response.body);
 
     expect(response.status).toBe(StatusCodes.OK);
-    const result: ApiResponse = response.body;
-    expect(result.success).toBeTruthy();
-    expect(result.data).toHaveProperty('learningProfile');
+    const result = response.body;
+    expect(result.success).toBe(true);
+    expect(result.data).toHaveProperty('learningProfile', 'VISUAL');
   });*/
 
   afterAll(async () => {
