@@ -64,4 +64,8 @@ export const studentService = {
     }
     return student.learningProfile;
   },
+
+  getAllStudents: async (): Promise<UserDTO[]> => {
+    return userService.getAllStudents();
+  },
 };

@@ -58,6 +58,30 @@ export const studentRouter: Router = (() => {
 
   studentRegistry.registerPath({
     method: 'get',
+    path: '/students/',
+    tags: ['Student'],
+    request: { body: { content: { 'application/json': { schema: UserCreationSchema.shape.body } }, description: '' } },
+    responses: createApiResponse(UserDTOSchema, 'Success'),
+  });
+  router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const students = await studentService.getAllStudents();
+
+      const apiResponse = new ApiResponse(
+        ResponseStatus.Success,
+        'Students retrieved successfully',
+        students,
+        StatusCodes.OK
+      );
+      res.status(StatusCodes.OK).json(apiResponse);
+    } catch (error) {
+      const apiError = new ApiError('Failed to retrieve students', StatusCodes.INTERNAL_SERVER_ERROR, error);
+      return next(apiError);
+    }
+  });
+
+  studentRegistry.registerPath({
+    method: 'get',
     path: '/students/me/courses/',
     tags: ['Student'],
     responses: createApiResponse(z.array(CourseDTOSchema), 'Success'),

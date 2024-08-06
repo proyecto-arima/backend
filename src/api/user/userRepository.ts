@@ -33,4 +33,8 @@ export const userRepository = {
     }
     return updatedUser;
   },
+
+  findUsersByRole: async (role: string): Promise<User[]> => {
+    return UserModel.find<User>({ role }).exec();
+  },
 };
