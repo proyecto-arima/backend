@@ -68,6 +68,7 @@ export const courseService = {
       userId: student.id.toString(),
       firstName: student.firstName,
       lastName: student.lastName,
+      email: student.email,
     }));
 
     const updatedCourse = await courseRepository.addStudentsToCourse(courseId, studentData);
