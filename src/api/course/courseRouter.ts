@@ -35,7 +35,7 @@ export const courseRouter: Router = (() => {
 
   courseRegistry.registerPath({
     method: 'post',
-    path: '/courses/create',
+    path: '/courses',
     tags: ['Course'],
     request: {
       body: { content: { 'application/json': { schema: CourseCreationSchema.shape.body } }, description: '' },
@@ -43,7 +43,7 @@ export const courseRouter: Router = (() => {
     responses: createApiResponse(CourseDTOSchema, 'Success'),
   });
   router.post(
-    '/create',
+    '/',
     sessionMiddleware,
     checkSessionContext,
     roleMiddleware([Role.TEACHER]),
