@@ -11,6 +11,7 @@ import rateLimiter from '@/common/middleware/rateLimiter';
 import requestLogger from '@/common/utils/requestLogger';
 
 import { authRouter } from './api/auth/authRouter';
+import { contentRouter } from './api/course/content/contentRouter';
 import { courseRouter } from './api/course/courseRouter';
 import { directorRouter } from './api/director/directorRouter';
 import { studentRouter } from './api/student/studentRouter';
@@ -36,13 +37,13 @@ app.use(requestLogger);
 // Routes
 app.use('/health-check', healthCheckRouter);
 app.use('/users', sessionMiddleware, userRouter);
-//app.use('/users', userRouter);
 
 app.use('/auth', authRouter);
 app.use('/students', studentRouter);
 app.use('/teachers', teacherRouter);
 app.use('/directors', directorRouter);
 app.use('/courses', courseRouter);
+app.use('/contents', contentRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

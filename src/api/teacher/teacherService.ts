@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 
+import { TeacherModel } from '@/api/teacher/teacherModel';
 import { UserCreationDTO, UserDTO } from '@/api/user/userModel';
 import sendMailTo from '@/common/mailSender/mailSenderService';
 import { Role } from '@/common/models/role';
@@ -16,6 +17,7 @@ export const teacherService = {
     logger.trace(`[TeacherService] - [create] - Creating teacher: ${JSON.stringify(user)}`);
     logger.trace(`[TeacherService] - [create] - Generating random password...`);
     const randomPassword = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
+    console.log('PASS:', randomPassword);
     if (config.app.node_env === 'development') {
       logger.trace(`[TeacherService] - [create] - Random password: ${randomPassword}`);
     }
@@ -25,6 +27,13 @@ export const teacherService = {
     logger.trace(`[TeacherService] - [create] - Creating teacher...`);
     const createdUser: UserDTO = await userService.create({ ...user, password: hash, role: Role.TEACHER });
     logger.trace(`[TeacherService] - [create] - Teacher created: ${JSON.stringify(createdUser)}`);
+
+    const teacher = new TeacherModel({
+      userId: createdUser.id,
+      courses: [],
+    });
+
+    await teacher.save();
 
     logger.trace(`[TeacherService] - [create] - Sending email to teacher ${createdUser.email}...`);
     sendMailTo(
