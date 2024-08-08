@@ -32,7 +32,7 @@ describe('Generic student tests', () => {
         image: 'https://example.com/image2.jpg',
         teacherUserId: 'teacher2',
         students: {
-          userId: '6643eb8662e9b625cd5dda4g',
+          userId: '6643eb8662e9b625cd5dda4a',
           firstName: 'Alex',
           lastName: 'Volkov',
         },
@@ -62,25 +62,6 @@ describe('Generic student tests', () => {
     });
   });
 
-  /*
-  it('should create a student', async () => {
-    const studentData = {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      password: 'securepassword',
-      role: 'STUDENT',
-      // other required fields
-    };
-
-    const response = await request(app).post('/students').send(studentData);
-
-    expect(response.status).toBe(StatusCodes.CREATED);
-    const result: ApiResponse = response.body;
-    expect(result.success).toBeTruthy();
-    expect(result.data).toHaveProperty('id');
-  });*/
-
   const login = async (email = 'student@proyectoarima.tech', password = 'admin') => {
     const response = await request(app).post('/auth').send({
       email,
@@ -90,35 +71,67 @@ describe('Generic student tests', () => {
     return result.data?.['access_token'];
   };
 
-  it('GET /me/courses', async () => {
+  it('GET /students/me/courses', async () => {
     const token = await login();
 
     const response = await request(app).get('/students/me/courses').set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(StatusCodes.OK);
     const result = response.body;
-    console.log(result);
     expect(result.success).toBe(true);
     const courses = result.data;
     expect(courses).toHaveLength(1);
     expect(courses[0]).toHaveProperty('title', 'Course 1');
   });
 
-  /*
+  it('GET /students/', async () => {
+    const token = await login();
+
+    const response = await request(app).get('/students/').set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(StatusCodes.OK);
+    const result = response.body;
+    expect(result.success).toBe(true);
+    const students = result.data;
+    expect(students).toHaveLength(1);
+    expect(students[0]).toHaveProperty('firstName', 'Student');
+  });
+
+  //TODO: VER ESTE TEST, FALLA EL ENVIO DE MAIL EN EL TEST
+  /* 
+  it('POST /students/', async () => {
+    const studentData = {
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john.doe@example.com',
+      document: {
+        type: 'DNI',
+        number: '123456789',
+      }
+    };
+
+    const response = await request(app).post('/students/').send(studentData);
+
+    expect(response.status).toBe(StatusCodes.CREATED);
+    const result = response.body;
+    expect(result.success).toBeTruthy();
+    expect(result.data).toHaveProperty('id');
+  });*/
+
   it('GET /students/:id/learning-profile', async () => {
     const token = await login();
-    
-    const studentId = '6643eb8662e9b625cd5dda4f';
 
-    const response = await request(app).get(`/students/${studentId}/learning-profile`).set('Authorization', `Bearer ${token}`);
+    const studentId = '6643eb8662e9b625cd5dda3c';
 
-    console.log(response.body);
+    const response = await request(app)
+      .get(`/students/${studentId}/learning-profile`)
+      .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(StatusCodes.OK);
     const result = response.body;
     expect(result.success).toBe(true);
     expect(result.data).toHaveProperty('learningProfile', 'VISUAL');
-  });*/
+  });
 
   afterAll(async () => {
     await disconnectFromMongoDB();

@@ -27,7 +27,7 @@ export const contentRouter: Router = (() => {
 
   contentRegistry.registerPath({
     method: 'post',
-    path: '/:contentId/reactions',
+    path: '/{:contentId}/reactions',
     tags: ['Content'],
     request: {
       params: AddReactionsSchema.shape.params,
@@ -53,7 +53,6 @@ export const contentRouter: Router = (() => {
 
       try {
         const updatedContent = await contentService.addReactionToContent(contentId, isSatisfied, studentId);
-
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
           'Reaction added to content successfully',
