@@ -89,13 +89,19 @@ export const courseRepository = {
     return sectionDtos;
   },
 
-  addContentToSection: async (sectionId: string, contentData: ContentCreationDTO): Promise<any> => {
+  addContentToSection: async (
+    sectionId: string,
+    contentData: ContentCreationDTO,
+    key: string,
+    preSignedUrl: string
+  ): Promise<any> => {
     const newContent = new ContentModel({
       title: contentData.title,
       sectionId,
+      key: key,
+      preSignedUrl: preSignedUrl,
       publicationType: contentData.publicationType,
       publicationDate: contentData.publicationDate,
-      file: contentData.file,
     });
 
     const savedContent = newContent.save();

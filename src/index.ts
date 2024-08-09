@@ -1,5 +1,4 @@
 import { logger } from '@/common/utils/serverLogger';
-import { mainGet, mainPut } from '@/common/utils/unificado';
 import { app } from '@/server';
 
 //import { buildTransporter, initTransporter } from './common/mailSender/mailSenderService';
@@ -16,8 +15,6 @@ connectToMongoDB(config.mongodb.uri)
   .catch((ex) => logger.error(`Error connecting to MongoDB: ${(ex as Error).message}`));
 
 //initTransporter(buildTransporter());
-mainGet();
-mainPut();
 
 const onCloseSignal = () => {
   logger.info('sigint received, shutting down');

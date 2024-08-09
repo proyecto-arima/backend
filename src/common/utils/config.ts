@@ -29,6 +29,7 @@ const ConfigSchema = z.object({
       aws_secret_access_key: z.string(),
       region: z.string().default('us-east-1'),
       bucket: z.string(),
+      prefix: z.string(),
     }),
   }),
   app: z.object({
@@ -63,6 +64,7 @@ const envConfig = {
       aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
       region: process.env.AWS_REGION,
       bucket: process.env.BUCKET,
+      prefix: process.env.PREFIX,
     },
   },
   app: {
@@ -94,6 +96,7 @@ const testConfig = {
       aws_secret_access_key: '',
       region: '',
       bucket: '',
+      prefix: '',
     },
   },
   app: {

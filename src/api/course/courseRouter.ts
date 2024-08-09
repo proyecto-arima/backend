@@ -1,6 +1,7 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import multer from 'multer';
 import { z } from 'zod';
 
 import { ContentCreationSchema } from '@/api/course/content/contentModel';
@@ -25,6 +26,9 @@ import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
+
+const upload = multer({ dest: 'uploads/' });
+
 const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
 
 export const courseRegistry = new OpenAPIRegistry();
@@ -223,15 +227,21 @@ export const courseRouter: Router = (() => {
     checkSessionContext,
     hasAccessToCourseMiddleware('courseId'),
     roleMiddleware([Role.TEACHER]),
+    upload.single('file'),
     validateRequest(ContentCreationSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const { sectionId } = req.params;
       const contentData = req.body;
+      const file = req.file;
+
+      if (!file) {
+        return next(new ApiError('File is required', StatusCodes.BAD_REQUEST));
+      }
 
       try {
         logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Start');
 
-        const newContent = await courseService.addContentToSection(sectionId, contentData);
+        const newContent = await courseService.addContentToSection(sectionId, contentData, file);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,

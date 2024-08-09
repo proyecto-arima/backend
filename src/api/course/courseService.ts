@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
 
 import { ContentCreationDTO, ContentDTO } from '@/api/course/content/contentModel';
@@ -6,6 +7,7 @@ import { courseRepository } from '@/api/course/courseRepository';
 import { SectionCreationDTO } from '@/api/course/section/sectionModel';
 import { studentRepository } from '@/api/student/studentRepository';
 import { teacherRepository } from '@/api/teacher/teacherRepository';
+import { /*s3Get,*/ s3Put } from '@/common/utils/awsManager';
 
 const generateMatriculationCode = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -99,8 +101,14 @@ export const courseService = {
     return await courseRepository.getStudentsOfCourse(courseId);
   },
 
-  async addContentToSection(sectionId: string, contentData: ContentCreationDTO): Promise<ContentDTO> {
+  async addContentToSection(
+    sectionId: string,
+    contentData: ContentCreationDTO,
+    file: Express.Multer.File
+  ): Promise<ContentDTO> {
     console.log('[courseService] - [addContentToSection] - Parameters:', { sectionId, contentData });
-    return await courseRepository.addContentToSection(sectionId, contentData);
+    const key = `${randomUUID()}`.toString();
+    const preSignedUrl = await s3Put(key, file);
+    return await courseRepository.addContentToSection(sectionId, contentData, key, preSignedUrl);
   },
 };
