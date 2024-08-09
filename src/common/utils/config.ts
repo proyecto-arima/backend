@@ -23,6 +23,14 @@ const ConfigSchema = z.object({
     secret: z.string(),
   }),
   cors_origin: z.string(),
+  cloud_service: z.object({
+    aws: z.object({
+      aws_access_key_id: z.string(),
+      aws_secret_access_key: z.string(),
+      region: z.string().default('us-east-1'),
+      bucket: z.string(),
+    }),
+  }),
   app: z.object({
     node_env: z.enum(['development', 'production', 'test']).default('development'),
     host: z.string().default('localhost'),
@@ -49,6 +57,14 @@ const envConfig = {
     secret: process.env.JWT_SECRET,
   },
   cors_origin: process.env.CORS_ORIGIN,
+  cloud_service: {
+    aws: {
+      aws_access_key_id: process.env.AWS_ACCESS_KEY_ID,
+      aws_secret_access_key: process.env.AWS_SECRET_ACCESS_KEY,
+      region: process.env.AWS_REGION,
+      bucket: process.env.BUCKET,
+    },
+  },
   app: {
     host: process.env.HOST,
     port: parseInt(process.env.PORT as string),
@@ -72,6 +88,14 @@ const testConfig = {
     secret: 'secret',
   },
   cors_origin: 'http://localhost:3000',
+  cloud_service: {
+    aws: {
+      aws_access_key_id: '',
+      aws_secret_access_key: '',
+      region: '',
+      bucket: '',
+    },
+  },
   app: {
     host: 'localhost',
     port: 8080,
