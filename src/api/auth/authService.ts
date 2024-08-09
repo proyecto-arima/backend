@@ -3,7 +3,6 @@ import jwt, { JsonWebTokenError } from 'jsonwebtoken';
 
 import { SessionToken, UserLoginDTO } from '@/api/user/userModel';
 import { userRepository } from '@/api/user/userRepository';
-import sendMailTo from '@/common/mailSender/mailSenderService';
 import { config } from '@/common/utils/config';
 import { logger } from '@/common/utils/serverLogger';
 
@@ -79,7 +78,7 @@ export const authService = {
 
       if (passwordSet.newPassword !== passwordSet.newPasswordConfirmation) {
         throw new PasswordsDoNotMatchError();
-      } 
+      }
 
       const sessionPayload: SessionPayload = SessionPayloadSchema.parse(jwt.decode(token, { json: true }));
       const user = await userRepository.findByIdAsync(sessionPayload.id.toString());
@@ -114,9 +113,9 @@ export const authService = {
       if (!user) {
         return Promise.resolve();
       }
-      const token = jwt.sign({ id: user.toDto().id }, config.jwt.secret as string, { expiresIn: '15m' });
+      //const token = jwt.sign({ id: user.toDto().id }, config.jwt.secret as string, { expiresIn: '15m' });
       user.forcePasswordReset = true;
-      const redirectLink = `${config.app.frontendUrl}/recoverPassword?token=${token}`;
+      //const redirectLink = `${config.app.frontendUrl}/recoverPassword?token=${token}`;
       // TODO: Fix SMTP testing on CI
       // sendMailTo(
       //   [user.email],

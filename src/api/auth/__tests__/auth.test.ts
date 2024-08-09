@@ -1,9 +1,9 @@
 import bcrypt from 'bcrypt';
 import { StatusCodes } from 'http-status-codes';
+import jwt from 'jsonwebtoken';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import request from 'supertest';
-import jwt from 'jsonwebtoken';
 
 import { ApiResponse } from '@/common/models/apiResponse';
 import { connectToMongoDB, disconnectFromMongoDB } from '@/common/utils/mongodb';
@@ -21,8 +21,6 @@ describe('Authentication tests', () => {
   const testUsername = 'admin@proyectoarima.tech';
   const testPassword = 'admin';
   let testToken = '';
-
-  
 
   beforeAll(async () => {
     const mongod = await MongoMemoryServer.create();
@@ -110,7 +108,7 @@ describe('Authentication tests', () => {
       email: testUsername,
       newPassword: newPassword,
       newPasswordConfirmation: newPassword,
-    });    
+    });
     const result: ApiResponse = response.body;
 
     expect(response.statusCode).toEqual(StatusCodes.OK);

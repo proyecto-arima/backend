@@ -1,5 +1,5 @@
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
-import mongoose, { InferRawDocType, Model, Schema } from 'mongoose';
+import mongoose, { Document, InferRawDocType, Model, Schema } from 'mongoose';
 import { z } from 'zod';
 
 import { LearningProfile } from '@/common/models/learningProfile';
@@ -32,24 +32,29 @@ export type StudentDTO = z.infer<typeof StudentDTOSchema>;
 /**
  * Student Model Schema Definition
  */
-const studentModelSchemaDefinition = {
+const studentModelSchemaDefinition: Record<keyof Omit<StudentDTO, 'id'>, any> = {
   userId: { type: String, required: true },
   learningProfile: { type: String, required: true, enum: LearningProfile },
   courses: [
     {
       id: { type: String, required: true },
       courseName: { type: String, required: true },
+      _id: false,
     },
   ],
 };
 
 // Type used to tell mongoose the shape of the schema available
-type IStudentSchemaDefinition = typeof studentModelSchemaDefinition;
+type IStudentSchemaDefinition = Omit<StudentDTO, 'id'>;
 // Type used to add methods to the schema
 interface IStudentSchemaDefinitionMethods {
   toDto(): StudentDTO;
 }
-type StudentModelDefinition = Model<IStudentSchemaDefinition, Record<string, never>, IStudentSchemaDefinitionMethods>;
+type StudentModelDefinition = Model<
+  IStudentSchemaDefinition & Document,
+  Record<string, never>,
+  IStudentSchemaDefinitionMethods
+>;
 
 /**
  * Student Model Schema
@@ -71,7 +76,7 @@ studentModelSchema.method('toDto', function (): StudentDTO {
     id: this._id.toString(),
     userId: this.userId.toString(),
     learningProfile: this.learningProfile.toString() as LearningProfile,
-    courses: this.courses.map((course) => ({
+    courses: this.courses.map((course: any) => ({
       id: course.id.toString(),
       courseName: course.courseName.toString(),
     })),
@@ -84,5 +89,18 @@ export const StudentModel = mongoose.model<IStudentSchemaDefinition, StudentMode
   studentModelSchema
 );
 
-// Let's create a Typescript interface for the Student model
 export type Student = InferRawDocType<typeof studentModelSchemaDefinition> & IStudentSchemaDefinitionMethods;
+
+export const StudentCreationSchema = z.object({
+  body: z.object({
+    firstName: z.string(),
+    lastName: z.string(),
+    email: z.string().email(),
+    document: z.object({
+      type: z.string(),
+      number: z.string(),
+    }),
+  }),
+});
+export type StudentCreationDTO = z.infer<typeof StudentCreationSchema.shape.body>;
+export type StudentCreation = StudentCreationDTO;

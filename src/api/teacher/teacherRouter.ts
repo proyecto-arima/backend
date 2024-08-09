@@ -1,8 +1,9 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import { z } from 'zod';
 
-import { CourseDTO } from '@/api/course/courseModel';
+import { CourseDTO, CourseDTOSchema } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { roleMiddleware } from '@/common/middleware/roleMiddleware';
@@ -21,6 +22,7 @@ const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
 export const teacherRegistry = new OpenAPIRegistry();
 
 teacherRegistry.register('Teacher', UserDTOSchema);
+teacherRegistry.register('Course', CourseDTOSchema);
 
 export const teacherRouter: Router = (() => {
   const router = express.Router();
@@ -55,11 +57,16 @@ export const teacherRouter: Router = (() => {
     }
   });
 
+  teacherRegistry.registerPath({
+    method: 'get',
+    path: '/teachers/me/courses/',
+    tags: ['Teacher'],
+    responses: createApiResponse(z.array(CourseDTOSchema), 'Success'),
+  });
   router.get(
     '/me/courses',
     sessionMiddleware,
     roleMiddleware([Role.TEACHER]),
-
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const sessionContext = req.sessionContext;
       if (!sessionContext?.user?.id) {
@@ -69,10 +76,10 @@ export const teacherRouter: Router = (() => {
 
       try {
         logger.trace('[TeacherRouter] - [/me/courses] - Start');
-        const teacherId = sessionContext.user.id;
+        const teacherUserId = sessionContext.user.id;
 
-        logger.trace(`[TeacherRouter] - [/me/courses] - Retrieving courses for teacher with id: ${teacherId}...`);
-        const courses: CourseDTO[] = await courseService.findCoursesByTeacherId(teacherId);
+        logger.trace(`[TeacherRouter] - [/me/courses] - Retrieving courses for teacher with id: ${teacherUserId}...`);
+        const courses: CourseDTO[] = await courseService.findCoursesByTeacherId(teacherUserId);
         logger.trace(`[TeacherRouter] - [/me/courses] - Courses found: ${JSON.stringify(courses)}. Sending response`);
 
         const apiResponse = new ApiResponse(
@@ -83,16 +90,9 @@ export const teacherRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (e) {
-        if (e instanceof ApiError) {
-          logger.warn(`[TeacherRouter] - [/me/courses] - ApiError: ${e.message}`);
-          return next(e);
-        } else {
-          logger.error(`[TeacherRouter] - [/me/courses] - Error: ${e}`);
-          const apiError = new ApiError('Failed to retrieve courses', StatusCodes.INTERNAL_SERVER_ERROR, e);
-          return next(apiError);
-        }
-      } finally {
-        logger.trace('[TeacherRouter] - [/me/courses] - End');
+        logger.error(`[TeacherRouter] - [/me/courses] - Error: ${e}`);
+        const apiError = new ApiError('Failed to retrieve courses', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
       }
     }
   );
