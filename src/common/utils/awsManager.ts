@@ -1,8 +1,6 @@
-//unificado
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import fs from 'fs';
-import https from 'https';
 
 import { config } from './config';
 
@@ -28,62 +26,33 @@ const createPresignedUrl = (command: GetObjectCommand | PutObjectCommand): Promi
   return getSignedUrl(client, command, { expiresIn: 3600 });
 };
 
-export const createPresignedUrlForPut = ({ bucket, key }: PresignedUrlParams): Promise<string> => {
-  const command = new PutObjectCommand({ Bucket: bucket, Key: key });
-  return createPresignedUrl(command);
-};
-
 export const createPresignedUrlForGet = ({ bucket, key }: PresignedUrlParams): Promise<string> => {
   const command = new GetObjectCommand({ Bucket: bucket, Key: key });
   return createPresignedUrl(command);
 };
 
-const put = (url: string, data: Buffer | string): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const req = https.request(
-      url,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Length': Buffer.isBuffer(data) ? data.length : new Blob([data]).size,
-        },
-      },
-      (res) => {
-        let responseBody = '';
-        res.on('data', (chunk) => {
-          responseBody += chunk;
-        });
-        res.on('end', () => {
-          resolve(responseBody);
-        });
-      }
-    );
-
-    req.on('error', (err) => {
-      reject(err);
-    });
-
-    req.write(data);
-    req.end();
-  });
-};
-
 export const s3Put = async (key: string, file: Express.Multer.File): Promise<string> => {
   try {
-    const clientUrl = await createPresignedUrlForPut({
+    const client = createS3Client();
+    const command = new PutObjectCommand({
+      Bucket: bucket,
+      Key: `${config.cloud_service.aws.prefix}/${key}`,
+      Body: fs.readFileSync(file.path),
+    });
+
+    await client.send(command);
+
+    console.log('File uploaded successfully. Generating presigned URL for GET.');
+
+    // Genera la URL pre-firmada para acceder al archivo
+    const getUrl = await createPresignedUrlForGet({
       bucket: bucket,
       key: `${config.cloud_service.aws.prefix}/${key}`,
     });
 
-    console.log('Calling PUT using presigned URL with client', clientUrl);
-
-    const fileData = fs.readFileSync(file.path);
-    await put(clientUrl, fileData);
-
-    console.log('\nDone. Check your S3.');
-    return clientUrl;
+    return getUrl;
   } catch (err) {
-    console.error(err);
+    console.error('Error uploading file or generating presigned URL:', err);
     return '';
   }
 };
