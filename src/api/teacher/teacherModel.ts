@@ -25,20 +25,21 @@ export type TeacherDTO = z.infer<typeof TeacherDTOSchema>;
 /**
  * Teacher Model Schema Definition
  */
-const teacherCourseSchemaDefinition = new Schema({
-  id: { type: String, required: true },
-  courseName: { type: String, required: true },
-});
+const teacherCourseSchemaDefinition = new Schema(
+  {
+    id: { type: String, required: true },
+    courseName: { type: String, required: true },
+  },
+  { _id: false }
+);
 
-const teacherModelSchemaDefinition = {
+const teacherModelSchemaDefinition: Record<keyof Omit<TeacherDTO, 'id'>, any> = {
   userId: { type: String, required: true },
   courses: { type: [teacherCourseSchemaDefinition], required: true },
 };
 
 // Type used to tell mongoose the shape of the schema available
-type ITeacherSchemaDefinition = typeof teacherModelSchemaDefinition & {
-  courses: Array<{ id: string; courseName: string }>;
-};
+type ITeacherSchemaDefinition = Omit<TeacherDTO, 'id'>;
 
 // Type used to add methods to the schema
 interface ITeacherSchemaDefinitionMethods {

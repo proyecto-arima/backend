@@ -32,9 +32,9 @@ export const hasAccessToCourseMiddleware = (courseIdParam: string) => {
 
       const hasAccess = (user: UserDTO, course: CourseDTO): boolean => {
         if (user.role === Role.TEACHER) {
-          return course.teacherId === user.id;
+          return course.teacherUserId === user.id;
         } else if (user.role === Role.STUDENT) {
-          return course.students.some((student) => student.id === user.id);
+          return course.students.some((student) => student.userId === user.id);
         }
         return false; // En caso de roles desconocidos
       };

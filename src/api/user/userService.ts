@@ -1,5 +1,6 @@
 import { User, UserCreation, UserDTO } from '@/api/user/userModel';
 import { userRepository } from '@/api/user/userRepository';
+import { Role } from '@/common/models/role';
 
 import { InvalidCredentialsError } from '../auth/authModel';
 
@@ -22,5 +23,10 @@ export const userService = {
   create: async (user: UserCreation): Promise<UserDTO> => {
     const createdUser: User = await userRepository.create(user);
     return createdUser.toDto();
+  },
+
+  getAllStudents: async (): Promise<UserDTO[]> => {
+    const users = await userRepository.findUsersByRole(Role.STUDENT);
+    return users.map((user) => user.toDto());
   },
 };
