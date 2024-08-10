@@ -7,7 +7,7 @@ import { courseRepository } from '@/api/course/courseRepository';
 import { SectionCreationDTO } from '@/api/course/section/sectionModel';
 import { studentRepository } from '@/api/student/studentRepository';
 import { teacherRepository } from '@/api/teacher/teacherRepository';
-import { /*s3Get,*/ s3Put } from '@/common/utils/awsManager';
+import { s3Get, s3Put } from '@/common/utils/awsManager';
 
 const generateMatriculationCode = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -110,5 +110,25 @@ export const courseService = {
     const key = `${randomUUID()}`.toString();
     const preSignedUrl = await s3Put(key, file);
     return await courseRepository.addContentToSection(sectionId, contentData, key, preSignedUrl);
+  },
+
+  getContentsWithPresignedUrls: async (sectionId: string) => {
+    const contents = await courseRepository.getContentsBySectionId(sectionId);
+
+    if (!contents) {
+      return [];
+    }
+
+    const contentsWithUrls = await Promise.all(
+      contents.map(async (content) => {
+        const presignedUrl = await s3Get(content.key);
+        return {
+          ...content,
+          presignedUrl,
+        };
+      })
+    );
+
+    return contentsWithUrls;
   },
 };

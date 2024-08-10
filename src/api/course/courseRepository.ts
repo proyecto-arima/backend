@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import mongoose from 'mongoose';
 
-import { ContentCreationDTO, ContentModel } from '@/api/course/content/contentModel';
+import { ContentCreationDTO, ContentDTO, ContentModel } from '@/api/course/content/contentModel';
 import { Course, CourseCreation, CourseCreationDTO, CourseDTO, CourseModel } from '@/api/course/courseModel';
 import { SectionCreationDTO, SectionModel } from '@/api/course/section/sectionModel';
 import { UserModel } from '@/api/user/userModel';
@@ -159,5 +159,16 @@ export const courseRepository = {
     }));
 
     return studentDtos;
+  },
+
+  getContentsBySectionId: async (sectionId: string): Promise<ContentDTO[] | null> => {
+    const contents = await ContentModel.find({ sectionId }).exec();
+
+    if (!contents) {
+      return null;
+    }
+
+    // Mapeamos cada documento a un DTO utilizando el método toDto
+    return contents.map((content) => content.toDto());
   },
 };

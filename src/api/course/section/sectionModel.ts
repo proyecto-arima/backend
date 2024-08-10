@@ -98,5 +98,12 @@ export const SectionCreationSchema = z.object({
   }),
 });
 
+export const DeleteSectionSchema = z.object({
+  params: z.object({
+    courseId: z.string(),
+    sectionId: z.string(),
+  }),
+});
+
 export type SectionCreationDTO = z.infer<typeof SectionCreationSchema.shape.body>;
 export type SectionCreation = SectionCreationDTO;

@@ -132,6 +132,10 @@ export const ReactionsResponseSchema = z.object({
   reactions: z.array(ReactionSchema),
 });
 
+export const ContentWithPresignedUrlSchema = ContentDTOSchema.extend({
+  preSignedUrl: z.string(),
+});
+
 export type AddReactionsDTO = z.infer<typeof AddReactionsSchema.shape.body>;
 export type ContentCreationDTO = z.infer<typeof ContentCreationSchema.shape.body>;
 export type ContentCreation = ContentCreationDTO;

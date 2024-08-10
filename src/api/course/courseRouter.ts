@@ -4,8 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import multer from 'multer';
 import { z } from 'zod';
 
-import { ContentCreationSchema } from '@/api/course/content/contentModel';
-import { ContentDTOSchema } from '@/api/course/content/contentModel';
+import { ContentCreationSchema, ContentWithPresignedUrlSchema } from '@/api/course/content/contentModel';
 import {
   AddStudentsSchema,
   CourseCreationSchema,
@@ -14,7 +13,8 @@ import {
   GetCourseSchema,
 } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
-import { SectionCreationSchema, SectionDTOSchema } from '@/api/course/section/sectionModel';
+import { DeleteSectionSchema, SectionCreationSchema, SectionDTOSchema } from '@/api/course/section/sectionModel';
+import { sectionService } from '@/api/course/section/sectionService';
 import { StudentDTOSchema } from '@/api/student/studentModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { checkSessionContext } from '@/common/middleware/checkSessionContext';
@@ -219,7 +219,7 @@ export const courseRouter: Router = (() => {
       params: ContentCreationSchema.shape.params,
       body: { content: { 'application/json': { schema: ContentCreationSchema.shape.body } }, description: '' },
     },
-    responses: createApiResponse(ContentDTOSchema, 'Success'),
+    responses: createApiResponse(ContentWithPresignedUrlSchema, 'Success'),
   });
   router.post(
     '/:courseId/sections/:sectionId/content',
@@ -239,7 +239,7 @@ export const courseRouter: Router = (() => {
       }
 
       try {
-        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Start');
+        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/content] - Start');
 
         const newContent = await courseService.addContentToSection(sectionId, contentData, file);
 
@@ -256,6 +256,37 @@ export const courseRouter: Router = (() => {
         return next(apiError);
       } finally {
         logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - End');
+      }
+    }
+  );
+
+  courseRegistry.registerPath({
+    method: 'get',
+    path: '/courses/{courseId}/sections/{sectionId}/contents',
+    tags: ['Course'],
+    request: {
+      params: ContentCreationSchema.shape.params,
+    },
+    responses: createApiResponse(z.array(ContentWithPresignedUrlSchema), 'Success'),
+  });
+  router.get(
+    '/:courseId/sections/:sectionId/contents',
+    sessionMiddleware,
+    checkSessionContext,
+    hasAccessToCourseMiddleware('courseId'),
+    roleMiddleware([Role.TEACHER, Role.STUDENT]), // O según los roles permitidos
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { sectionId } = req.params;
+
+      try {
+        const contentsWithUrls = await courseService.getContentsWithPresignedUrls(sectionId);
+        res.status(200).json({
+          success: true,
+          message: 'Contents retrieved successfully',
+          data: contentsWithUrls,
+        });
+      } catch (error) {
+        next(error);
       }
     }
   );
@@ -336,6 +367,42 @@ export const courseRouter: Router = (() => {
         return next(apiError);
       } finally {
         logger.trace('[CourseRouter] - [/:id/students] - End');
+      }
+    }
+  );
+
+  courseRegistry.registerPath({
+    method: 'delete',
+    path: '/courses/{courseId}/sections/{sectionId}',
+    tags: ['Course'],
+    request: {
+      params: DeleteSectionSchema.shape.params,
+    },
+    responses: createApiResponse(z.object({}), 'Success'),
+  });
+  router.delete(
+    '/:courseId/sections/:sectionId',
+    sessionMiddleware,
+    hasAccessToCourseMiddleware('courseId'),
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(DeleteSectionSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const courseId = req.params.courseId;
+      const sectionId = req.params.sectionId;
+
+      try {
+        await sectionService.deleteSection(sectionId, courseId);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Section deleted successfully',
+          null,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        const apiError = new ApiError('Failed to delete section', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
       }
     }
   );
