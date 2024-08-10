@@ -1,6 +1,5 @@
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import fs from 'fs';
 
 import { config } from './config';
 
@@ -37,7 +36,7 @@ export const s3Put = async (key: string, file: Express.Multer.File): Promise<str
     const command = new PutObjectCommand({
       Bucket: bucket,
       Key: `${config.cloud_service.aws.prefix}/${key}`,
-      Body: fs.readFileSync(file.path),
+      Body: file.buffer,
     });
 
     await client.send(command);
