@@ -12,7 +12,6 @@ extendZodWithOpenApi(z);
 export const ContentDTOSchema = z.object({
   id: z.string(),
   key: z.string(),
-  preSignedUrl: z.string(),
   title: z.string(),
   sectionId: z.string(),
   publicationType: z.enum([PublicationType.AUTOMATIC, PublicationType.DEFERRED]),
@@ -39,7 +38,6 @@ const reactionSchema = new Schema(
 
 const contentModelSchemaDefinition: Record<keyof Omit<ContentDTO, 'id'>, any> = {
   key: { type: String, required: true },
-  preSignedUrl: { type: String, required: true },
   title: { type: String, required: true },
   sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: true },
   publicationType: { type: String, enum: Object.values(PublicationType), required: true },
@@ -77,7 +75,6 @@ contentModelSchema.method('toDto', function (): ContentDTO {
   return {
     id: this._id.toString(),
     key: this.key,
-    preSignedUrl: this.preSignedUrl,
     title: this.title,
     sectionId: this.sectionId.toString(),
     publicationType: this.publicationType as PublicationType,

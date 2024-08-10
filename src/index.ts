@@ -14,7 +14,7 @@ connectToMongoDB(config.mongodb.uri)
   .then(() => logger.info('MongoDB connected'))
   .catch((ex) => logger.error(`Error connecting to MongoDB: ${(ex as Error).message}`));
 
-//initTransporter(buildTransporter());
+initTransporter(buildTransporter());
 
 const onCloseSignal = () => {
   logger.info('sigint received, shutting down');

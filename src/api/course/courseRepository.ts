@@ -99,7 +99,6 @@ export const courseRepository = {
       title: contentData.title,
       sectionId,
       key: key,
-      preSignedUrl: preSignedUrl,
       publicationType: contentData.publicationType,
       publicationDate: contentData.publicationDate,
     });
@@ -121,7 +120,10 @@ export const courseRepository = {
 
     await section.save();
 
-    return newContent.toDto();
+    return {
+      ...newContent.toDto(),
+      preSignedUrl,
+    };
   },
 
   async addStudentsToCourse(courseId: string, students: any[]): Promise<Course> {

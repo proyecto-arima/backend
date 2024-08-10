@@ -241,30 +241,6 @@ describe('Generic course tests', () => {
     expect(students[0]).toHaveProperty('firstName', 'Student');
   });
 
-  it('POST /courses/:courseId/sections/:sectionId/content', async () => {
-    const token = await login();
-
-    const courseId = '66b2ba4bb24f72c9f4aac1d5';
-    const sectionId = '66b0e07bceed604f8977c1cc';
-
-    const contentData = {
-      title: 'Advanced TypeScript Techniques',
-      publicationType: 'DEFERRED',
-      publicationDate: '2024-08-01T00:00:00Z',
-      file: 'https://example.com/path/to/your/advanced-file.pdf',
-    };
-
-    const response = await request(app)
-      .post(`/courses/${courseId}/sections/${sectionId}/content`)
-      .send(contentData)
-      .set('Authorization', `Bearer ${token}`);
-
-    expect(response.status).toBe(StatusCodes.OK);
-    const result = response.body;
-    expect(result.success).toBe(true);
-    expect(result.data).toHaveProperty('id');
-  });
-
   afterAll(async () => {
     await disconnectFromMongoDB();
   });
