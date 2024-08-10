@@ -1,7 +1,7 @@
 import { logger } from '@/common/utils/serverLogger';
 import { app } from '@/server';
 
-//import { buildTransporter, initTransporter } from './common/mailSender/mailSenderService';
+import { buildTransporter, initTransporter } from './common/mailSender/mailSenderService';
 import { config } from './common/utils/config';
 import { connectToMongoDB } from './common/utils/mongodb';
 
