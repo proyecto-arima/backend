@@ -14,6 +14,7 @@ import { authRouter } from './api/auth/authRouter';
 import { contentRouter } from './api/course/content/contentRouter';
 import { courseRouter } from './api/course/courseRouter';
 import { directorRouter } from './api/director/directorRouter';
+import { instituteRouter } from './api/institute/instituteRouter';
 import { studentRouter } from './api/student/studentRouter';
 import { teacherRouter } from './api/teacher/teacherRouter';
 import { sessionMiddleware } from './common/middleware/session';
@@ -44,6 +45,7 @@ app.use('/teachers', teacherRouter);
 app.use('/directors', directorRouter);
 app.use('/courses', courseRouter);
 app.use('/contents', contentRouter);
+app.use('/institutes', instituteRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

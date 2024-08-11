@@ -34,27 +34,33 @@ export const studentRouter: Router = (() => {
     responses: createApiResponse(UserDTOSchema, 'Success'),
   });
 
-  router.post('/', validateRequest(UserCreationSchema), async (req: Request, res: Response) => {
-    try {
-      logger.trace('[StudentRouter] - [/] - Start');
-      logger.trace(`[StudentRouter] - [/] - Request to create student: ${JSON.stringify(req.body)}`);
-      const userDTO: UserDTO = await studentService.create(req.body);
-      logger.trace(`[StudentRouter] - [/] - Student created: ${JSON.stringify(userDTO)}. Sending response`);
-      const apiResponse = new ApiResponse(
-        ResponseStatus.Success,
-        'Student created successfully',
-        userDTO,
-        StatusCodes.CREATED
-      );
-      handleApiResponse(apiResponse, res);
-    } catch (error) {
-      logger.error(`[StudentRouter] - [/] - Error: ${error}`);
-      const apiError = new ApiError('Failed to create student', StatusCodes.INTERNAL_SERVER_ERROR, error);
-      return res.status(apiError.statusCode).json(apiError);
-    } finally {
-      logger.trace('[StudentRouter] - [/] - End');
+  router.post(
+    '/',
+    validateRequest(UserCreationSchema),
+    roleMiddleware([Role.ADMIN]),
+
+    async (req: Request, res: Response) => {
+      try {
+        logger.trace('[StudentRouter] - [/] - Start');
+        logger.trace(`[StudentRouter] - [/] - Request to create student: ${JSON.stringify(req.body)}`);
+        const userDTO: UserDTO = await studentService.create(req.body);
+        logger.trace(`[StudentRouter] - [/] - Student created: ${JSON.stringify(userDTO)}. Sending response`);
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Student created successfully',
+          userDTO,
+          StatusCodes.CREATED
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        logger.error(`[StudentRouter] - [/] - Error: ${error}`);
+        const apiError = new ApiError('Failed to create student', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return res.status(apiError.statusCode).json(apiError);
+      } finally {
+        logger.trace('[StudentRouter] - [/] - End');
+      }
     }
-  });
+  );
 
   studentRegistry.registerPath({
     method: 'get',

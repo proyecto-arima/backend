@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 
+import { DirectorModel } from '@/api/director/directorModel';
 import { UserCreationDTO, UserDTO } from '@/api/user/userModel';
 import { Role } from '@/common/models/role';
 import { config } from '@/common/utils/config';
@@ -26,6 +27,12 @@ export const directorService = {
 
     // TODO: Send email to user notifying them of their registration
     // It should force the user to change their password on first login
+
+    const director = new DirectorModel({
+      userId: createdUser.id,
+    });
+
+    await director.save();
 
     logger.trace(`[DirectorService] - [create] - Sending email to user ${createdUser.email}...`);
     sendMailTo(

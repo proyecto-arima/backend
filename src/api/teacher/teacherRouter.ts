@@ -35,27 +35,32 @@ export const teacherRouter: Router = (() => {
     responses: createApiResponse(UserDTOSchema, 'Success'),
   });
 
-  router.post('/', validateRequest(UserCreationSchema), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      logger.trace('[TeacherRouter] - [/] - Start');
-      const teacher = req.body;
-      logger.trace(`[TeacherRouter] - [/] - Creating teacher: ${JSON.stringify(teacher)}`);
-      const createdTeacher = await teacherService.create(teacher);
-      logger.trace(`[TeacherRouter] - [/] - Teacher created: ${JSON.stringify(createdTeacher)}`);
-      const apiResponse = new ApiResponse(
-        ResponseStatus.Success,
-        'Teacher successfully created',
-        createdTeacher,
-        StatusCodes.CREATED
-      );
-      handleApiResponse(apiResponse, res);
-    } catch (e) {
-      logger.error(`[TeacherRouter] - [/] - Error: ${e}`);
-      return next(e);
-    } finally {
-      logger.trace('[TeacherRouter] - [/] - End');
+  router.post(
+    '/',
+    validateRequest(UserCreationSchema),
+    roleMiddleware([Role.ADMIN]),
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        logger.trace('[TeacherRouter] - [/] - Start');
+        const teacher = req.body;
+        logger.trace(`[TeacherRouter] - [/] - Creating teacher: ${JSON.stringify(teacher)}`);
+        const createdTeacher = await teacherService.create(teacher);
+        logger.trace(`[TeacherRouter] - [/] - Teacher created: ${JSON.stringify(createdTeacher)}`);
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Teacher successfully created',
+          createdTeacher,
+          StatusCodes.CREATED
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        logger.error(`[TeacherRouter] - [/] - Error: ${e}`);
+        return next(e);
+      } finally {
+        logger.trace('[TeacherRouter] - [/] - End');
+      }
     }
-  });
+  );
 
   teacherRegistry.registerPath({
     method: 'get',
