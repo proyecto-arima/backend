@@ -1,3 +1,5 @@
+import { CourseModel } from '@/api/course/courseModel';
+import { StudentModel } from '@/api/student/studentModel';
 import { User, UserCreation, UserCreationDTO, UserModel, UserNotFoundError } from '@/api/user/userModel';
 
 export const userRepository = {
@@ -30,5 +32,23 @@ export const userRepository = {
 
   findUsersByRole: async (role: string): Promise<User[]> => {
     return UserModel.find<User>({ role }).exec();
+  },
+
+  removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {
+    const session = await UserModel.startSession();
+    session.startTransaction();
+
+    try {
+      await CourseModel.updateOne({ _id: courseId }, { $pull: { students: { userId: userId } } }, { session });
+
+      await StudentModel.updateOne({ userId: userId }, { $pull: { courses: { id: courseId } } }, { session });
+
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   },
 };

@@ -4,6 +4,8 @@ import mongoose from 'mongoose';
 import { ContentCreationDTO, ContentDTO, ContentModel } from '@/api/course/content/contentModel';
 import { Course, CourseCreation, CourseCreationDTO, CourseDTO, CourseModel } from '@/api/course/courseModel';
 import { SectionCreationDTO, SectionModel } from '@/api/course/section/sectionModel';
+import { StudentModel } from '@/api/student/studentModel';
+import { TeacherModel } from '@/api/teacher/teacherModel';
 import { UserModel } from '@/api/user/userModel';
 
 export const courseRepository = {
@@ -170,5 +172,24 @@ export const courseRepository = {
 
     // Mapeamos cada documento a un DTO utilizando el método toDto
     return contents.map((content) => content.toDto());
+  },
+
+  deleteCourse: async (courseId: string): Promise<void> => {
+    const session = await CourseModel.startSession();
+    session.startTransaction();
+
+    try {
+      await StudentModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } }, { session });
+
+      await TeacherModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } }, { session });
+      await CourseModel.deleteOne({ _id: courseId }, { session });
+
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   },
 };

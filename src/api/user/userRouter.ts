@@ -3,7 +3,7 @@ import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-import { GetUserSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
+import { DeleteUserFromCourseSchema, GetUserSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
 import { userService } from '@/api/user/userService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { SessionRequest } from '@/common/middleware/session';
@@ -104,6 +104,34 @@ export const userRouter: Router = (() => {
       return next(new ApiError('Failed to retrieve user', StatusCodes.INTERNAL_SERVER_ERROR, e));
     } finally {
       logger.trace('[UserRouter] - [/:id] - End');
+    }
+  });
+
+  userRegistry.registerPath({
+    method: 'delete',
+    path: '/users/{userId}/courses/{courseId}',
+    tags: ['Course'],
+    request: {
+      params: DeleteUserFromCourseSchema.shape.params,
+    },
+    responses: createApiResponse(z.object({}), 'Success'),
+  });
+  router.delete('/:userId/courses/:courseId', async (req: SessionRequest, res: Response, next: NextFunction) => {
+    const { courseId, userId } = req.params;
+
+    try {
+      await userService.removeUserFromCourse(userId, courseId);
+
+      const apiResponse = new ApiResponse(
+        ResponseStatus.Success,
+        'User removed from course successfully',
+        null,
+        StatusCodes.OK
+      );
+      handleApiResponse(apiResponse, res);
+    } catch (error) {
+      const apiError = new ApiError('Failed to remove user from course', StatusCodes.INTERNAL_SERVER_ERROR, error);
+      return next(apiError);
     }
   });
 

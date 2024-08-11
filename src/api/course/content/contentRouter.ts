@@ -27,7 +27,7 @@ export const contentRouter: Router = (() => {
 
   contentRegistry.registerPath({
     method: 'post',
-    path: '/{:contentId}/reactions',
+    path: '/contents/{:contentId}/reactions',
     tags: ['Content'],
     request: {
       params: AddReactionsSchema.shape.params,
@@ -69,7 +69,7 @@ export const contentRouter: Router = (() => {
 
   contentRegistry.registerPath({
     method: 'get',
-    path: '/{contentId}/reactions',
+    path: '/contents/{contentId}/reactions',
     tags: ['Content'],
     request: {
       params: GetContentSchema.shape.params,

@@ -189,5 +189,11 @@ export const CourseCreationSchema = z.object({
     studentEmails: z.array(z.string().email()).optional(), // Array de emails
   }),
 });
+
+export const DeleteCourseSchema = z.object({
+  params: z.object({
+    courseId: z.string(),
+  }),
+});
 export type CourseCreationDTO = z.infer<typeof CourseCreationSchema.shape.body>;
 export type CourseCreation = CourseCreationDTO;

@@ -29,4 +29,8 @@ export const userService = {
     const users = await userRepository.findUsersByRole(Role.STUDENT);
     return users.map((user) => user.toDto());
   },
+
+  removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {
+    await userRepository.removeUserFromCourse(userId, courseId);
+  },
 };

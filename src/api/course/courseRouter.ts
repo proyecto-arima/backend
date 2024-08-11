@@ -10,6 +10,7 @@ import {
   CourseCreationSchema,
   CourseDTO,
   CourseDTOSchema,
+  DeleteCourseSchema,
   GetCourseSchema,
 } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
@@ -403,6 +404,41 @@ export const courseRouter: Router = (() => {
         handleApiResponse(apiResponse, res);
       } catch (error) {
         const apiError = new ApiError('Failed to delete section', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
+      }
+    }
+  );
+
+  courseRegistry.registerPath({
+    method: 'delete',
+    path: '/courses/{courseId}',
+    tags: ['Course'],
+    request: {
+      params: DeleteCourseSchema.shape.params,
+    },
+    responses: createApiResponse(z.object({}), 'Success'),
+  });
+  router.delete(
+    '/:courseId',
+    sessionMiddleware,
+    hasAccessToCourseMiddleware('courseId'),
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(DeleteCourseSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const courseId = req.params.courseId;
+
+      try {
+        await courseService.deleteCourse(courseId);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Course deleted successfully',
+          null,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        const apiError = new ApiError('Failed to delete course', StatusCodes.INTERNAL_SERVER_ERROR, error);
         return next(apiError);
       }
     }

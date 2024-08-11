@@ -131,4 +131,8 @@ export const courseService = {
 
     return contentsWithUrls;
   },
+
+  deleteCourse: async (courseId: string): Promise<void> => {
+    await courseRepository.deleteCourse(courseId);
+  },
 };
