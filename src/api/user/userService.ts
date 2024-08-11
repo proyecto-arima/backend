@@ -33,4 +33,17 @@ export const userService = {
   removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {
     await userRepository.removeUserFromCourse(userId, courseId);
   },
+
+  async updateUserProfile(
+    userId: string,
+    updatedFields: Partial<{ email: string; firstName: string; lastName: string }>
+  ): Promise<UserDTO> {
+    const updatedUser = await userRepository.updateUserProfile(userId, updatedFields);
+
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+
+    return updatedUser.toDto();
+  },
 };

@@ -51,4 +51,16 @@ export const userRepository = {
       session.endSession();
     }
   },
+
+  async updateUserProfile(
+    userId: string,
+    updatedFields: Partial<{ email: string; firstName: string; lastName: string }>
+  ) {
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      { $set: updatedFields },
+      { new: true, runValidators: true }
+    ).exec();
+    return updatedUser;
+  },
 };

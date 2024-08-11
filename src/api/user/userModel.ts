@@ -147,6 +147,14 @@ export const DeleteUserFromCourseSchema = z.object({
   }),
 });
 
+export const UpdateUserProfileSchema = z.object({
+  body: z.object({
+    email: z.string().email().optional(),
+    firstName: z.string().min(1).optional(),
+    lastName: z.string().min(1).optional(),
+  }),
+});
+
 export const SessionTokenSchema = z.object({
   access_token: z.string(),
 });

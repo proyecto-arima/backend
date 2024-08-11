@@ -241,6 +241,20 @@ describe('Generic course tests', () => {
     expect(students[0]).toHaveProperty('firstName', 'Student');
   });
 
+  /*
+  it('DELETE /courses/:courseId', async () => {
+    const token = await login();
+
+    const courseId = '66b2ba4bb24f72c9f4aac1d5';
+
+    const response = await request(app).delete(`/courses/${courseId}`).set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(StatusCodes.OK);
+    const result = response.body;
+    expect(result.success).toBe(true);
+    expect(result.message).toBe('Course deleted successfully');
+  });*/
+
   afterAll(async () => {
     await disconnectFromMongoDB();
   });

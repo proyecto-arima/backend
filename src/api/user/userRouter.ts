@@ -3,15 +3,21 @@ import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-import { DeleteUserFromCourseSchema, GetUserSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
+import {
+  DeleteUserFromCourseSchema,
+  GetUserSchema,
+  UpdateUserProfileSchema,
+  UserDTO,
+  UserDTOSchema,
+} from '@/api/user/userModel';
 import { userService } from '@/api/user/userService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
-import { SessionRequest } from '@/common/middleware/session';
+import { sessionMiddleware, SessionRequest } from '@/common/middleware/session';
 import { ApiError } from '@/common/models/apiError';
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
-
+const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
 import { InvalidCredentialsError } from '../auth/authModel';
 
 export const userRegistry = new OpenAPIRegistry();
@@ -134,6 +140,48 @@ export const userRouter: Router = (() => {
       return next(apiError);
     }
   });
+
+  userRegistry.registerPath({
+    method: 'patch',
+    path: '/users/me',
+    tags: ['User'],
+    request: {
+      body: { content: { 'application/json': { schema: UpdateUserProfileSchema.shape.body } }, description: '' },
+    },
+    responses: createApiResponse(UserDTOSchema, 'Success'),
+  });
+
+  router.patch(
+    '/me',
+    sessionMiddleware,
+    validateRequest(UpdateUserProfileSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      try {
+        const userId = req.sessionContext?.user?.id;
+
+        if (!userId) {
+          return next(UNAUTHORIZED);
+        }
+
+        const { email, firstName, lastName } = req.body;
+        const updatedFields = { email, firstName, lastName };
+
+        // Actualizar solo los campos proporcionados
+        const updatedUser = await userService.updateUserProfile(userId, updatedFields);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'User profile updated successfully',
+          updatedUser,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        const apiError = new ApiError('Failed to update user profile', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
+      }
+    }
+  );
 
   return router;
 })();
