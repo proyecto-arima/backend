@@ -38,7 +38,7 @@ export const studentRouter: Router = (() => {
   router.post(
     '/',
     sessionMiddleware,
-    roleMiddleware([Role.DIRECTOR]),
+    //roleMiddleware([Role.DIRECTOR]),
     validateRequest(UserCreationSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const sessionContext = req.sessionContext;

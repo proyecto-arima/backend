@@ -58,12 +58,12 @@ const userModelSchemaDefinition = {
 };
 
 // Type used to tell mongoose the shape of the schema available
-type IUserSchemaDefinition = typeof userModelSchemaDefinition;
+type IUserSchemaDefinition = Omit<UserDTO, 'id'>;
 // Type used to add methods to the schema
 interface IUserSchemaDefinitionMethods {
   toDto(): UserDTO;
 }
-type UserModelDefinition = Model<IUserSchemaDefinition, Record<string, never>, IUserSchemaDefinitionMethods>;
+type UserModelDefinition = Model<IUserSchemaDefinition & Document, Record<string, never>, IUserSchemaDefinitionMethods>;
 
 /**
  * User Model Schema

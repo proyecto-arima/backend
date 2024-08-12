@@ -11,6 +11,8 @@ extendZodWithOpenApi(z);
 export const InstituteDTOSchema = z.object({
   id: z.string(),
   name: z.string(),
+  address: z.string(),
+  phone: z.string(),
 });
 export type InstituteDTO = z.infer<typeof InstituteDTOSchema>;
 
@@ -19,6 +21,8 @@ export type InstituteDTO = z.infer<typeof InstituteDTOSchema>;
  */
 const instituteModelSchemaDefinition: Record<keyof Omit<InstituteDTO, 'id'>, any> = {
   name: { type: String, required: true },
+  address: { type: String, required: true },
+  phone: { type: String, required: true },
 };
 
 // Type used to tell mongoose the shape of the schema available
@@ -52,6 +56,8 @@ instituteModelSchema.method('toDto', function (): InstituteDTO {
   return {
     id: this._id.toString(),
     name: this.name.toString(),
+    address: this.address.toString(),
+    phone: this.phone.toString(),
   };
 });
 
@@ -65,6 +71,8 @@ export const InstituteModel = mongoose.model<IInstituteSchemaDefinition, Institu
 export const InstituteCreationSchema = z.object({
   body: z.object({
     name: z.string(),
+    address: z.string(),
+    phone: z.string(),
   }),
 });
 export type InstituteCreationDTO = z.infer<typeof InstituteCreationSchema.shape.body>;
