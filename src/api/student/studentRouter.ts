@@ -15,6 +15,7 @@ import { LearningProfile } from '@/common/models/learningProfile';
 import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
+const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
 
 import { studentService } from './studentService';
 
@@ -36,14 +37,21 @@ export const studentRouter: Router = (() => {
 
   router.post(
     '/',
+    sessionMiddleware,
+    roleMiddleware([Role.DIRECTOR]),
     validateRequest(UserCreationSchema),
-    roleMiddleware([Role.ADMIN]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
 
-    async (req: Request, res: Response) => {
       try {
         logger.trace('[StudentRouter] - [/] - Start');
         logger.trace(`[StudentRouter] - [/] - Request to create student: ${JSON.stringify(req.body)}`);
-        const userDTO: UserDTO = await studentService.create(req.body);
+
+        const directorUserId = sessionContext.user.id;
+        const userDTO: UserDTO = await studentService.create(req.body, directorUserId);
         logger.trace(`[StudentRouter] - [/] - Student created: ${JSON.stringify(userDTO)}. Sending response`);
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
@@ -69,22 +77,33 @@ export const studentRouter: Router = (() => {
     request: { body: { content: { 'application/json': { schema: UserCreationSchema.shape.body } }, description: '' } },
     responses: createApiResponse(UserDTOSchema, 'Success'),
   });
-  router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const students = await studentService.getAllStudents();
+  router.get(
+    '/',
+    sessionMiddleware,
+    roleMiddleware([Role.DIRECTOR]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
 
-      const apiResponse = new ApiResponse(
-        ResponseStatus.Success,
-        'Students retrieved successfully',
-        students,
-        StatusCodes.OK
-      );
-      res.status(StatusCodes.OK).json(apiResponse);
-    } catch (error) {
-      const apiError = new ApiError('Failed to retrieve students', StatusCodes.INTERNAL_SERVER_ERROR, error);
-      return next(apiError);
+      try {
+        const directorUserId = sessionContext.user.id;
+        const students = await studentService.getAllStudents(directorUserId);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Students retrieved successfully',
+          students,
+          StatusCodes.OK
+        );
+        res.status(StatusCodes.OK).json(apiResponse);
+      } catch (error) {
+        const apiError = new ApiError('Failed to retrieve students', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
+      }
     }
-  });
+  );
 
   studentRegistry.registerPath({
     method: 'get',

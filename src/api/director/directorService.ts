@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 
 import { DirectorModel } from '@/api/director/directorModel';
-import { UserCreationDTO, UserDTO } from '@/api/user/userModel';
+import { UserDirectorCreationDTO, UserDTO } from '@/api/user/userModel';
 import { Role } from '@/common/models/role';
 import { config } from '@/common/utils/config';
 import { logger } from '@/common/utils/serverLogger';
@@ -10,7 +10,7 @@ import sendMailTo from '../../common/mailSender/mailSenderService';
 import { userService } from '../user/userService';
 
 export const directorService = {
-  create: async (user: UserCreationDTO): Promise<UserDTO> => {
+  create: async (user: UserDirectorCreationDTO): Promise<UserDTO> => {
     logger.trace('[DirectorService] - [create] - Start');
     logger.trace(`[DirectorService] - [create] - Creating user: ${JSON.stringify(user)}`);
     logger.trace(`[DirectorService] - [create] - Generating random password...`);
@@ -30,6 +30,7 @@ export const directorService = {
 
     const director = new DirectorModel({
       userId: createdUser.id,
+      instituteId: user.instituteId,
     });
 
     await director.save();

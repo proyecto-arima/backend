@@ -3,6 +3,7 @@ import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
 
+import { adminRouter } from '@/api/admin/adminRouter';
 import { healthCheckRouter } from '@/api/healthCheck/healthCheckRouter';
 import { userRouter } from '@/api/user/userRouter';
 import { openAPIRouter } from '@/api-docs/openAPIRouter';
@@ -39,6 +40,7 @@ app.use(requestLogger);
 app.use('/health-check', healthCheckRouter);
 app.use('/users', sessionMiddleware, userRouter);
 
+app.use('/admins', adminRouter);
 app.use('/auth', authRouter);
 app.use('/students', studentRouter);
 app.use('/teachers', teacherRouter);

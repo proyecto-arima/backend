@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 
+import { directorRepository } from '@/api/director/directorRepository';
 import { StudentModel } from '@/api/student/studentModel';
 import { studentRepository } from '@/api/student/studentRepository';
 import { UserCreationDTO, UserDTO } from '@/api/user/userModel';
@@ -12,12 +13,11 @@ import { logger } from '@/common/utils/serverLogger';
 import { userService } from '../user/userService';
 
 export const studentService = {
-  create: async (user: UserCreationDTO): Promise<UserDTO> => {
+  create: async (user: UserCreationDTO, directorUserId: string): Promise<UserDTO> => {
     logger.trace('[StudentService] - [create] - Start');
     logger.trace(`[StudentService] - [create] - Creating user: ${JSON.stringify(user)}`);
     logger.trace(`[StudentService] - [create] - Generating random password...`);
     const randomPassword = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
-    console.log(randomPassword);
     if (config.app.node_env === 'development') {
       logger.trace(`[StudentService] - [create] - Random password: ${randomPassword}`);
     }
@@ -31,8 +31,12 @@ export const studentService = {
 
     // Crear la entrada en la colección de estudiantes
     logger.trace(`[StudentService] - [create] - Creating student entry...`);
+
+    const instituteId = await directorRepository.getInstituteId(directorUserId);
+
     const student = new StudentModel({
       userId: createdUser.id,
+      instituteId: instituteId,
       learningProfile: LearningProfile.VISUAL,
       courses: [],
     });
@@ -65,7 +69,7 @@ export const studentService = {
     return student.learningProfile;
   },
 
-  getAllStudents: async (): Promise<UserDTO[]> => {
-    return userService.getAllStudents();
+  getAllStudents: async (directorUserId: string): Promise<UserDTO[]> => {
+    return userService.getAllStudents(directorUserId);
   },
 };

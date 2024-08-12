@@ -127,7 +127,21 @@ export const UserCreationSchema = z.object({
     }),
   }),
 });
+
+export const UserDirectorCreationSchema = z.object({
+  body: z.object({
+    firstName: z.string(),
+    lastName: z.string(),
+    email: z.string().email(),
+    document: z.object({
+      type: z.string(),
+      number: z.string(),
+    }),
+    instituteId: z.string(),
+  }),
+});
 export type UserCreationDTO = z.infer<typeof UserCreationSchema.shape.body>;
+export type UserDirectorCreationDTO = z.infer<typeof UserDirectorCreationSchema.shape.body>;
 export type UserCreation = UserCreationDTO & { password: string; role: Role };
 
 // Input Validation for POST /users/login

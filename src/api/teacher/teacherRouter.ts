@@ -1,5 +1,5 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
-import express, { NextFunction, Request, Response, Router } from 'express';
+import express, { NextFunction, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
@@ -37,14 +37,21 @@ export const teacherRouter: Router = (() => {
 
   router.post(
     '/',
+    sessionMiddleware,
+    roleMiddleware([Role.DIRECTOR]),
     validateRequest(UserCreationSchema),
-    roleMiddleware([Role.ADMIN]),
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
+
       try {
         logger.trace('[TeacherRouter] - [/] - Start');
         const teacher = req.body;
         logger.trace(`[TeacherRouter] - [/] - Creating teacher: ${JSON.stringify(teacher)}`);
-        const createdTeacher = await teacherService.create(teacher);
+        const directorUserId = sessionContext.user.id;
+        const createdTeacher = await teacherService.create(teacher, directorUserId);
         logger.trace(`[TeacherRouter] - [/] - Teacher created: ${JSON.stringify(createdTeacher)}`);
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,

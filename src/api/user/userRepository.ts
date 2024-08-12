@@ -30,8 +30,15 @@ export const userRepository = {
     return updatedUser;
   },
 
-  findUsersByRole: async (role: string): Promise<User[]> => {
-    return UserModel.find<User>({ role }).exec();
+  findUsersByRoleAndInstitute: async (role: string, instituteId: string): Promise<User[]> => {
+    // Encuentra los estudiantes por instituteId
+    const students = await StudentModel.find({ instituteId }).exec();
+
+    // Extrae los userIds de esos estudiantes
+    const userIds = students.map((student) => student.userId);
+
+    // Encuentra los usuarios por role y los userIds obtenidos
+    return UserModel.find<User>({ role, _id: { $in: userIds } }).exec();
   },
 
   removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {

@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 
+import { directorRepository } from '@/api/director/directorRepository';
 import { TeacherModel } from '@/api/teacher/teacherModel';
 import { UserCreationDTO, UserDTO } from '@/api/user/userModel';
 import sendMailTo from '@/common/mailSender/mailSenderService';
@@ -12,12 +13,11 @@ import { userService } from '../user/userService';
 
 // TODO: Reimplementar para no repetir
 export const teacherService = {
-  create: async (user: UserCreationDTO): Promise<UserDTO> => {
+  create: async (user: UserCreationDTO, directorUserId: string): Promise<UserDTO> => {
     logger.trace('[TeacherService] - [create] - Start');
     logger.trace(`[TeacherService] - [create] - Creating teacher: ${JSON.stringify(user)}`);
     logger.trace(`[TeacherService] - [create] - Generating random password...`);
     const randomPassword = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
-    console.log('PASS:', randomPassword);
     if (config.app.node_env === 'development') {
       logger.trace(`[TeacherService] - [create] - Random password: ${randomPassword}`);
     }
@@ -28,8 +28,10 @@ export const teacherService = {
     const createdUser: UserDTO = await userService.create({ ...user, password: hash, role: Role.TEACHER });
     logger.trace(`[TeacherService] - [create] - Teacher created: ${JSON.stringify(createdUser)}`);
 
+    const instituteId = await directorRepository.getInstituteId(directorUserId);
     const teacher = new TeacherModel({
       userId: createdUser.id,
+      instituteId: instituteId,
       courses: [],
     });
 

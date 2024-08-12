@@ -13,6 +13,7 @@ extendZodWithOpenApi(z);
 export const TeacherDTOSchema = z.object({
   id: z.string(),
   userId: z.string(),
+  instituteId: z.string(),
   courses: z.array(
     z.object({
       id: z.string(),
@@ -35,6 +36,7 @@ const teacherCourseSchemaDefinition = new Schema(
 
 const teacherModelSchemaDefinition: Record<keyof Omit<TeacherDTO, 'id'>, any> = {
   userId: { type: String, required: true },
+  instituteId: { type: String, required: false },
   courses: { type: [teacherCourseSchemaDefinition], required: true },
 };
 
@@ -70,6 +72,7 @@ teacherModelSchema.method('toDto', function (): TeacherDTO {
   return {
     id: this._id.toString(),
     userId: this.userId.toString(),
+    instituteId: this.instituteId.toString(),
     courses: this.courses.map((course) => ({
       id: course.id.toString(),
       courseName: course.courseName.toString(),

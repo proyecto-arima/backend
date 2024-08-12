@@ -3,6 +3,7 @@ import { userRepository } from '@/api/user/userRepository';
 import { Role } from '@/common/models/role';
 
 import { InvalidCredentialsError } from '../auth/authModel';
+import { directorRepository } from '../director/directorRepository';
 
 export const userService = {
   // Retrieves all users from the database
@@ -25,8 +26,9 @@ export const userService = {
     return createdUser.toDto();
   },
 
-  getAllStudents: async (): Promise<UserDTO[]> => {
-    const users = await userRepository.findUsersByRole(Role.STUDENT);
+  getAllStudents: async (directorUserId: string): Promise<UserDTO[]> => {
+    const instituteId = await directorRepository.getInstituteId(directorUserId);
+    const users = await userRepository.findUsersByRoleAndInstitute(Role.STUDENT, instituteId);
     return users.map((user) => user.toDto());
   },
 
