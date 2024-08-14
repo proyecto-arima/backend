@@ -8,6 +8,7 @@ import { Role } from '@/common/models/role';
 
 import { InvalidCredentialsError } from '../auth/authModel';
 import { directorRepository } from '../director/directorRepository';
+import { teacherRepository } from '../teacher/teacherRepository';
 
 export const userService = {
   // Retrieves all users from the database
@@ -67,8 +68,16 @@ export const userService = {
     return createdUser.toDto();
   },
 
-  getAllStudents: async (directorUserId: string): Promise<UserDTO[]> => {
-    const instituteId = await directorRepository.getInstituteId(directorUserId);
+  getAllStudents: async (userId: string): Promise<UserDTO[]> => {
+    const user: User = await userRepository.findByIdAsync(userId);
+
+    let instituteId = null;
+    if (user.role === Role.DIRECTOR) {
+      instituteId = await directorRepository.getInstituteId(userId);
+    } else if (user.role === Role.TEACHER) {
+      const teacher = await teacherRepository.findByUserIdAsync(userId);
+      instituteId = teacher.instituteId;
+    }
     const users = await userRepository.findUsersByRoleAndInstitute(Role.STUDENT, instituteId);
     return users.map((user) => user.toDto());
   },

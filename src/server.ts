@@ -25,7 +25,11 @@ const app: Express = express();
 
 // Set the application to trust the reverse proxy
 app.set('trust proxy', true);
-app.use(express.json());
+app.use(
+  express.json({
+    limit: '10mb',
+  })
+);
 app.use(cookieParser());
 
 // Middlewares
@@ -46,7 +50,7 @@ app.use('/students', studentRouter);
 app.use('/teachers', teacherRouter);
 app.use('/directors', sessionMiddleware, directorRouter);
 app.use('/courses', courseRouter);
-app.use('/contents', contentRouter);
+app.use('/content', contentRouter);
 app.use('/institutes', sessionMiddleware, instituteRouter);
 
 // Swagger UI

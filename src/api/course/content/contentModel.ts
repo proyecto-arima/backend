@@ -25,6 +25,7 @@ export const ContentDTOSchema = z.object({
       })
     )
     .optional(),
+  generated: z.string().optional(),
 });
 export type ContentDTO = z.infer<typeof ContentDTOSchema>;
 
@@ -48,6 +49,7 @@ const contentModelSchemaDefinition: Record<keyof Omit<ContentDTO, 'id'>, any> = 
     default: [],
     required: false,
   },
+  generated: { type: String, required: false },
 };
 
 type IContentSchemaDefinition = Omit<ContentDTO, 'id'>;
@@ -81,6 +83,7 @@ contentModelSchema.method('toDto', function (): ContentDTO {
     publicationDate: this.publicationDate,
     //file: this.file,
     reactions: this.reactions || [],
+    generated: this.generated,
   };
 });
 

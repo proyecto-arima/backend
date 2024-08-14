@@ -16,4 +16,9 @@ export const contentService = {
   ): Promise<{ reactions: { idStudent: string; isSatisfied: boolean }[] } | null> => {
     return await contentRepository.getReactionsByContentId(contentId);
   },
+
+  getContentById: async (contentId: string): Promise<ContentDTO> => {
+    const content = await contentRepository.findById(contentId);
+    return content.toDto();
+  },
 };

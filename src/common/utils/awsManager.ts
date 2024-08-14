@@ -37,6 +37,7 @@ export const s3Put = async (key: string, file: Express.Multer.File): Promise<str
       Bucket: bucket,
       Key: `${config.cloud_service.aws.prefix}/${key}`,
       Body: file.buffer,
+      ContentType: file.mimetype,
     });
 
     await client.send(command);

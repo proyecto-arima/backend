@@ -29,6 +29,7 @@ export const teacherService = {
     logger.trace(`[TeacherService] - [create] - Teacher created: ${JSON.stringify(createdUser)}`);
 
     const instituteId = await directorRepository.getInstituteId(directorUserId);
+    console.log(instituteId);
     const teacher = new TeacherModel({
       userId: createdUser.id,
       instituteId: instituteId,
@@ -49,5 +50,18 @@ export const teacherService = {
     logger.trace(`[TeacherService] - [create] - Email sent.`);
     logger.trace('[TeacherService] - [create] - End');
     return createdUser;
+  },
+
+  findByInstituteId: async (instituteId: string): Promise<UserDTO[]> => {
+    logger.trace('[TeacherService] - [findByInstituteId] - Start');
+    logger.trace(`[TeacherService] - [findByInstituteId] - Searching for teachers in institute ${instituteId}`);
+    const teachers = await TeacherModel.find({ instituteId: instituteId }).exec();
+    logger.trace(`[TeacherService] - [findByInstituteId] - Found ${teachers.length} teachers`);
+    // TODO: Put instituteId in the USER
+    const teacherIds = teachers.map((teacher) => teacher.userId);
+    const teacherUsersPromises = teacherIds.map((teacherId) => userService.findById(teacherId));
+    const teachersUsers = await Promise.all(teacherUsersPromises);
+    logger.trace('[TeacherService] - [findByInstituteId] - End');
+    return teachersUsers;
   },
 };

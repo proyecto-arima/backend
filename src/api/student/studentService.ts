@@ -70,7 +70,7 @@ export const studentService = {
     return student.learningProfile;
   },
 
-  getAllStudents: async (directorUserId: string): Promise<UserDTO[]> => {
-    return userService.getAllStudents(directorUserId);
+  getAllStudents: async (userId: string): Promise<UserDTO[]> => {
+    return userService.getAllStudents(userId);
   },
 };

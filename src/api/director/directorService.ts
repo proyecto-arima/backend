@@ -57,4 +57,12 @@ export const directorService = {
     logger.trace('[DirectorService] - [findAll] - End');
     return directors;
   },
+
+  getInstituteId: async (directorId: string): Promise<string> => {
+    logger.trace('[DirectorService] - [getInstituteId] - Start');
+    const id = await directorRepository.getInstituteId(directorId);
+    logger.trace(`[DirectorService] - [getInstituteId] - Institute ID: ${id}`);
+    logger.trace('[DirectorService] - [getInstituteId] - End');
+    return id;
+  },
 };

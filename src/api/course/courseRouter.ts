@@ -14,7 +14,12 @@ import {
   GetCourseSchema,
 } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
-import { DeleteSectionSchema, SectionCreationSchema, SectionDTOSchema } from '@/api/course/section/sectionModel';
+import {
+  DeleteSectionSchema,
+  SectionCreationSchema,
+  SectionDTOSchema,
+  SectionFetchingSchema,
+} from '@/api/course/section/sectionModel';
 import { sectionService } from '@/api/course/section/sectionService';
 import { StudentDTOSchema } from '@/api/student/studentModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
@@ -177,6 +182,38 @@ export const courseRouter: Router = (() => {
 
   courseRegistry.registerPath({
     method: 'get',
+    path: '/courses/{courseId}/sections/{sectionId}',
+    tags: ['Course'],
+    request: {
+      params: SectionFetchingSchema.shape.params,
+    },
+    responses: createApiResponse(SectionDTOSchema, 'Success'),
+  });
+  router.get(
+    '/:courseId/sections/:sectionId',
+    sessionMiddleware,
+    checkSessionContext,
+    hasAccessToCourseMiddleware('courseId'),
+    roleMiddleware([Role.TEACHER, Role.STUDENT]),
+    validateRequest(SectionFetchingSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { sectionId } = req.params;
+
+      try {
+        const section = await sectionService.findById(sectionId);
+        res.status(200).json({
+          success: true,
+          message: 'Section retrieved successfully',
+          data: section,
+        });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  courseRegistry.registerPath({
+    method: 'get',
     path: '/courses/{id}/sections',
     tags: ['Course'],
     request: { params: GetCourseSchema.shape.params },
@@ -236,6 +273,8 @@ export const courseRouter: Router = (() => {
       const contentData = req.body;
       const file = req.file;
 
+      console.log(req);
+
       if (!file) {
         return next(new ApiError('File is required', StatusCodes.BAD_REQUEST));
       }
@@ -253,18 +292,18 @@ export const courseRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (e) {
-        logger.error(`[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Error: ${e}`);
+        logger.error(`[CourseRouter] - [/:courseId/sections/:sectionId/content] - Error: ${e}`);
         const apiError = new ApiError('Failed to add content to section', StatusCodes.INTERNAL_SERVER_ERROR, e);
         return next(apiError);
       } finally {
-        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - End');
+        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/content] - End');
       }
     }
   );
 
   courseRegistry.registerPath({
     method: 'get',
-    path: '/courses/{courseId}/sections/{sectionId}/contents',
+    path: '/courses/{courseId}/sections/{sectionId}/content',
     tags: ['Course'],
     request: {
       params: ContentCreationSchema.shape.params,
@@ -272,7 +311,7 @@ export const courseRouter: Router = (() => {
     responses: createApiResponse(z.array(ContentWithPresignedUrlSchema), 'Success'),
   });
   router.get(
-    '/:courseId/sections/:sectionId/contents',
+    '/:courseId/sections/:sectionId/content',
     sessionMiddleware,
     checkSessionContext,
     hasAccessToCourseMiddleware('courseId'),

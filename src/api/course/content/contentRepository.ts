@@ -1,4 +1,4 @@
-import { ContentDTO, ContentModel } from '@/api/course/content/contentModel';
+import { Content, ContentDTO, ContentModel } from '@/api/course/content/contentModel';
 
 export const contentRepository = {
   async getReactionsByContentId(
@@ -31,5 +31,13 @@ export const contentRepository = {
 
     await content.save();
     return content.toDto();
+  },
+
+  async findById(contentId: string): Promise<Content> {
+    const content = await ContentModel.findById<Content>(contentId).exec();
+    if (!content) {
+      throw new Error('Content not found');
+    }
+    return content;
   },
 };

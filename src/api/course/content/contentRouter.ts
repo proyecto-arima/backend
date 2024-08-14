@@ -98,5 +98,28 @@ export const contentRouter: Router = (() => {
     }
   );
 
+  router.get(
+    '/:contentId',
+    sessionMiddleware,
+    roleMiddleware([Role.STUDENT, Role.TEACHER]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+
+      try {
+        const content = await contentService.getContentById(contentId);
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Content retrieved successfully',
+          content,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        const apiError = new ApiError('Failed to retrieve content', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      }
+    }
+  );
+
   return router;
 })();

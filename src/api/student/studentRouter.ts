@@ -80,7 +80,7 @@ export const studentRouter: Router = (() => {
   router.get(
     '/',
     sessionMiddleware,
-    roleMiddleware([Role.DIRECTOR]),
+    roleMiddleware([Role.DIRECTOR, Role.TEACHER]),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const sessionContext = req.sessionContext;
       if (!sessionContext?.user?.id) {
@@ -88,8 +88,8 @@ export const studentRouter: Router = (() => {
       }
 
       try {
-        const directorUserId = sessionContext.user.id;
-        const students = await studentService.getAllStudents(directorUserId);
+        const userId = sessionContext.user.id;
+        const students = await studentService.getAllStudents(userId);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
