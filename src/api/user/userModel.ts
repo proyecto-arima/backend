@@ -137,7 +137,9 @@ export const UserDirectorCreationSchema = z.object({
       type: z.string(),
       number: z.string(),
     }),
-    instituteId: z.string(),
+    institute: z.object({
+      id: z.string(),
+    }),
   }),
 });
 export type UserCreationDTO = z.infer<typeof UserCreationSchema.shape.body>;

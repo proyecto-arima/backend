@@ -13,8 +13,15 @@ extendZodWithOpenApi(z);
  */
 export const DirectorDTOSchema = z.object({
   id: z.string(),
-  userId: z.string(),
-  instituteId: z.string(),
+  user: z.object({
+    id: z.string(),
+    email: z.string(),
+    name: z.string(),
+  }),
+  institute: z.object({
+    id: z.string(),
+    name: z.string(),
+  }),
 });
 export type DirectorDTO = z.infer<typeof DirectorDTOSchema>;
 
@@ -22,8 +29,8 @@ export type DirectorDTO = z.infer<typeof DirectorDTOSchema>;
  * Director Model Schema Definition
  */
 const directorModelSchemaDefinition: Record<keyof Omit<DirectorDTO, 'id'>, any> = {
-  userId: { type: String, required: true },
-  instituteId: { type: String, required: false },
+  user: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
+  institute: { type: Schema.Types.ObjectId, required: true, ref: 'Institutes' },
 };
 
 // Type used to tell mongoose the shape of the schema available
@@ -56,8 +63,8 @@ const directorModelSchema = new Schema<
 directorModelSchema.method('toDto', function (): DirectorDTO {
   return {
     id: this._id.toString(),
-    userId: this.userId.toString(),
-    instituteId: this.instituteId.toString(),
+    user: this.user,
+    institute: this.institute,
   };
 });
 

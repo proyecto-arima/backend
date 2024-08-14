@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 
-import { DirectorModel } from '@/api/director/directorModel';
+import { DirectorDTO, DirectorModel } from '@/api/director/directorModel';
 import { UserDirectorCreationDTO, UserDTO } from '@/api/user/userModel';
 import { Role } from '@/common/models/role';
 import { config } from '@/common/utils/config';
@@ -8,6 +8,7 @@ import { logger } from '@/common/utils/serverLogger';
 
 import sendMailTo from '../../common/mailSender/mailSenderService';
 import { userService } from '../user/userService';
+import { directorRepository } from './directorRepository';
 
 export const directorService = {
   create: async (user: UserDirectorCreationDTO): Promise<UserDTO> => {
@@ -29,8 +30,8 @@ export const directorService = {
     // It should force the user to change their password on first login
 
     const director = new DirectorModel({
-      userId: createdUser.id,
-      instituteId: user.instituteId,
+      user: createdUser.id,
+      institute: user.institute.id,
     });
 
     await director.save();
@@ -47,5 +48,13 @@ export const directorService = {
 
     logger.trace('[DirectorService] - [create] - End');
     return createdUser;
+  },
+
+  findAll: async (): Promise<DirectorDTO[]> => {
+    logger.trace('[DirectorService] - [findAll] - Start');
+    const directors = await directorRepository.findAll();
+    logger.trace(`[DirectorService] - [findAll] - Found ${directors.length} directors`);
+    logger.trace('[DirectorService] - [findAll] - End');
+    return directors;
   },
 };

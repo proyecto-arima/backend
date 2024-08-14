@@ -44,10 +44,10 @@ app.use('/admins', adminRouter);
 app.use('/auth', authRouter);
 app.use('/students', studentRouter);
 app.use('/teachers', teacherRouter);
-app.use('/directors', directorRouter);
+app.use('/directors', sessionMiddleware, directorRouter);
 app.use('/courses', courseRouter);
 app.use('/contents', contentRouter);
-app.use('/institutes', instituteRouter);
+app.use('/institutes', sessionMiddleware, instituteRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

@@ -48,5 +48,27 @@ export const directorRouter: Router = (() => {
     }
   );
 
+  router.get('/', roleMiddleware([Role.ADMIN, Role.DIRECTOR]), async (req: Request, res: Response) => {
+    try {
+      logger.trace('[DirectorRouter] - [GET /] - Start');
+      const directors = await directorService.findAll();
+
+      logger.trace(`[DirectorRouter] - [GET /] - Found ${directors.length} directors. Sending response`);
+      const apiResponse = new ApiResponse(
+        ResponseStatus.Success,
+        'Directors retrieved successfully',
+        directors,
+        StatusCodes.OK
+      );
+      handleApiResponse(apiResponse, res);
+    } catch (error) {
+      logger.error(`[DirectorRouter] - [GET /] - Error: ${error}`);
+      const apiError = new ApiError('Failed to retrieve directors', StatusCodes.INTERNAL_SERVER_ERROR, error);
+      return res.status(apiError.statusCode).json(apiError);
+    } finally {
+      logger.trace('[DirectorRouter] - [GET /] - End');
+    }
+  });
+
   return router;
 })();

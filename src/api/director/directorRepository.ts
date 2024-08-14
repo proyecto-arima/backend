@@ -11,6 +11,12 @@ export const directorRepository = {
 
   getInstituteId: async (directorUserId: string): Promise<string> => {
     const director = await directorRepository.findByUserIdAsync(directorUserId);
-    return director.instituteId;
+    return director.institute.id;
+  },
+
+  findAll: async (): Promise<DirectorDTO[]> => {
+    const directors = await DirectorModel.find().populate('user').populate('institute').exec();
+    console.log(directors);
+    return directors.map((director) => director.toDto());
   },
 };

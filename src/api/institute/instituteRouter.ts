@@ -63,5 +63,37 @@ export const instituteRouter: Router = (() => {
     }
   );
 
+  instituteRegistry.registerPath({
+    method: 'get',
+    path: '/institutes/',
+    tags: ['Institute'],
+    responses: createApiResponse(InstituteDTOSchema, 'Success'),
+  });
+
+  router.get('/', roleMiddleware([Role.ADMIN]), async (req: Request, res: Response) => {
+    try {
+      logger.trace('[InstituteRouter] - [GET /institutes] - Start');
+
+      const institutes: InstituteDTO[] = await instituteService.findAll();
+
+      logger.trace(
+        `[InstituteRouter] - [GET /institutes] - Institutes retrieved: ${JSON.stringify(institutes)}. Sending response`
+      );
+      const apiResponse = new ApiResponse(
+        ResponseStatus.Success,
+        'Institutes retrieved successfully',
+        institutes,
+        StatusCodes.OK
+      );
+      handleApiResponse(apiResponse, res);
+    } catch (error) {
+      logger.error(`[InstituteRouter] - [GET /institutes] - Error: ${error}`);
+      const apiError = new ApiError('Failed to retrieve institutes', StatusCodes.INTERNAL_SERVER_ERROR, error);
+      return res.status(apiError.statusCode).json(apiError);
+    } finally {
+      logger.trace('[InstituteRouter] - [GET /institutes] - End');
+    }
+  });
+
   return router;
 })();
