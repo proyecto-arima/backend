@@ -11,10 +11,9 @@ import {
   CourseDTO,
   CourseDTOSchema,
   GetCourseSchema,
-  GetSectionOfCourseSchema
 } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
-import { SectionCreationSchema, SectionDTO, SectionDTOSchema } from '@/api/course/section/sectionModel';
+import { SectionCreationSchema, SectionDTOSchema } from '@/api/course/section/sectionModel';
 import { StudentDTOSchema } from '@/api/student/studentModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { checkSessionContext } from '@/common/middleware/checkSessionContext';
@@ -209,48 +208,6 @@ export const courseRouter: Router = (() => {
   );
 
   courseRegistry.registerPath({
-    method: 'get',
-    path: '/courses/{courseId}/sections/{sectionId}',
-    tags: ['Course'],
-    request: { params: GetCourseSchema.shape.params },
-    responses: createApiResponse(z.array(SectionDTOSchema), 'Success'),
-  });
-  router.get(
-    '/:courseId/sections/:sectionId',
-    sessionMiddleware,
-    checkSessionContext,
-    hasAccessToCourseMiddleware('courseId'),
-    roleMiddleware([Role.TEACHER, Role.STUDENT]),
-    validateRequest(GetSectionOfCourseSchema),
-    async (req: SessionRequest, res: Response, next: NextFunction) => {
-      const { courseId, sectionId } = req.params;
-      try {
-        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId] - Start');
-        const sections = await courseService.getSectionsOfCourse(courseId);
-        const section = sections.find((section: SectionDTO) => section.id === sectionId);
-        if (!section) {
-          const apiError = new ApiError('Section not found', StatusCodes.NOT_FOUND);
-          return next(apiError);
-        }
-
-        const apiResponse = new ApiResponse(
-          ResponseStatus.Success,
-          'Section retrieved successfully',
-          sections,
-          StatusCodes.OK
-        );
-        handleApiResponse(apiResponse, res);
-      } catch (e) {
-        logger.error(`[CourseRouter] - [/:courseId/sections/:sectionId] - Error: ${e}`);
-        const apiError = new ApiError('Failed to retrieve section', StatusCodes.INTERNAL_SERVER_ERROR, e);
-        return next(apiError);
-      } finally {
-        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId] - End');
-      }
-    }
-  );
-
-  courseRegistry.registerPath({
     method: 'post',
     path: '/courses/{courseId}/sections/{sectionId}/content',
     tags: ['Course'],
@@ -273,6 +230,7 @@ export const courseRouter: Router = (() => {
 
       try {
         logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Start');
+
         const newContent = await courseService.addContentToSection(sectionId, contentData);
 
         const apiResponse = new ApiResponse(
@@ -285,47 +243,6 @@ export const courseRouter: Router = (() => {
       } catch (e) {
         logger.error(`[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Error: ${e}`);
         const apiError = new ApiError('Failed to add content to section', StatusCodes.INTERNAL_SERVER_ERROR, e);
-        return next(apiError);
-      } finally {
-        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - End');
-      }
-    }
-  );
-
-  courseRegistry.registerPath({
-    method: 'get',
-    path: '/courses/{courseId}/sections/{sectionId}/contents',
-    tags: ['Course'],
-    responses: createApiResponse(ContentDTOSchema, 'Success'),
-  });
-  router.get(
-    '/:courseId/sections/:sectionId/contents',
-    sessionMiddleware,
-    checkSessionContext,
-    hasAccessToCourseMiddleware('courseId'),
-    roleMiddleware([Role.TEACHER, Role.STUDENT]),
-    validateRequest(GetCourseSchema),
-    async (req: SessionRequest, res: Response, next: NextFunction) => {
-      try {
-        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Start');
-        const course = await courseService.findById(req.params.courseId);
-        const section = course.sections?.find((section) => section.id === req.params.sectionId);
-        if (!section) {
-          const apiError = new ApiError('Section not found', StatusCodes.NOT_FOUND);
-          return next(apiError);
-        }
-        logger.trace(`[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Retrieving contents of section "${section.name}" and course "${course.title}"...`);
-        const contents = await courseService.getContentsOfSection(req.params.sectionId);
-        const apiResponse = new ApiResponse(
-          ResponseStatus.Success,
-          `Contents of section ${section.name} and course ${course.title} retrieved successfully`,
-          contents,
-          StatusCodes.OK
-        );
-        handleApiResponse(apiResponse, res);
-      } catch (e) {
-        logger.error(`[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Error: ${e}`);
-        const apiError = new ApiError('Failed retrieve content of section', StatusCodes.INTERNAL_SERVER_ERROR, e);
         return next(apiError);
       } finally {
         logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - End');

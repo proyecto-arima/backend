@@ -107,6 +107,7 @@ export const courseRepository = {
     }
 
     section.contents = section?.contents || [];
+
     section.contents.push({
       id: (await savedContent)._id as Types.ObjectId,
       title: (await savedContent).title,
@@ -115,24 +116,6 @@ export const courseRepository = {
     await section.save();
 
     return newContent.toDto();
-  },
-
-  getContentsOfSection: async (sectionId: string): Promise<any[]> => {
-    const section = await SectionModel.findById(sectionId).exec();
-    if (!section) {
-      throw new Error('Section not found');
-    }  
-
-    const contentIds = section.contents?.map((content) => content.id);
-    const contents = await ContentModel.find({ _id: { $in: contentIds } }).exec();
-    const contentDtos = contents.map((content) => ({
-      id: content.id.toString(),
-      title: content.title,
-      publicationType: content.publicationType,
-      publicationDate: content.publicationDate,
-      file: content.file,
-    }));
-    return contentDtos;
   },
 
   async addStudentsToCourse(courseId: string, students: any[]): Promise<Course> {
