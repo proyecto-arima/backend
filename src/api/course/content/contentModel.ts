@@ -11,11 +11,12 @@ extendZodWithOpenApi(z);
 
 export const ContentDTOSchema = z.object({
   id: z.string(),
+  key: z.string(),
   title: z.string(),
   sectionId: z.string(),
   publicationType: z.enum([PublicationType.AUTOMATIC, PublicationType.DEFERRED]),
   publicationDate: z.date().optional(),
-  file: z.string(),
+  //file: z.string(),
   reactions: z
     .array(
       z.object({
@@ -24,6 +25,7 @@ export const ContentDTOSchema = z.object({
       })
     )
     .optional(),
+  generated: z.string().optional(),
 });
 export type ContentDTO = z.infer<typeof ContentDTOSchema>;
 
@@ -36,16 +38,18 @@ const reactionSchema = new Schema(
 );
 
 const contentModelSchemaDefinition: Record<keyof Omit<ContentDTO, 'id'>, any> = {
+  key: { type: String, required: true },
   title: { type: String, required: true },
   sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: true },
   publicationType: { type: String, enum: Object.values(PublicationType), required: true },
   publicationDate: { type: Date, required: false },
-  file: { type: String, required: true },
+  //file: { type: String, required: true },
   reactions: {
     type: [reactionSchema],
     default: [],
     required: false,
   },
+  generated: { type: String, required: false },
 };
 
 type IContentSchemaDefinition = Omit<ContentDTO, 'id'>;
@@ -72,12 +76,14 @@ const contentModelSchema = new Schema<
 contentModelSchema.method('toDto', function (): ContentDTO {
   return {
     id: this._id.toString(),
+    key: this.key,
     title: this.title,
     sectionId: this.sectionId.toString(),
     publicationType: this.publicationType as PublicationType,
     publicationDate: this.publicationDate,
-    file: this.file,
+    //file: this.file,
     reactions: this.reactions || [],
+    generated: this.generated,
   };
 });
 
@@ -102,7 +108,6 @@ export const ContentCreationSchema = z.object({
       }
       return null;
     }, z.date().nullable().optional()),
-    file: z.string(),
   }),
 });
 
@@ -128,6 +133,10 @@ const ReactionSchema = z.object({
 // Definición del esquema de la respuesta
 export const ReactionsResponseSchema = z.object({
   reactions: z.array(ReactionSchema),
+});
+
+export const ContentWithPresignedUrlSchema = ContentDTOSchema.extend({
+  preSignedUrl: z.string(),
 });
 
 export type AddReactionsDTO = z.infer<typeof AddReactionsSchema.shape.body>;

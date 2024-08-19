@@ -1,15 +1,17 @@
 import bcrypt from 'bcrypt';
 
-import { UserCreationDTO, UserDTO } from '@/api/user/userModel';
+import { DirectorDTO, DirectorModel } from '@/api/director/directorModel';
+import { UserDirectorCreationDTO, UserDTO } from '@/api/user/userModel';
 import { Role } from '@/common/models/role';
 import { config } from '@/common/utils/config';
 import { logger } from '@/common/utils/serverLogger';
 
 import sendMailTo from '../../common/mailSender/mailSenderService';
 import { userService } from '../user/userService';
+import { directorRepository } from './directorRepository';
 
 export const directorService = {
-  create: async (user: UserCreationDTO): Promise<UserDTO> => {
+  create: async (user: UserDirectorCreationDTO): Promise<UserDTO> => {
     logger.trace('[DirectorService] - [create] - Start');
     logger.trace(`[DirectorService] - [create] - Creating user: ${JSON.stringify(user)}`);
     logger.trace(`[DirectorService] - [create] - Generating random password...`);
@@ -27,6 +29,13 @@ export const directorService = {
     // TODO: Send email to user notifying them of their registration
     // It should force the user to change their password on first login
 
+    const director = new DirectorModel({
+      user: createdUser.id,
+      institute: user.institute.id,
+    });
+
+    await director.save();
+
     logger.trace(`[DirectorService] - [create] - Sending email to user ${createdUser.email}...`);
     sendMailTo(
       [createdUser.email],
@@ -39,5 +48,21 @@ export const directorService = {
 
     logger.trace('[DirectorService] - [create] - End');
     return createdUser;
+  },
+
+  findAll: async (): Promise<DirectorDTO[]> => {
+    logger.trace('[DirectorService] - [findAll] - Start');
+    const directors = await directorRepository.findAll();
+    logger.trace(`[DirectorService] - [findAll] - Found ${directors.length} directors`);
+    logger.trace('[DirectorService] - [findAll] - End');
+    return directors;
+  },
+
+  getInstituteId: async (directorId: string): Promise<string> => {
+    logger.trace('[DirectorService] - [getInstituteId] - Start');
+    const id = await directorRepository.getInstituteId(directorId);
+    logger.trace(`[DirectorService] - [getInstituteId] - Institute ID: ${id}`);
+    logger.trace('[DirectorService] - [getInstituteId] - End');
+    return id;
   },
 };

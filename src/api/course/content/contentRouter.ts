@@ -27,7 +27,7 @@ export const contentRouter: Router = (() => {
 
   contentRegistry.registerPath({
     method: 'post',
-    path: '/{:contentId}/reactions',
+    path: '/contents/{:contentId}/reactions',
     tags: ['Content'],
     request: {
       params: AddReactionsSchema.shape.params,
@@ -69,7 +69,7 @@ export const contentRouter: Router = (() => {
 
   contentRegistry.registerPath({
     method: 'get',
-    path: '/{contentId}/reactions',
+    path: '/contents/{contentId}/reactions',
     tags: ['Content'],
     request: {
       params: GetContentSchema.shape.params,
@@ -93,6 +93,29 @@ export const contentRouter: Router = (() => {
         handleApiResponse(apiResponse, res);
       } catch (e) {
         const apiError = new ApiError('Failed to retrieve reactions', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      }
+    }
+  );
+
+  router.get(
+    '/:contentId',
+    sessionMiddleware,
+    roleMiddleware([Role.STUDENT, Role.TEACHER]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+
+      try {
+        const content = await contentService.getContentById(contentId);
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Content retrieved successfully',
+          content,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        const apiError = new ApiError('Failed to retrieve content', StatusCodes.INTERNAL_SERVER_ERROR, e);
         return next(apiError);
       }
     }

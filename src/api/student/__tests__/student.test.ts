@@ -39,30 +39,62 @@ describe('Generic student tests', () => {
       },
     ]);
 
-    await mongoose.connection.db.collection('users').insertOne({
-      _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda4f'),
-      firstName: 'Student',
-      lastName: 'Proyecto Arima',
-      document: {
-        type: 'GENERIC',
-        number: '00000000',
+    await mongoose.connection.db.collection('users').insertMany([
+      {
+        _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda4f'),
+        firstName: 'Student',
+        lastName: 'Proyecto Arima',
+        document: {
+          type: 'GENERIC',
+          number: '00000000',
+        },
+        email: 'student@proyectoarima.tech',
+        password: '$2b$10$6aJ.eouEbOlyhV99pVsrM./mAdk41tzPh6tZLv1vyFaWqB6G/5Zf.', // admin
+        role: 'STUDENT',
+        forcePasswordReset: false,
       },
-      email: 'student@proyectoarima.tech',
-      password: '$2b$10$6aJ.eouEbOlyhV99pVsrM./mAdk41tzPh6tZLv1vyFaWqB6G/5Zf.', // admin
-      role: 'STUDENT',
-      forcePasswordReset: false,
-    });
+
+      {
+        _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda00'),
+        firstName: 'Director',
+        lastName: 'Proyecto Arima',
+        document: {
+          type: 'GENERIC',
+          number: '00000000',
+        },
+        email: 'director@proyectoarima.tech',
+        password: '$2b$10$6aJ.eouEbOlyhV99pVsrM./mAdk41tzPh6tZLv1vyFaWqB6G/5Zf.', // admin
+        role: 'DIRECTOR',
+        forcePasswordReset: false,
+      },
+    ]);
 
     await mongoose.connection.db.collection('students').insertOne({
       _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda3c'),
       userId: '6643eb8662e9b625cd5dda4f',
+      instituteId: '66b8e029d9b6b3b37200bde3',
       firstName: 'christian',
       lastName: 'harper',
       learningProfile: 'VISUAL',
     });
+
+    await mongoose.connection.db.collection('directors').insertOne({
+      _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda10'),
+      userId: '6643eb8662e9b625cd5dda00',
+      instituteId: '66b8e029d9b6b3b37200bde3',
+    });
   });
 
   const login = async (email = 'student@proyectoarima.tech', password = 'admin') => {
+    const response = await request(app).post('/auth').send({
+      email,
+      password,
+    });
+    const result = response.body;
+    return result.data?.['access_token'];
+  };
+
+  const directorLogin = async (email = 'director@proyectoarima.tech', password = 'admin') => {
     const response = await request(app).post('/auth').send({
       email,
       password,
@@ -85,7 +117,7 @@ describe('Generic student tests', () => {
   });
 
   it('GET /students/', async () => {
-    const token = await login();
+    const token = await directorLogin();
 
     const response = await request(app).get('/students/').set('Authorization', `Bearer ${token}`);
 

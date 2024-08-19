@@ -1,19 +1,26 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import multer from 'multer';
 import { z } from 'zod';
 
-import { ContentCreationSchema } from '@/api/course/content/contentModel';
-import { ContentDTOSchema } from '@/api/course/content/contentModel';
+import { ContentCreationSchema, ContentWithPresignedUrlSchema } from '@/api/course/content/contentModel';
 import {
   AddStudentsSchema,
   CourseCreationSchema,
   CourseDTO,
   CourseDTOSchema,
+  DeleteCourseSchema,
   GetCourseSchema,
 } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
-import { SectionCreationSchema, SectionDTOSchema } from '@/api/course/section/sectionModel';
+import {
+  DeleteSectionSchema,
+  SectionCreationSchema,
+  SectionDTOSchema,
+  SectionFetchingSchema,
+} from '@/api/course/section/sectionModel';
+import { sectionService } from '@/api/course/section/sectionService';
 import { StudentDTOSchema } from '@/api/student/studentModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { checkSessionContext } from '@/common/middleware/checkSessionContext';
@@ -25,6 +32,10 @@ import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
 const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
 
 export const courseRegistry = new OpenAPIRegistry();
@@ -171,6 +182,38 @@ export const courseRouter: Router = (() => {
 
   courseRegistry.registerPath({
     method: 'get',
+    path: '/courses/{courseId}/sections/{sectionId}',
+    tags: ['Course'],
+    request: {
+      params: SectionFetchingSchema.shape.params,
+    },
+    responses: createApiResponse(SectionDTOSchema, 'Success'),
+  });
+  router.get(
+    '/:courseId/sections/:sectionId',
+    sessionMiddleware,
+    checkSessionContext,
+    hasAccessToCourseMiddleware('courseId'),
+    roleMiddleware([Role.TEACHER, Role.STUDENT]),
+    validateRequest(SectionFetchingSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { sectionId } = req.params;
+
+      try {
+        const section = await sectionService.findById(sectionId);
+        res.status(200).json({
+          success: true,
+          message: 'Section retrieved successfully',
+          data: section,
+        });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  courseRegistry.registerPath({
+    method: 'get',
     path: '/courses/{id}/sections',
     tags: ['Course'],
     request: { params: GetCourseSchema.shape.params },
@@ -215,7 +258,7 @@ export const courseRouter: Router = (() => {
       params: ContentCreationSchema.shape.params,
       body: { content: { 'application/json': { schema: ContentCreationSchema.shape.body } }, description: '' },
     },
-    responses: createApiResponse(ContentDTOSchema, 'Success'),
+    responses: createApiResponse(ContentWithPresignedUrlSchema, 'Success'),
   });
   router.post(
     '/:courseId/sections/:sectionId/content',
@@ -223,15 +266,23 @@ export const courseRouter: Router = (() => {
     checkSessionContext,
     hasAccessToCourseMiddleware('courseId'),
     roleMiddleware([Role.TEACHER]),
+    upload.single('file'),
     validateRequest(ContentCreationSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const { sectionId } = req.params;
       const contentData = req.body;
+      const file = req.file;
+
+      console.log(req);
+
+      if (!file) {
+        return next(new ApiError('File is required', StatusCodes.BAD_REQUEST));
+      }
 
       try {
-        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Start');
+        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/content] - Start');
 
-        const newContent = await courseService.addContentToSection(sectionId, contentData);
+        const newContent = await courseService.addContentToSection(sectionId, contentData, file);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
@@ -241,11 +292,42 @@ export const courseRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (e) {
-        logger.error(`[CourseRouter] - [/:courseId/sections/:sectionId/contents] - Error: ${e}`);
+        logger.error(`[CourseRouter] - [/:courseId/sections/:sectionId/content] - Error: ${e}`);
         const apiError = new ApiError('Failed to add content to section', StatusCodes.INTERNAL_SERVER_ERROR, e);
         return next(apiError);
       } finally {
-        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/contents] - End');
+        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId/content] - End');
+      }
+    }
+  );
+
+  courseRegistry.registerPath({
+    method: 'get',
+    path: '/courses/{courseId}/sections/{sectionId}/content',
+    tags: ['Course'],
+    request: {
+      params: ContentCreationSchema.shape.params,
+    },
+    responses: createApiResponse(z.array(ContentWithPresignedUrlSchema), 'Success'),
+  });
+  router.get(
+    '/:courseId/sections/:sectionId/content',
+    sessionMiddleware,
+    checkSessionContext,
+    hasAccessToCourseMiddleware('courseId'),
+    roleMiddleware([Role.TEACHER, Role.STUDENT]), // O según los roles permitidos
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { sectionId } = req.params;
+
+      try {
+        const contentsWithUrls = await courseService.getContentsWithPresignedUrls(sectionId);
+        res.status(200).json({
+          success: true,
+          message: 'Contents retrieved successfully',
+          data: contentsWithUrls,
+        });
+      } catch (error) {
+        next(error);
       }
     }
   );
@@ -326,6 +408,77 @@ export const courseRouter: Router = (() => {
         return next(apiError);
       } finally {
         logger.trace('[CourseRouter] - [/:id/students] - End');
+      }
+    }
+  );
+
+  courseRegistry.registerPath({
+    method: 'delete',
+    path: '/courses/{courseId}/sections/{sectionId}',
+    tags: ['Course'],
+    request: {
+      params: DeleteSectionSchema.shape.params,
+    },
+    responses: createApiResponse(z.object({}), 'Success'),
+  });
+  router.delete(
+    '/:courseId/sections/:sectionId',
+    sessionMiddleware,
+    hasAccessToCourseMiddleware('courseId'),
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(DeleteSectionSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const courseId = req.params.courseId;
+      const sectionId = req.params.sectionId;
+
+      try {
+        await sectionService.deleteSection(sectionId, courseId);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Section deleted successfully',
+          null,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        const apiError = new ApiError('Failed to delete section', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
+      }
+    }
+  );
+
+  courseRegistry.registerPath({
+    method: 'delete',
+    path: '/courses/{courseId}',
+    tags: ['Course'],
+    request: {
+      params: DeleteCourseSchema.shape.params,
+    },
+    responses: createApiResponse(z.object({}), 'Success'),
+  });
+  router.delete(
+    '/:courseId',
+    sessionMiddleware,
+    hasAccessToCourseMiddleware('courseId'),
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(DeleteCourseSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const courseId = req.params.courseId;
+
+      try {
+        await courseService.deleteCourse(courseId);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Course deleted successfully',
+          null,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        const apiError = new ApiError('Failed to delete course', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
       }
     }
   );

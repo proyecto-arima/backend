@@ -2,10 +2,11 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
-import { UserCreationSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
-import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { UserDirectorCreationSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
+import { roleMiddleware } from '@/common/middleware/roleMiddleware';
 import { ApiError } from '@/common/models/apiError';
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
+import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
 
@@ -18,33 +19,54 @@ directorRegistry.register('Director', UserDTOSchema);
 export const directorRouter: Router = (() => {
   const router = express.Router();
 
-  directorRegistry.registerPath({
-    method: 'post',
-    path: '/directors/',
-    tags: ['Director'],
-    request: { body: { content: { 'application/json': { schema: UserCreationSchema.shape.body } }, description: '' } },
-    responses: createApiResponse(UserDTOSchema, 'Success'),
-  });
+  router.post(
+    '/',
+    validateRequest(UserDirectorCreationSchema),
+    roleMiddleware([Role.ADMIN, Role.DIRECTOR]),
+    async (req: Request, res: Response) => {
+      try {
+        logger.trace('[DirectorRouter] - [/:instituteId] - Start');
+        const userDTO: UserDTO = await directorService.create(req.body);
 
-  router.post('/', validateRequest(UserCreationSchema), async (req: Request, res: Response) => {
+        logger.trace(
+          `[DirectorRouter] - [/:instituteId] - Director created: ${JSON.stringify(userDTO)}. Sending response`
+        );
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Director created successfully',
+          userDTO,
+          StatusCodes.CREATED
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        logger.error(`[DirectorRouter] - [/:instituteId] - Error: ${error}`);
+        const apiError = new ApiError('Failed to create director', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return res.status(apiError.statusCode).json(apiError);
+      } finally {
+        logger.trace('[DirectorRouter] - [/:instituteId] - End');
+      }
+    }
+  );
+
+  router.get('/', roleMiddleware([Role.ADMIN, Role.DIRECTOR]), async (req: Request, res: Response) => {
     try {
-      logger.trace('[DirectorRouter] - [/] - Start');
-      logger.trace(`[DirectorRouter] - [/] - Request to create director: ${JSON.stringify(req.body)}`);
-      const userDTO: UserDTO = await directorService.create(req.body);
-      logger.trace(`[DirectorRouter] - [/] - Director created: ${JSON.stringify(userDTO)}. Sending response`);
+      logger.trace('[DirectorRouter] - [GET /] - Start');
+      const directors = await directorService.findAll();
+
+      logger.trace(`[DirectorRouter] - [GET /] - Found ${directors.length} directors. Sending response`);
       const apiResponse = new ApiResponse(
         ResponseStatus.Success,
-        'Director created successfully',
-        userDTO,
-        StatusCodes.CREATED
+        'Directors retrieved successfully',
+        directors,
+        StatusCodes.OK
       );
       handleApiResponse(apiResponse, res);
     } catch (error) {
-      logger.error(`[DirectorRouter] - [/] - Error: ${error}`);
-      const apiError = new ApiError('Failed to create director', StatusCodes.INTERNAL_SERVER_ERROR, error);
+      logger.error(`[DirectorRouter] - [GET /] - Error: ${error}`);
+      const apiError = new ApiError('Failed to retrieve directors', StatusCodes.INTERNAL_SERVER_ERROR, error);
       return res.status(apiError.statusCode).json(apiError);
     } finally {
-      logger.trace('[DirectorRouter] - [/] - End');
+      logger.trace('[DirectorRouter] - [GET /] - End');
     }
   });
 

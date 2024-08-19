@@ -1,9 +1,11 @@
 import { Types } from 'mongoose';
 import mongoose from 'mongoose';
 
-import { ContentCreationDTO, ContentModel } from '@/api/course/content/contentModel';
+import { ContentCreationDTO, ContentDTO, ContentModel } from '@/api/course/content/contentModel';
 import { Course, CourseCreation, CourseCreationDTO, CourseDTO, CourseModel } from '@/api/course/courseModel';
 import { SectionCreationDTO, SectionModel } from '@/api/course/section/sectionModel';
+import { StudentModel } from '@/api/student/studentModel';
+import { TeacherModel } from '@/api/teacher/teacherModel';
 import { UserModel } from '@/api/user/userModel';
 
 export const courseRepository = {
@@ -89,13 +91,18 @@ export const courseRepository = {
     return sectionDtos;
   },
 
-  addContentToSection: async (sectionId: string, contentData: ContentCreationDTO): Promise<any> => {
+  addContentToSection: async (
+    sectionId: string,
+    contentData: ContentCreationDTO,
+    key: string,
+    preSignedUrl: string
+  ): Promise<any> => {
     const newContent = new ContentModel({
       title: contentData.title,
       sectionId,
+      key: key,
       publicationType: contentData.publicationType,
       publicationDate: contentData.publicationDate,
-      file: contentData.file,
     });
 
     const savedContent = newContent.save();
@@ -115,7 +122,10 @@ export const courseRepository = {
 
     await section.save();
 
-    return newContent.toDto();
+    return {
+      ...newContent.toDto(),
+      preSignedUrl,
+    };
   },
 
   async addStudentsToCourse(courseId: string, students: any[]): Promise<Course> {
@@ -151,5 +161,35 @@ export const courseRepository = {
     }));
 
     return studentDtos;
+  },
+
+  getContentsBySectionId: async (sectionId: string): Promise<ContentDTO[] | null> => {
+    const contents = await ContentModel.find({ sectionId }).exec();
+
+    if (!contents) {
+      return null;
+    }
+
+    // Mapeamos cada documento a un DTO utilizando el método toDto
+    return contents.map((content) => content.toDto());
+  },
+
+  deleteCourse: async (courseId: string): Promise<void> => {
+    const session = await CourseModel.startSession();
+    session.startTransaction();
+
+    try {
+      await StudentModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } }, { session });
+
+      await TeacherModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } }, { session });
+      await CourseModel.deleteOne({ _id: courseId }, { session });
+
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
   },
 };

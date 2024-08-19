@@ -58,12 +58,12 @@ const userModelSchemaDefinition = {
 };
 
 // Type used to tell mongoose the shape of the schema available
-type IUserSchemaDefinition = typeof userModelSchemaDefinition;
+type IUserSchemaDefinition = Omit<UserDTO, 'id'>;
 // Type used to add methods to the schema
 interface IUserSchemaDefinitionMethods {
   toDto(): UserDTO;
 }
-type UserModelDefinition = Model<IUserSchemaDefinition, Record<string, never>, IUserSchemaDefinitionMethods>;
+type UserModelDefinition = Model<IUserSchemaDefinition & Document, Record<string, never>, IUserSchemaDefinitionMethods>;
 
 /**
  * User Model Schema
@@ -127,7 +127,23 @@ export const UserCreationSchema = z.object({
     }),
   }),
 });
+
+export const UserDirectorCreationSchema = z.object({
+  body: z.object({
+    firstName: z.string(),
+    lastName: z.string(),
+    email: z.string().email(),
+    document: z.object({
+      type: z.string(),
+      number: z.string(),
+    }),
+    institute: z.object({
+      id: z.string(),
+    }),
+  }),
+});
 export type UserCreationDTO = z.infer<typeof UserCreationSchema.shape.body>;
+export type UserDirectorCreationDTO = z.infer<typeof UserDirectorCreationSchema.shape.body>;
 export type UserCreation = UserCreationDTO & { password: string; role: Role };
 
 // Input Validation for POST /users/login
@@ -138,6 +154,22 @@ export const UserLoginSchema = z.object({
   }),
 });
 export type UserLoginDTO = z.infer<typeof UserLoginSchema.shape.body>;
+
+// Input Validation for DELETE /users/:userId/courses/:courseId
+export const DeleteUserFromCourseSchema = z.object({
+  params: z.object({
+    userId: z.string(),
+    courseId: z.string(),
+  }),
+});
+
+export const UpdateUserProfileSchema = z.object({
+  body: z.object({
+    email: z.string().email().optional(),
+    firstName: z.string().min(1).optional(),
+    lastName: z.string().min(1).optional(),
+  }),
+});
 
 export const SessionTokenSchema = z.object({
   access_token: z.string(),

@@ -1,5 +1,5 @@
-import { app } from '@/server';
 import { logger } from '@/common/utils/serverLogger';
+import { app } from '@/server';
 
 import { buildTransporter, initTransporter } from './common/mailSender/mailSenderService';
 import { config } from './common/utils/config';

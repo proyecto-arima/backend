@@ -129,6 +129,7 @@ describe('Generic course tests', () => {
 
     await mongoose.connection.db.collection('contents').insertOne({
       _id: new mongoose.Types.ObjectId('66b0e07bceed604f8977c0aa'),
+      key: 'fe6728c5-3919-462f-8f67-ad899edbe5fb',
       sectionId: '66b0e07bceed604f8977c1cc',
       title: 'CSharp bla',
       publicationType: 'DEFERRED',
@@ -139,7 +140,6 @@ describe('Generic course tests', () => {
         },
       ],
       publicationDate: '2024-08-01T00:00:00Z',
-      file: 'https://example.com/path/to/your/advanced-file.pdf',
     });
   });
 
