@@ -9,9 +9,7 @@ export const EmailSchema = z.object({
   bcc: z.array(z.string().email()).optional(),
   subject: z.string(),
   bodyTemplateName: z.string(),
-  templateParams: z.object({
-    paramName: z.any(),
-  }),
+  templateParams: z.record(z.any()),
   attachments: z.array(z.any()).optional(),
 });
 export type Email = z.infer<typeof EmailSchema>;
