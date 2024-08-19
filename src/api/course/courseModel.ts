@@ -170,10 +170,6 @@ export const GetCourseSchema = z.object({
   params: z.object({ id: commonValidations.id }),
 });
 
-export const GetSectionOfCourseSchema = z.object({
-  params: z.object({ courseId: commonValidations.id, sectionId: commonValidations.id }),
-});
-
 // Esquema para validar la solicitud de agregar estudiantes a un curso
 export const AddStudentsSchema = z.object({
   params: z.object({
