@@ -52,7 +52,7 @@ export type CourseDTO = z.infer<typeof CourseDTOSchema>;
  */
 const studentSchemaDefinition = new Schema(
   {
-    userId: { type: String, required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'Users' },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     email: { type: String, required: false },
@@ -79,12 +79,12 @@ const sectionSchemaDefinition = new Schema(
 );
 
 // Usa el schema definido en sectionModel
-const courseModelSchemaDefinition = {
+const courseModelSchemaDefinition: Record<keyof Omit<CourseDTO, 'id'>, any> = {
   title: { type: String, required: true },
   description: { type: String, required: true },
   image: { type: String, required: true },
   matriculationCode: { type: String },
-  teacherUserId: { type: String },
+  teacherUserId: { type: Schema.Types.ObjectId, ref: 'Teachers' },
   students: { type: [studentSchemaDefinition], required: true },
   sections: { type: [sectionSchemaDefinition], required: false }, // Usa el schema de Section
 };
@@ -145,7 +145,7 @@ courseModelSchema.method('toDto', function (): CourseDTO {
         email: student.email?.toString() || '',
       })) || [],
     sections:
-      this.sections?.map((section) => ({
+      this.sections?.map((section: any) => ({
         id: section.id?.toString() || '',
         name: section.name?.toString() || '',
         description: section.description?.toString() || '',

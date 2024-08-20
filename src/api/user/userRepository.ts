@@ -32,31 +32,18 @@ export const userRepository = {
 
   findUsersByRoleAndInstitute: async (role: string, instituteId: string): Promise<User[]> => {
     // Encuentra los estudiantes por instituteId
-    const students = await StudentModel.find({ instituteId }).exec();
+    const students = await StudentModel.find({ institute: instituteId }).exec();
 
     // Extrae los userIds de esos estudiantes
-    const userIds = students.map((student) => student.userId);
+    const userIds = students.map((student) => student.user);
 
     // Encuentra los usuarios por role y los userIds obtenidos
     return UserModel.find<User>({ role, _id: { $in: userIds } }).exec();
   },
 
   removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {
-    const session = await UserModel.startSession();
-    session.startTransaction();
-
-    try {
-      await CourseModel.updateOne({ _id: courseId }, { $pull: { students: { userId: userId } } }, { session });
-
-      await StudentModel.updateOne({ userId: userId }, { $pull: { courses: { id: courseId } } }, { session });
-
-      await session.commitTransaction();
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
-    }
+    await CourseModel.updateOne({ _id: courseId }, { $pull: { students: { userId: userId } } });
+    await StudentModel.updateOne({ userId: userId }, { $pull: { courses: { id: courseId } } });
   },
 
   async updateUserProfile(

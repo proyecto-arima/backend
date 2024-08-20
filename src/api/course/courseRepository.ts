@@ -175,21 +175,8 @@ export const courseRepository = {
   },
 
   deleteCourse: async (courseId: string): Promise<void> => {
-    const session = await CourseModel.startSession();
-    session.startTransaction();
-
-    try {
-      await StudentModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } }, { session });
-
-      await TeacherModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } }, { session });
-      await CourseModel.deleteOne({ _id: courseId }, { session });
-
-      await session.commitTransaction();
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
-    }
+    await StudentModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } });
+    await TeacherModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } });
+    await CourseModel.deleteOne({ _id: courseId });
   },
 };

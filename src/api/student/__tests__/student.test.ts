@@ -14,34 +14,47 @@ describe('Generic student tests', () => {
 
   beforeEach(async () => {
     await mongoose.connection.dropDatabase();
+
+    // Inserta un instituto
+    await mongoose.connection.db.collection('institutes').insertOne({
+      _id: new mongoose.Types.ObjectId('66b8e029d9b6b3b37200bde3'),
+      name: 'Test Institute',
+    });
+
+    // Inserta cursos
     await mongoose.connection.db.collection('courses').insertMany([
       {
         title: 'Course 1',
         description: 'Course for the test student',
         image: 'https://example.com/image1.jpg',
-        teacherUserId: 'teacher1',
-        students: {
-          userId: '6643eb8662e9b625cd5dda4f',
-          firstName: 'christian',
-          lastName: 'harper',
-        },
+        teacherUserId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda4f'),
+        students: [
+          {
+            userId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dd111'),
+            firstName: 'christian',
+            lastName: 'harper',
+          },
+        ],
       },
       {
         title: 'Course 2',
         description: 'Course for another student',
         image: 'https://example.com/image2.jpg',
-        teacherUserId: 'teacher2',
-        students: {
-          userId: '6643eb8662e9b625cd5dda4a',
-          firstName: 'Alex',
-          lastName: 'Volkov',
-        },
+        teacherUserId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda4c'),
+        students: [
+          {
+            userId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda4a'),
+            firstName: 'Alex',
+            lastName: 'Volkov',
+          },
+        ],
       },
     ]);
 
+    // Inserta usuarios
     await mongoose.connection.db.collection('users').insertMany([
       {
-        _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda4f'),
+        _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dd111'),
         firstName: 'Student',
         lastName: 'Proyecto Arima',
         document: {
@@ -53,7 +66,6 @@ describe('Generic student tests', () => {
         role: 'STUDENT',
         forcePasswordReset: false,
       },
-
       {
         _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda00'),
         firstName: 'Director',
@@ -69,23 +81,23 @@ describe('Generic student tests', () => {
       },
     ]);
 
+    // Inserta estudiantes
     await mongoose.connection.db.collection('students').insertOne({
       _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda3c'),
-      userId: '6643eb8662e9b625cd5dda4f',
-      instituteId: '66b8e029d9b6b3b37200bde3',
-      firstName: 'christian',
-      lastName: 'harper',
+      user: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dd111'),
+      institute: new mongoose.Types.ObjectId('66b8e029d9b6b3b37200bde3'),
       learningProfile: 'VISUAL',
     });
 
+    // Inserta directores
     await mongoose.connection.db.collection('directors').insertOne({
       _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda10'),
-      userId: '6643eb8662e9b625cd5dda00',
-      instituteId: '66b8e029d9b6b3b37200bde3',
+      user: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda00'),
+      institute: new mongoose.Types.ObjectId('66b8e029d9b6b3b37200bde3'),
     });
   });
 
-  const login = async (email = 'student@proyectoarima.tech', password = 'admin') => {
+  const studentLogin = async (email = 'student@proyectoarima.tech', password = 'admin') => {
     const response = await request(app).post('/auth').send({
       email,
       password,
@@ -104,7 +116,7 @@ describe('Generic student tests', () => {
   };
 
   it('GET /students/me/courses', async () => {
-    const token = await login();
+    const token = await studentLogin();
 
     const response = await request(app).get('/students/me/courses').set('Authorization', `Bearer ${token}`);
 
@@ -151,7 +163,7 @@ describe('Generic student tests', () => {
   });*/
 
   it('GET /students/:id/learning-profile', async () => {
-    const token = await login();
+    const token = await studentLogin();
 
     const studentId = '6643eb8662e9b625cd5dda3c';
 

@@ -31,17 +31,17 @@ export const userService = {
     if (user.role === Role.DIRECTOR) {
       const director = await DirectorModel.findOne({ userId: id }).exec();
       if (director) {
-        instituteId = director.instituteId;
+        instituteId = director.institute.id;
       }
     } else if (user.role === Role.TEACHER) {
       const teacher = await TeacherModel.findOne({ userId: id }).exec();
       if (teacher) {
-        instituteId = teacher.instituteId;
+        instituteId = teacher.institute.id;
       }
     } else if (user.role === Role.STUDENT) {
       const student = await StudentModel.findOne({ userId: id }).exec();
       if (student) {
-        instituteId = student.instituteId;
+        instituteId = student.institute.id;
         learningProfile = student.learningProfile;
       }
     }
@@ -76,7 +76,7 @@ export const userService = {
       instituteId = await directorRepository.getInstituteId(userId);
     } else if (user.role === Role.TEACHER) {
       const teacher = await teacherRepository.findByUserIdAsync(userId);
-      instituteId = teacher.instituteId;
+      instituteId = teacher.institute;
     }
     const users = await userRepository.findUsersByRoleAndInstitute(Role.STUDENT, instituteId);
     return users.map((user) => user.toDto());

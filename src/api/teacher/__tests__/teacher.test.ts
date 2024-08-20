@@ -19,13 +19,13 @@ describe('Generic teacher tests', () => {
         title: 'Course 1',
         description: 'Course for the test teacher',
         image: 'https://example.com/image1.jpg',
-        teacherUserId: '6643eb8662e9b625cd5dda4f', // ID del docente que ejecuta la prueba
+        teacherUserId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda4f'), // ID del docente que ejecuta la prueba
       },
       {
         title: 'Course 2',
         description: 'Course for another teacher',
         image: 'https://example.com/image2.jpg',
-        teacherUserId: '6643eb8662e9b625cd5dda4g', // ID de otro docente
+        teacherUserId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda4c'), // ID de otro docente
       },
     ]);
 

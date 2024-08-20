@@ -14,6 +14,7 @@ export const adminService = {
     logger.trace(`[AdminService] - [create] - Creating user: ${JSON.stringify(user)}`);
     logger.trace(`[AdminService] - [create] - Generating random password...`);
     const randomPassword = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
+    console.log('ADMIN PASS:', randomPassword);
     if (config.app.node_env === 'development') {
       logger.trace(`[AdminService] - [create] - Random password: ${randomPassword}`);
     }
