@@ -20,7 +20,7 @@ export const ContentDTOSchema = z.object({
   reactions: z
     .array(
       z.object({
-        idStudent: z.string(),
+        userId: z.string(),
         isSatisfied: z.boolean(),
       })
     )
@@ -31,7 +31,7 @@ export type ContentDTO = z.infer<typeof ContentDTOSchema>;
 
 const reactionSchema = new Schema(
   {
-    idStudent: { type: String, required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'Users', required: true },
     isSatisfied: { type: Boolean, required: true },
   },
   { _id: false }
@@ -126,7 +126,7 @@ export const GetContentSchema = z.object({
 
 // Definición del esquema de una reacción
 const ReactionSchema = z.object({
-  idStudent: z.string(),
+  userId: z.string(),
   isSatisfied: z.boolean(),
 });
 

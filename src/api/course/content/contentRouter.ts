@@ -44,15 +44,15 @@ export const contentRouter: Router = (() => {
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const { contentId } = req.params;
       const sessionContext = req.sessionContext;
-      const studentId = sessionContext?.user?.id;
+      const userId = sessionContext?.user?.id;
       const { isSatisfied } = req.body;
 
-      if (!studentId) {
+      if (!userId) {
         return next(UNAUTHORIZED);
       }
 
       try {
-        const updatedContent = await contentService.addReactionToContent(contentId, isSatisfied, studentId);
+        const updatedContent = await contentService.addReactionToContent(contentId, isSatisfied, userId);
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
           'Reaction added to content successfully',

@@ -20,10 +20,10 @@ describe('Generic course tests', () => {
         title: 'Course 1',
         description: 'Course for the test student',
         image: 'https://example.com/image1.jpg',
-        teacherUserId: '6643eb8662e9b625cd5dda11',
+        teacherUserId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda11'),
         students: [
           {
-            userId: '6643eb8662e9b625cd5dda4f',
+            userId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda4f'),
             firstName: 'student',
             lastName: '1',
             email: 'student@proyectoarima.tech',
@@ -31,7 +31,7 @@ describe('Generic course tests', () => {
         ],
         sections: [
           {
-            id: '66b0e07bceed604f8977c1cc',
+            id: new mongoose.Types.ObjectId('66b0e07bceed604f8977c1cc'),
             name: 'Aprendiendo mas',
             description: 'dale que vos podes, entra a mi seccion.',
           },
@@ -42,10 +42,10 @@ describe('Generic course tests', () => {
         title: 'Course 2',
         description: 'Course for another student',
         image: 'https://example.com/image2.jpg',
-        teacherUserId: '6643eb8662e9b625cd5dda11',
+        teacherUserId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda11'),
         students: [
           {
-            userId: '6643eb8662e9b625cd5dda4a',
+            userId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda4a'),
             firstName: 'Alex',
             lastName: 'Volkov',
             email: 'alexV@proyectoarima.tech',
@@ -99,7 +99,7 @@ describe('Generic course tests', () => {
     await mongoose.connection.db.collection('students').insertMany([
       {
         _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda3c'),
-        userId: '6643eb8662e9b625cd5dda4f',
+        userId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda4f'),
         firstName: 'christian',
         lastName: 'harper',
         learningProfile: 'VISUAL',
@@ -107,7 +107,7 @@ describe('Generic course tests', () => {
 
       {
         _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda2b'),
-        userId: '6643eb8662e9b625cd5ddb1b',
+        userId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5ddb1b'),
         firstName: 'stella',
         lastName: 'mendez',
         learningProfile: 'VISUAL',
@@ -121,7 +121,7 @@ describe('Generic course tests', () => {
       visible: true,
       contents: [
         {
-          id: '66b0e1f3f4bf663c33986f2d',
+          id: new mongoose.Types.ObjectId('66b0e1f3f4bf663c33986f2d'),
           title: 'Advanced TypeScript Techniques',
         },
       ],
@@ -130,12 +130,12 @@ describe('Generic course tests', () => {
     await mongoose.connection.db.collection('contents').insertOne({
       _id: new mongoose.Types.ObjectId('66b0e07bceed604f8977c0aa'),
       key: 'fe6728c5-3919-462f-8f67-ad899edbe5fb',
-      sectionId: '66b0e07bceed604f8977c1cc',
+      sectionId: new mongoose.Types.ObjectId('66b0e07bceed604f8977c1cc'),
       title: 'CSharp bla',
       publicationType: 'DEFERRED',
       reactions: [
         {
-          idStudent: '6643eb8662e9b625cd5ddb1b',
+          userId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5ddb1b'),
           isSatisfied: true,
         },
       ],
@@ -185,7 +185,7 @@ describe('Generic course tests', () => {
     expect(result.success).toBe(true);
     const reactions = result.data.reactions;
     expect(reactions).toHaveLength(1);
-    expect(reactions[0]).toHaveProperty('idStudent', '6643eb8662e9b625cd5ddb1b');
+    expect(reactions[0]).toHaveProperty('userId', '6643eb8662e9b625cd5ddb1b');
   });
 
   afterAll(async () => {
