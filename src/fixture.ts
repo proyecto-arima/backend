@@ -145,6 +145,12 @@ const insertInitialData = async () => {
       firstName: 'Student',
       lastName: '1',
       learningProfile: 'VISUAL',
+      courses: [
+        {
+          id: '66b2ba4bb24f72c9f4aac1d5',
+          courseName: 'Course 1',
+        },
+      ],
     },
     {
       _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda2b'),

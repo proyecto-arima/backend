@@ -82,10 +82,6 @@ export const userService = {
     return users.map((user) => user.toDto());
   },
 
-  removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {
-    await userRepository.removeUserFromCourse(userId, courseId);
-  },
-
   async updateUserProfile(
     userId: string,
     updatedFields: Partial<{ email: string; firstName: string; lastName: string }>

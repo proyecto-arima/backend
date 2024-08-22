@@ -195,5 +195,12 @@ export const DeleteCourseSchema = z.object({
     courseId: z.string(),
   }),
 });
+
+export const DeleteUserFromCourseSchema = z.object({
+  params: z.object({
+    userId: z.string(),
+    courseId: z.string(),
+  }),
+});
 export type CourseCreationDTO = z.infer<typeof CourseCreationSchema.shape.body>;
 export type CourseCreation = CourseCreationDTO;

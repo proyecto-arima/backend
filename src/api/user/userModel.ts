@@ -155,14 +155,6 @@ export const UserLoginSchema = z.object({
 });
 export type UserLoginDTO = z.infer<typeof UserLoginSchema.shape.body>;
 
-// Input Validation for DELETE /users/:userId/courses/:courseId
-export const DeleteUserFromCourseSchema = z.object({
-  params: z.object({
-    userId: z.string(),
-    courseId: z.string(),
-  }),
-});
-
 export const UpdateUserProfileSchema = z.object({
   body: z.object({
     email: z.string().email().optional(),

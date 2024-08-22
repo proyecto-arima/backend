@@ -135,4 +135,8 @@ export const courseService = {
   deleteCourse: async (courseId: string): Promise<void> => {
     await courseRepository.deleteCourse(courseId);
   },
+
+  removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {
+    await courseRepository.removeUserFromCourse(userId, courseId);
+  },
 };

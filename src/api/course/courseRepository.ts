@@ -179,4 +179,9 @@ export const courseRepository = {
     await TeacherModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } });
     await CourseModel.deleteOne({ _id: courseId });
   },
+
+  removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {
+    await CourseModel.updateOne({ _id: courseId }, { $pull: { students: { userId: userId } } });
+    await StudentModel.updateOne({ user: userId }, { $pull: { courses: { id: courseId } } });
+  },
 };

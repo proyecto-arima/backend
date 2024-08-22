@@ -1,4 +1,3 @@
-import { CourseModel } from '@/api/course/courseModel';
 import { StudentModel } from '@/api/student/studentModel';
 import { User, UserCreation, UserCreationDTO, UserModel, UserNotFoundError } from '@/api/user/userModel';
 
@@ -39,11 +38,6 @@ export const userRepository = {
 
     // Encuentra los usuarios por role y los userIds obtenidos
     return UserModel.find<User>({ role, _id: { $in: userIds } }).exec();
-  },
-
-  removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {
-    await CourseModel.updateOne({ _id: courseId }, { $pull: { students: { userId: userId } } });
-    await StudentModel.updateOne({ userId: userId }, { $pull: { courses: { id: courseId } } });
   },
 
   async updateUserProfile(

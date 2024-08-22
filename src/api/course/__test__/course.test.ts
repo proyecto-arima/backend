@@ -174,4 +174,25 @@ describe('Generic course tests', () => {
     expect(result.data).toHaveProperty('name', 'Aprendiendo mas');
     expect(result.data).toHaveProperty('description', 'dale que vos podes, entra a mi seccion.');
   });
+
+  it('DELETE /courses/:courseId/users/:userId', async () => {
+    const token = await login();
+
+    const userId = '6643eb8662e9b625cd5dda4f'; // ID de usuario del estudiante
+    const courseId = '66b2ba4bb24f72c9f4aac1d5'; // ID del curso que se va a eliminar
+
+    const response = await request(app)
+      .delete(`/courses/${courseId}/users/${userId}`)
+      .send()
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.statusCode).toBe(StatusCodes.OK);
+
+    const courseResponse = await request(app).get(`/courses/${courseId}`).set('Authorization', `Bearer ${token}`);
+    const course = courseResponse.body.data;
+
+    const studentExists = course.students.some((student: { userId: string }) => student.userId === userId);
+
+    expect(studentExists).toBe(false);
+  });
 });
