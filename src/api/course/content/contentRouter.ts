@@ -7,7 +7,7 @@ import {
   ContentDTOSchema,
   GetContentSchema,
   ReactionsResponseSchema,
-  UpdateVisibilitySchema
+  UpdateVisibilitySchema,
 } from '@/api/course/content/contentModel';
 import { contentService } from '@/api/course/content/contentService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
@@ -147,7 +147,7 @@ export const contentRouter: Router = (() => {
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const { contentId } = req.params;
       const { visible } = req.body;
-  
+
       try {
         const updatedContent = await contentService.updateContentVisibility(contentId, visible);
         const apiResponse = new ApiResponse(
