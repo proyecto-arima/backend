@@ -98,6 +98,13 @@ export const contentRouter: Router = (() => {
     }
   );
 
+  contentRegistry.registerPath({
+    method: 'get',
+    path: '/contents/{id}',
+    tags: ['Content'],
+    request: { params: GetContentSchema.shape.params },
+    responses: createApiResponse(ContentDTOSchema, 'Success'),
+  });
   router.get(
     '/:contentId',
     sessionMiddleware,

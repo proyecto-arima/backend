@@ -112,11 +112,10 @@ export const userRouter: Router = (() => {
       logger.trace('[UserRouter] - [/:id] - End');
     }
   });
-
   userRegistry.registerPath({
     method: 'delete',
     path: '/users/{userId}/courses/{courseId}',
-    tags: ['Course'],
+    tags: ['User'],
     request: {
       params: DeleteUserFromCourseSchema.shape.params,
     },
