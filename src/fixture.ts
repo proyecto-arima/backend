@@ -180,7 +180,8 @@ const insertInitialData = async () => {
     key: 'fe6728c5-3919-462f-8f67-ad899edbe5fb',
     sectionId: new mongoose.Types.ObjectId('66b0e07bceed604f8977c1cc'),
     title: 'CSharp bla',
-    publicationType: 'DEFERRED',
+    publicationType: 'AUTOMATIC',
+    visible: true,
     reactions: [
       {
         userId: new mongoose.Types.ObjectId('6643eb8662e9b625cd5ddb1b'),

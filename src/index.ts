@@ -4,6 +4,7 @@ import { app } from '@/server';
 import { buildTransporter, initTransporter } from './common/mailSender/mailSenderService';
 import { config } from './common/utils/config';
 import { connectToMongoDB } from './common/utils/mongodb';
+import './cron';
 
 const server = app.listen(config.app.port, () => {
   const { port, host, node_env } = config.app;

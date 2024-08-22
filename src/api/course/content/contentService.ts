@@ -1,4 +1,4 @@
-import { ContentDTO } from '@/api/course/content/contentModel';
+import { ContentDTO, ContentModel } from '@/api/course/content/contentModel';
 import { contentRepository } from '@/api/course/content/contentRepository';
 
 export const contentService = {
@@ -15,6 +15,16 @@ export const contentService = {
 
   getContentById: async (contentId: string): Promise<ContentDTO> => {
     const content = await contentRepository.findById(contentId);
+    return content.toDto();
+  },
+
+  async updateContentVisibility(contentId: string, visible: boolean): Promise<ContentDTO> {
+    const content = await ContentModel.findByIdAndUpdate(contentId, { visible }, { new: true });
+
+    if (!content) {
+      throw new Error('Content not found');
+    }
+
     return content.toDto();
   },
 };

@@ -7,6 +7,7 @@ import { SectionCreationDTO, SectionModel } from '@/api/course/section/sectionMo
 import { StudentModel } from '@/api/student/studentModel';
 import { TeacherModel } from '@/api/teacher/teacherModel';
 import { UserModel } from '@/api/user/userModel';
+import { PublicationType } from '@/common/models/publicationType';
 
 export const courseRepository = {
   // Retrieves all courses from the database
@@ -97,12 +98,15 @@ export const courseRepository = {
     key: string,
     preSignedUrl: string
   ): Promise<any> => {
+    const isVisible = contentData.publicationType === PublicationType.AUTOMATIC;
+
     const newContent = new ContentModel({
       title: contentData.title,
       sectionId,
       key: key,
       publicationType: contentData.publicationType,
       publicationDate: contentData.publicationDate,
+      visible: isVisible,
     });
 
     const savedContent = newContent.save();

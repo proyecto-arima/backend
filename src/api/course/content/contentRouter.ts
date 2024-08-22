@@ -7,6 +7,7 @@ import {
   ContentDTOSchema,
   GetContentSchema,
   ReactionsResponseSchema,
+  UpdateVisibilitySchema
 } from '@/api/course/content/contentModel';
 import { contentService } from '@/api/course/content/contentService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
@@ -123,6 +124,41 @@ export const contentRouter: Router = (() => {
         handleApiResponse(apiResponse, res);
       } catch (e) {
         const apiError = new ApiError('Failed to retrieve content', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      }
+    }
+  );
+
+  contentRegistry.registerPath({
+    method: 'patch',
+    path: '/contents/{contentId}/visibility',
+    tags: ['Content'],
+    request: {
+      params: UpdateVisibilitySchema.shape.params,
+      body: { content: { 'application/json': { schema: UpdateVisibilitySchema.shape.body } } },
+    },
+    responses: createApiResponse(ContentDTOSchema, 'Success'),
+  });
+  router.patch(
+    '/:contentId/visibility',
+    sessionMiddleware,
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(UpdateVisibilitySchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+      const { visible } = req.body;
+  
+      try {
+        const updatedContent = await contentService.updateContentVisibility(contentId, visible);
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Content visibility updated successfully',
+          updatedContent,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        const apiError = new ApiError('Failed to update content visibility', StatusCodes.INTERNAL_SERVER_ERROR, error);
         return next(apiError);
       }
     }
