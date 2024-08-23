@@ -1,4 +1,5 @@
 import cron from 'node-cron';
+
 import { ContentModel } from '@/api/course/content/contentModel';
 
 // Ejecuta el job cada minuto (puedes ajustar la frecuencia según tus necesidades)
