@@ -23,7 +23,12 @@ export const ContentDTOSchema = z.object({
       })
     )
     .optional(),
-  generated: z.string().optional(),
+  generated: z
+    .object({
+      link: z.string(),
+      approved: z.boolean(),
+    })
+    .optional(),
 });
 export type ContentDTO = z.infer<typeof ContentDTOSchema>;
 
@@ -31,6 +36,14 @@ const reactionSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'Users', required: true },
     isSatisfied: { type: Boolean, required: true },
+  },
+  { _id: false }
+);
+
+const generatedSchema = new Schema(
+  {
+    link: { type: String, required: false, default: '' },
+    approved: { type: Boolean, required: true, default: false },
   },
   { _id: false }
 );
@@ -47,7 +60,7 @@ const contentModelSchemaDefinition: Record<keyof Omit<ContentDTO, 'id'>, any> = 
     default: [],
     required: false,
   },
-  generated: { type: String, required: false },
+  generated: { type: generatedSchema, required: false, default: () => ({ link: '', approved: false }) },
 };
 
 type IContentSchemaDefinition = Omit<ContentDTO, 'id'>;
@@ -144,6 +157,15 @@ export const UpdateVisibilitySchema = z.object({
   }),
   body: z.object({
     visible: z.boolean(),
+  }),
+});
+
+export const UpdateApproveSchema = z.object({
+  params: z.object({
+    contentId: z.string(),
+  }),
+  body: z.object({
+    approve: z.boolean(),
   }),
 });
 

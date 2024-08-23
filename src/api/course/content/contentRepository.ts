@@ -40,4 +40,20 @@ export const contentRepository = {
     }
     return content;
   },
+
+  async updateApproval(contentId: string, approve: boolean) {
+    const content = await ContentModel.findById(contentId);
+    if (!content) {
+      throw new Error('Content not found');
+    }
+
+    if (content.generated && content.generated.link) {
+      content.generated.approved = approve;
+    } else {
+      throw new Error('Generated link is missing or empty');
+    }
+
+    await content.save();
+    return content.toDto();
+  },
 };

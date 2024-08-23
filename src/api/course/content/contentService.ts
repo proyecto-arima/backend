@@ -27,4 +27,8 @@ export const contentService = {
 
     return content.toDto();
   },
+
+  async updateContentApproval(contentId: string, approve: boolean) {
+    return contentRepository.updateApproval(contentId, approve);
+  },
 };

@@ -7,6 +7,7 @@ import {
   ContentDTOSchema,
   GetContentSchema,
   ReactionsResponseSchema,
+  UpdateApproveSchema,
   UpdateVisibilitySchema,
 } from '@/api/course/content/contentModel';
 import { contentService } from '@/api/course/content/contentService';
@@ -159,6 +160,46 @@ export const contentRouter: Router = (() => {
         handleApiResponse(apiResponse, res);
       } catch (error) {
         const apiError = new ApiError('Failed to update content visibility', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
+      }
+    }
+  );
+
+  contentRegistry.registerPath({
+    method: 'patch',
+    path: '/contents/{contentId}/approval',
+    tags: ['Content'],
+    request: {
+      params: UpdateApproveSchema.shape.params,
+      body: { content: { 'application/json': { schema: UpdateApproveSchema.shape.body } } },
+    },
+    responses: createApiResponse(ContentDTOSchema, 'Success'),
+  });
+
+  router.patch(
+    '/:contentId/approval',
+    sessionMiddleware,
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(UpdateApproveSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+      const { approve } = req.body;
+
+      try {
+        const updatedContent = await contentService.updateContentApproval(contentId, approve);
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Content approval status updated successfully',
+          updatedContent,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        const apiError = new ApiError(
+          'Failed to update content approval status',
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          error
+        );
         return next(apiError);
       }
     }

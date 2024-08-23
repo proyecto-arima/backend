@@ -188,6 +188,10 @@ const insertInitialData = async () => {
         isSatisfied: true,
       },
     ],
+    generated: {
+      link: 'google.com',
+      approved: false,
+    },
     publicationDate: '2024-08-01T00:00:00Z',
   });
 

@@ -56,4 +56,22 @@ describe('Content retrieval tests', () => {
     expect(result.data).toHaveProperty('title', 'CSharp bla');
     expect(result.data).toHaveProperty('visible', false);
   });
+
+  it('PATCH /contents/:contentId/approval', async () => {
+    const token = await teacherLogin();
+
+    const contentId = '66b0e07bceed604f8977c0aa';
+    const approveData = { approve: true };
+
+    const response = await request(app)
+      .patch(`/contents/${contentId}/approval`)
+      .set('Authorization', `Bearer ${token}`)
+      .send(approveData);
+
+    expect(response.status).toBe(StatusCodes.OK);
+    const result = response.body;
+    expect(result.success).toBe(true);
+    expect(result.data).toHaveProperty('title', 'CSharp bla');
+    expect(result.data).toHaveProperty('generated.approved', true);
+  });
 });

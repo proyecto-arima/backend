@@ -11,13 +11,10 @@ export const teacherRepository = {
   },
 
   findByUserIdAsync: async (teacherUserId: string): Promise<any> => {
-    console.log(teacherUserId);
     const teacher = await TeacherModel.findOne<Teacher>({ user: teacherUserId }).exec();
     if (!teacher) {
       throw new Error('Teacher not found');
     }
-
-    console.log('TEACHER', teacher);
     return teacher;
   },
 
