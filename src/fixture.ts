@@ -144,7 +144,7 @@ const insertInitialData = async () => {
       institute: new mongoose.Types.ObjectId('66b8e029d9b6b3b37200bde3'),
       firstName: 'Student',
       lastName: '1',
-      learningProfile: 'VISUAL',
+      learningProfile: 'CONVERGENTE',
       courses: [
         {
           id: '66b2ba4bb24f72c9f4aac1d5',
@@ -158,7 +158,7 @@ const insertInitialData = async () => {
       institute: new mongoose.Types.ObjectId('66b8e029d9b6b3b37200bde3'),
       firstName: 'stella',
       lastName: 'mendez',
-      learningProfile: 'VISUAL',
+      learningProfile: 'CONVERGENTE',
     },
   ]);
 

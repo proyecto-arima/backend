@@ -84,6 +84,6 @@ describe('Generic student tests', () => {
     expect(response.status).toBe(StatusCodes.OK);
     const result = response.body;
     expect(result.success).toBe(true);
-    expect(result.data).toHaveProperty('learningProfile', 'VISUAL');
+    expect(result.data).toHaveProperty('learningProfile', 'CONVERGENTE');
   });
 });

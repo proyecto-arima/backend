@@ -115,28 +115,60 @@ export const GetUserSchema = z.object({
   params: z.object({ id: commonValidations.id }),
 });
 
+// Validación para el tipo de documento
+const DocumentTypeEnum = z.enum(['DNI', 'Pasaporte']);
+
+// Esquema de validación para el documento
+const DocumentSchema = z
+  .object({
+    type: DocumentTypeEnum,
+    number: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === 'DNI' && !/^\d{1,8}$/.test(data.number)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'DNI must have a maximum of 8 digits.',
+        path: ['number'], // Marca el error en el campo 'number'
+      });
+    }
+    if (data.type === 'Pasaporte' && !/^[a-zA-Z0-9]+$/.test(data.number)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Passport must be alphanumeric.',
+        path: ['number'], // Marca el error en el campo 'number'
+      });
+    }
+  });
+
 // Input Validation for 'POST users/register' endpoint
 export const UserCreationSchema = z.object({
   body: z.object({
-    firstName: z.string(),
-    lastName: z.string(),
-    email: z.string().email(),
-    document: z.object({
-      type: z.string(),
-      number: z.string(),
-    }),
+    firstName: z
+      .string()
+      .regex(/^[a-zA-Z\s]+$/, 'First name must contain only letters')
+      .min(1, 'First name cannot be empty'),
+    lastName: z
+      .string()
+      .regex(/^[a-zA-Z\s]+$/, 'Last name must contain only letters')
+      .min(1, 'Last name cannot be empty'),
+    email: z.string().email('Invalid email format'),
+    document: DocumentSchema,
   }),
 });
 
 export const UserDirectorCreationSchema = z.object({
   body: z.object({
-    firstName: z.string(),
-    lastName: z.string(),
-    email: z.string().email(),
-    document: z.object({
-      type: z.string(),
-      number: z.string(),
-    }),
+    firstName: z
+      .string()
+      .regex(/^[a-zA-Z\s]+$/, 'First name must contain only letters')
+      .min(1, 'First name cannot be empty'),
+    lastName: z
+      .string()
+      .regex(/^[a-zA-Z\s]+$/, 'Last name must contain only letters')
+      .min(1, 'Last name cannot be empty'),
+    email: z.string().email('Invalid email format'),
+    document: DocumentSchema,
     institute: z.object({
       id: z.string(),
     }),
