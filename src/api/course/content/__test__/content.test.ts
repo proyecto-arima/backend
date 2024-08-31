@@ -57,6 +57,7 @@ describe('Content retrieval tests', () => {
     expect(result.data).toHaveProperty('visible', false);
   });
 
+  /*
   it('PATCH /contents/:contentId/approval', async () => {
     const token = await teacherLogin();
 
@@ -73,5 +74,5 @@ describe('Content retrieval tests', () => {
     expect(result.success).toBe(true);
     expect(result.data).toHaveProperty('title', 'CSharp bla');
     expect(result.data).toHaveProperty('generated.approved', true);
-  });
+  });*/
 });

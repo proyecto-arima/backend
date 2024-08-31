@@ -43,7 +43,7 @@ export type StudentDTO = z.infer<typeof StudentDTOSchema>;
 const studentModelSchemaDefinition: Record<keyof Omit<StudentDTO, 'id'>, any> = {
   user: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
   institute: { type: Schema.Types.ObjectId, required: true, ref: 'Institutes' },
-  learningProfile: { type: String, required: true, enum: LearningProfile },
+  learningProfile: { type: String, required: false, enum: LearningProfile },
   courses: [
     {
       id: { type: Schema.Types.ObjectId, required: true, ref: 'Courses' },

@@ -2,10 +2,17 @@ import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import mongoose, { Document, Model, Schema } from 'mongoose';
 import { z } from 'zod';
 
+import { ContentType } from '@/common/models/contentType';
 import { PublicationType } from '@/common/models/publicationType';
 import { commonValidations } from '@/common/utils/commonValidation';
 
 extendZodWithOpenApi(z);
+
+const GeneratedContentSchema = z.object({
+  type: z.enum([ContentType.SUMMARY, ContentType.MIND_MAP, ContentType.GAMIFICATION, ContentType.SPEECH]),
+  content: z.string(),
+  approved: z.boolean(),
+});
 
 export const ContentDTOSchema = z.object({
   id: z.string(),
@@ -23,12 +30,7 @@ export const ContentDTOSchema = z.object({
       })
     )
     .optional(),
-  generated: z
-    .object({
-      link: z.string(),
-      approved: z.boolean(),
-    })
-    .optional(),
+  generated: z.array(GeneratedContentSchema).optional(),
 });
 export type ContentDTO = z.infer<typeof ContentDTOSchema>;
 
@@ -40,9 +42,10 @@ const reactionSchema = new Schema(
   { _id: false }
 );
 
-const generatedSchema = new Schema(
+const generatedContentSchema = new Schema(
   {
-    link: { type: String, required: false, default: '' },
+    type: { type: String, enum: Object.values(ContentType), required: true },
+    content: { type: String, required: true },
     approved: { type: Boolean, required: true, default: false },
   },
   { _id: false }
@@ -60,7 +63,11 @@ const contentModelSchemaDefinition: Record<keyof Omit<ContentDTO, 'id'>, any> = 
     default: [],
     required: false,
   },
-  generated: { type: generatedSchema, required: false, default: () => ({ link: '', approved: false }) },
+  generated: {
+    type: [generatedContentSchema],
+    required: false,
+    default: [],
+  },
 };
 
 type IContentSchemaDefinition = Omit<ContentDTO, 'id'>;
@@ -94,7 +101,7 @@ contentModelSchema.method('toDto', function (): ContentDTO {
     publicationDate: this.publicationDate,
     visible: this.visible,
     reactions: this.reactions || [],
-    generated: this.generated,
+    generated: this.generated || [],
   };
 });
 

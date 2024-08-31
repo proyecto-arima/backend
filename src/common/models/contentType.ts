@@ -1,0 +1,6 @@
+export enum ContentType {
+  SUMMARY = 'SUMMARY',
+  MIND_MAP = 'MIND_MAP',
+  GAMIFICATION = 'GAMIFICATION',
+  SPEECH = 'SPEECH',
+}
