@@ -169,8 +169,8 @@ const insertInitialData = async () => {
     visible: true,
     contents: [
       {
-        id: new mongoose.Types.ObjectId('66b0e1f3f4bf663c33986f2d'),
-        title: 'Advanced TypeScript Techniques',
+        id: new mongoose.Types.ObjectId('66b0e07bceed604f8977c0aa'),
+        title: 'CSharp bla',
       },
     ],
   });

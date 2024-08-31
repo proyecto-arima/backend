@@ -4,6 +4,35 @@ import request from 'supertest';
 import { setupTestEnvironment } from '@/fixture';
 import { app } from '@/server';
 
+/* Mock de AWS S3
+vi.mock('@aws-sdk/client-s3', async (importOriginal) => {
+  const AWS = await importOriginal<typeof import('@aws-sdk/client-s3')>();
+  const S3 = {
+    upload: vi.fn().mockReturnValue({
+      promise: vi.fn().mockResolvedValue({
+        Location: 'https://mocked-s3-url.com/file.jpg',
+        Key: 'mocked-key',
+      }),
+    }),
+  };
+  console.log('S3 MOCK LOADED AAAAAA'); // Verificar que este mock se carga
+  return {
+    ...AWS,
+    S3: vi.fn().mockImplementation(() => S3),
+  };
+});
+
+// Mock de `awsManager`
+vi.mock('@/common/utils/awsManager', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('@/common/utils/awsManager')>();
+  console.log('awsManager mock LOADED BBBBBBBBBBBBBBB'); // Verificar que este mock se carga
+  return {
+    ...mod,
+    s3Put: vi.fn().mockResolvedValue({ key: 'mocked-key' }),
+    s3Get: vi.fn(),
+  };
+});*/
+
 describe('Generic course tests', () => {
   setupTestEnvironment();
 
@@ -194,5 +223,44 @@ describe('Generic course tests', () => {
     const studentExists = course.students.some((student: { userId: string }) => student.userId === userId);
 
     expect(studentExists).toBe(false);
+  });
+
+  it('POST /courses/:courseId/sections/:sectionId/content', async () => {
+    const token = await login();
+
+    const courseId = '66b2ba4bb24f72c9f4aac1d5';
+    const sectionId = '66b0e07bceed604f8977c1cc';
+    const contentData = {
+      title: 'Test Content',
+      publicationType: 'AUTOMATIC',
+    };
+
+    const response = await request(app)
+      .post(`/courses/${courseId}/sections/${sectionId}/content`)
+      .field('title', contentData.title)
+      .field('publicationType', contentData.publicationType)
+      .attach('file', Buffer.from('dummy content'), 'testfile.txt')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(StatusCodes.OK);
+    const result = response.body;
+    expect(result.success).toBe(true);
+  });
+
+  it('GET /courses/:courseId/sections/:sectionId/content', async () => {
+    const token = await login(); // Puedes ajustar el rol según los permitidos
+
+    const courseId = '66b2ba4bb24f72c9f4aac1d5';
+    const sectionId = '66b0e07bceed604f8977c1cc';
+
+    const response = await request(app)
+      .get(`/courses/${courseId}/sections/${sectionId}/content`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(StatusCodes.OK);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0]).toHaveProperty('id', '66b0e07bceed604f8977c0aa');
+    expect(response.body.data[0]).toHaveProperty('key', 'fe6728c5-3919-462f-8f67-ad899edbe5fb');
   });
 });
