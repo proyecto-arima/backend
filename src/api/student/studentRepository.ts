@@ -15,6 +15,6 @@ export const studentRepository = {
     studentUserId: Types.ObjectId,
     course: { id: Types.ObjectId; courseName: string }
   ): Promise<void> => {
-    await StudentModel.updateOne({ userId: studentUserId }, { $push: { courses: course } }).exec();
+    await StudentModel.updateOne({ user: studentUserId }, { $push: { courses: course } }).exec();
   },
 };

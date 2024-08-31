@@ -1,3 +1,5 @@
+import './cron';
+
 import { logger } from '@/common/utils/serverLogger';
 import { app } from '@/server';
 

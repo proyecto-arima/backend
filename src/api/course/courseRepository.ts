@@ -7,6 +7,7 @@ import { SectionCreationDTO, SectionModel } from '@/api/course/section/sectionMo
 import { StudentModel } from '@/api/student/studentModel';
 import { TeacherModel } from '@/api/teacher/teacherModel';
 import { UserModel } from '@/api/user/userModel';
+import { PublicationType } from '@/common/models/publicationType';
 
 export const courseRepository = {
   // Retrieves all courses from the database
@@ -97,12 +98,15 @@ export const courseRepository = {
     key: string,
     preSignedUrl: string
   ): Promise<any> => {
+    const isVisible = contentData.publicationType === PublicationType.AUTOMATIC;
+
     const newContent = new ContentModel({
       title: contentData.title,
       sectionId,
       key: key,
       publicationType: contentData.publicationType,
       publicationDate: contentData.publicationDate,
+      visible: isVisible,
     });
 
     const savedContent = newContent.save();
@@ -175,21 +179,13 @@ export const courseRepository = {
   },
 
   deleteCourse: async (courseId: string): Promise<void> => {
-    const session = await CourseModel.startSession();
-    session.startTransaction();
+    await StudentModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } });
+    await TeacherModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } });
+    await CourseModel.deleteOne({ _id: courseId });
+  },
 
-    try {
-      await StudentModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } }, { session });
-
-      await TeacherModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } }, { session });
-      await CourseModel.deleteOne({ _id: courseId }, { session });
-
-      await session.commitTransaction();
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
-    }
+  removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {
+    await CourseModel.updateOne({ _id: courseId }, { $pull: { students: { userId: userId } } });
+    await StudentModel.updateOne({ user: userId }, { $pull: { courses: { id: courseId } } });
   },
 };

@@ -18,6 +18,7 @@ export const studentService = {
     logger.trace(`[StudentService] - [create] - Creating user: ${JSON.stringify(user)}`);
     logger.trace(`[StudentService] - [create] - Generating random password...`);
     const randomPassword = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
+    console.log('STUDENT PASS:', randomPassword);
     console.log('PASSWORD', randomPassword);
     if (config.app.node_env === 'development') {
       logger.trace(`[StudentService] - [create] - Random password: ${randomPassword}`);
@@ -36,9 +37,9 @@ export const studentService = {
     const instituteId = await directorRepository.getInstituteId(directorUserId);
 
     const student = new StudentModel({
-      userId: createdUser.id,
-      instituteId: instituteId,
-      learningProfile: LearningProfile.VISUAL,
+      user: createdUser.id,
+      institute: instituteId,
+      learningProfile: LearningProfile.CONVERGENTE,
       courses: [],
     });
 

@@ -31,6 +31,7 @@ export async function initTransporter(t: nodemailer.Transporter) {
 
 async function sendMailTo(mails: Array<string>, subject: string, html: string) {
   try {
+    if (config.app.node_env === 'test') return;
     const info = await transporter.sendMail({
       from: config.smtp.sender,
       to: mails.join(','),

@@ -3,7 +3,7 @@ import { Content, ContentDTO, ContentModel } from '@/api/course/content/contentM
 export const contentRepository = {
   async getReactionsByContentId(
     contentId: string
-  ): Promise<{ reactions: { idStudent: string; isSatisfied: boolean }[] } | null> {
+  ): Promise<{ reactions: { userId: string; isSatisfied: boolean }[] } | null> {
     const content = await ContentModel.findById(contentId).exec();
     if (!content) {
       return null;
@@ -11,7 +11,7 @@ export const contentRepository = {
     return { reactions: content.reactions || [] };
   },
 
-  async addReactionToContent(contentId: string, isSatisfied: boolean, idStudent: string): Promise<ContentDTO | null> {
+  async addReactionToContent(contentId: string, isSatisfied: boolean, userId: string): Promise<ContentDTO | null> {
     const content = await ContentModel.findById(contentId).exec();
     if (!content) {
       return null;
@@ -21,12 +21,12 @@ export const contentRepository = {
       content.reactions = [];
     }
 
-    const existingReactionIndex = content.reactions.findIndex((r) => r.idStudent === idStudent);
+    const existingReactionIndex = content.reactions.findIndex((r) => r.userId.toString() === userId);
 
     if (existingReactionIndex !== -1) {
       content.reactions[existingReactionIndex].isSatisfied = isSatisfied;
     } else {
-      content.reactions.push({ idStudent, isSatisfied });
+      content.reactions.push({ userId: userId, isSatisfied });
     }
 
     await content.save();
@@ -39,5 +39,21 @@ export const contentRepository = {
       throw new Error('Content not found');
     }
     return content;
+  },
+
+  async updateApproval(contentId: string, approve: boolean) {
+    const content = await ContentModel.findById(contentId);
+    if (!content) {
+      throw new Error('Content not found');
+    }
+
+    if (content.generated && content.generated.link) {
+      content.generated.approved = approve;
+    } else {
+      throw new Error('Generated link is missing or empty');
+    }
+
+    await content.save();
+    return content.toDto();
   },
 };

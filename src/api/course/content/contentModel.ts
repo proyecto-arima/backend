@@ -1,5 +1,3 @@
-// contentModel.ts
-
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import mongoose, { Document, Model, Schema } from 'mongoose';
 import { z } from 'zod';
@@ -16,23 +14,36 @@ export const ContentDTOSchema = z.object({
   sectionId: z.string(),
   publicationType: z.enum([PublicationType.AUTOMATIC, PublicationType.DEFERRED]),
   publicationDate: z.date().optional(),
-  //file: z.string(),
+  visible: z.boolean(),
   reactions: z
     .array(
       z.object({
-        idStudent: z.string(),
+        userId: z.string(),
         isSatisfied: z.boolean(),
       })
     )
     .optional(),
-  generated: z.string().optional(),
+  generated: z
+    .object({
+      link: z.string(),
+      approved: z.boolean(),
+    })
+    .optional(),
 });
 export type ContentDTO = z.infer<typeof ContentDTOSchema>;
 
 const reactionSchema = new Schema(
   {
-    idStudent: { type: String, required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'Users', required: true },
     isSatisfied: { type: Boolean, required: true },
+  },
+  { _id: false }
+);
+
+const generatedSchema = new Schema(
+  {
+    link: { type: String, required: false, default: '' },
+    approved: { type: Boolean, required: true, default: false },
   },
   { _id: false }
 );
@@ -43,13 +54,13 @@ const contentModelSchemaDefinition: Record<keyof Omit<ContentDTO, 'id'>, any> = 
   sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: true },
   publicationType: { type: String, enum: Object.values(PublicationType), required: true },
   publicationDate: { type: Date, required: false },
-  //file: { type: String, required: true },
+  visible: { type: Boolean, required: true, default: true },
   reactions: {
     type: [reactionSchema],
     default: [],
     required: false,
   },
-  generated: { type: String, required: false },
+  generated: { type: generatedSchema, required: false, default: () => ({ link: '', approved: false }) },
 };
 
 type IContentSchemaDefinition = Omit<ContentDTO, 'id'>;
@@ -81,7 +92,7 @@ contentModelSchema.method('toDto', function (): ContentDTO {
     sectionId: this.sectionId.toString(),
     publicationType: this.publicationType as PublicationType,
     publicationDate: this.publicationDate,
-    //file: this.file,
+    visible: this.visible,
     reactions: this.reactions || [],
     generated: this.generated,
   };
@@ -108,6 +119,7 @@ export const ContentCreationSchema = z.object({
       }
       return null;
     }, z.date().nullable().optional()),
+    visible: z.boolean().optional(),
   }),
 });
 
@@ -126,7 +138,7 @@ export const GetContentSchema = z.object({
 
 // Definición del esquema de una reacción
 const ReactionSchema = z.object({
-  idStudent: z.string(),
+  userId: z.string(),
   isSatisfied: z.boolean(),
 });
 
@@ -137,6 +149,24 @@ export const ReactionsResponseSchema = z.object({
 
 export const ContentWithPresignedUrlSchema = ContentDTOSchema.extend({
   preSignedUrl: z.string(),
+});
+
+export const UpdateVisibilitySchema = z.object({
+  params: z.object({
+    contentId: z.string(),
+  }),
+  body: z.object({
+    visible: z.boolean(),
+  }),
+});
+
+export const UpdateApproveSchema = z.object({
+  params: z.object({
+    contentId: z.string(),
+  }),
+  body: z.object({
+    approve: z.boolean(),
+  }),
 });
 
 export type AddReactionsDTO = z.infer<typeof AddReactionsSchema.shape.body>;

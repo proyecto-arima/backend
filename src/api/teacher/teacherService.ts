@@ -18,6 +18,7 @@ export const teacherService = {
     logger.trace(`[TeacherService] - [create] - Creating teacher: ${JSON.stringify(user)}`);
     logger.trace(`[TeacherService] - [create] - Generating random password...`);
     const randomPassword = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
+    console.log('TEACHER PASS:', randomPassword);
     if (config.app.node_env === 'development') {
       logger.trace(`[TeacherService] - [create] - Random password: ${randomPassword}`);
     }
@@ -31,8 +32,8 @@ export const teacherService = {
     const instituteId = await directorRepository.getInstituteId(directorUserId);
     console.log(instituteId);
     const teacher = new TeacherModel({
-      userId: createdUser.id,
-      instituteId: instituteId,
+      user: createdUser.id,
+      institute: instituteId,
       courses: [],
     });
 
@@ -58,7 +59,7 @@ export const teacherService = {
     const teachers = await TeacherModel.find({ instituteId: instituteId }).exec();
     logger.trace(`[TeacherService] - [findByInstituteId] - Found ${teachers.length} teachers`);
     // TODO: Put instituteId in the USER
-    const teacherIds = teachers.map((teacher) => teacher.userId);
+    const teacherIds = teachers.map((teacher) => teacher.user.id);
     const teacherUsersPromises = teacherIds.map((teacherId) => userService.findById(teacherId));
     const teachersUsers = await Promise.all(teacherUsersPromises);
     logger.trace('[TeacherService] - [findByInstituteId] - End');

@@ -50,7 +50,7 @@ app.use('/students', studentRouter);
 app.use('/teachers', teacherRouter);
 app.use('/directors', sessionMiddleware, directorRouter);
 app.use('/courses', courseRouter);
-app.use('/content', contentRouter);
+app.use('/contents', contentRouter);
 app.use('/institutes', sessionMiddleware, instituteRouter);
 
 // Swagger UI

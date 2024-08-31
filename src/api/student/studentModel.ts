@@ -18,8 +18,15 @@ extendZodWithOpenApi(z);
  */
 export const StudentDTOSchema = z.object({
   id: z.string(),
-  userId: z.string(),
-  instituteId: z.string(),
+  user: z.object({
+    id: z.string(),
+    email: z.string(),
+    name: z.string(),
+  }),
+  institute: z.object({
+    id: z.string(),
+    name: z.string(),
+  }),
   learningProfile: z.nativeEnum(LearningProfile),
   courses: z.array(
     z.object({
@@ -34,12 +41,12 @@ export type StudentDTO = z.infer<typeof StudentDTOSchema>;
  * Student Model Schema Definition
  */
 const studentModelSchemaDefinition: Record<keyof Omit<StudentDTO, 'id'>, any> = {
-  userId: { type: String, required: true },
-  instituteId: { type: String, required: false },
+  user: { type: Schema.Types.ObjectId, required: true, ref: 'Users' },
+  institute: { type: Schema.Types.ObjectId, required: true, ref: 'Institutes' },
   learningProfile: { type: String, required: true, enum: LearningProfile },
   courses: [
     {
-      id: { type: String, required: true },
+      id: { type: Schema.Types.ObjectId, required: true, ref: 'Courses' },
       courseName: { type: String, required: true },
       _id: false,
     },
@@ -76,8 +83,8 @@ const studentModelSchema = new Schema<
 studentModelSchema.method('toDto', function (): StudentDTO {
   return {
     id: this._id.toString(),
-    userId: this.userId.toString(),
-    instituteId: this.instituteId.toString(),
+    user: this.user,
+    institute: this.institute,
     learningProfile: this.learningProfile.toString() as LearningProfile,
     courses: this.courses.map((course: any) => ({
       id: course.id.toString(),
