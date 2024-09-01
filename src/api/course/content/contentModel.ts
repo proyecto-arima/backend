@@ -90,6 +90,17 @@ const contentModelSchema = new Schema<
   timestamps: true,
   versionKey: false,
 });
+// Middleware pre-save para generar automáticamente contenido
+contentModelSchema.pre('save', function (next) {
+  if (this.isNew) {
+    this.generated = Object.values(ContentType).map((type) => ({
+      type,
+      content: '', // Deja el contenido vacío o pon un valor por defecto
+      approved: false,
+    }));
+  }
+  next();
+});
 
 contentModelSchema.method('toDto', function (): ContentDTO {
   return {
@@ -155,6 +166,7 @@ export const ReactionsResponseSchema = z.object({
 });
 
 export const ContentWithPresignedUrlSchema = ContentDTOSchema.extend({
+  status: z.string(),
   preSignedUrl: z.string(),
 });
 
@@ -172,8 +184,35 @@ export const UpdateApproveSchema = z.object({
     contentId: z.string(),
   }),
   body: z.object({
-    approve: z.boolean(),
+    mind_map: z.boolean().optional(),
+    gamification: z.boolean().optional(),
+    summary: z.boolean().optional(),
+    speech: z.boolean().optional(),
   }),
+});
+
+export const SummaryContentSchema = z.object({
+  type: z.literal('SUMMARY'),
+  content: z.string().optional(),
+  approved: z.boolean(),
+});
+
+export const MindmapContentSchema = z.object({
+  type: z.literal('MIND_MAP'),
+  content: z.string().optional(),
+  approved: z.boolean(),
+});
+
+export const GamificationContentSchema = z.object({
+  type: z.literal('GAMIFICATION'),
+  content: z.string().optional(),
+  approved: z.boolean(),
+});
+
+export const SpeechContentSchema = z.object({
+  type: z.literal('SPEECH'),
+  content: z.string().optional(),
+  approved: z.boolean(),
 });
 
 export type AddReactionsDTO = z.infer<typeof AddReactionsSchema.shape.body>;

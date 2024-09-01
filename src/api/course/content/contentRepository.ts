@@ -41,19 +41,25 @@ export const contentRepository = {
     return content;
   },
 
-  async updateApproval(contentId: string, approve: boolean) {
+  async updateApproval(contentId: string, approve: Record<string, boolean>): Promise<Content | null> {
+    // Lógica para actualizar los estados de aprobación en la base de datos.
     const content = await ContentModel.findById(contentId);
-    if (!content) {
-      throw new Error('Content not found');
+
+    if (!content || !content.generated) {
+      throw new Error('Content not found or does not have generated content');
     }
 
-    if (content.generated && content.generated.link) {
-      content.generated.approved = approve;
-    } else {
-      throw new Error('Generated link is missing or empty');
-    }
+    // Actualiza los estados de aprobación en el objeto de contenido
+    Object.keys(approve).forEach((key) => {
+      const contentItem = content.generated?.find((item) => item.type.toUpperCase() === key.toUpperCase());
+
+      if (contentItem) {
+        contentItem.approved = approve[key];
+      }
+    });
 
     await content.save();
-    return content.toDto();
+
+    return content;
   },
 };

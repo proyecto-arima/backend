@@ -316,10 +316,14 @@ export const courseRouter: Router = (() => {
     sessionMiddleware,
     checkSessionContext,
     hasAccessToCourseMiddleware('courseId'),
-    roleMiddleware([Role.TEACHER, Role.STUDENT]), // O según los roles permitidos
+    roleMiddleware([Role.TEACHER, Role.STUDENT]),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
-      const { sectionId } = req.params;
+      if (!req.sessionContext || !req.sessionContext.user) {
+        return next(new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED, 'User is not authenticated'));
+      }
 
+      const { sectionId } = req.params;
+      //const role = req.sessionContext.user.role;
       try {
         const contentsWithUrls = await courseService.getContentsWithPresignedUrls(sectionId);
         res.status(200).json({

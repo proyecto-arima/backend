@@ -188,10 +188,28 @@ const insertInitialData = async () => {
         isSatisfied: true,
       },
     ],
-    generated: {
-      link: 'google.com',
-      approved: false,
-    },
+    generated: [
+      {
+        type: 'SUMMARY',
+        content: 'google.com',
+        approved: false,
+      },
+      {
+        type: 'MIND_MAP',
+        content: 'google.com',
+        approved: false,
+      },
+      {
+        type: 'GAMIFICATION',
+        content: 'google.com',
+        approved: false,
+      },
+      {
+        type: 'SPEECH',
+        content: 'google.com',
+        approved: false,
+      },
+    ],
     publicationDate: '2024-08-01T00:00:00Z',
   });
 
