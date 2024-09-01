@@ -1,48 +1,83 @@
+import fs from 'fs';
+import { compile } from 'handlebars';
 import nodemailer from 'nodemailer';
 
 import { logger } from '@/common/utils/serverLogger';
 
 import { config } from '../utils/config';
+import { Email } from './mailTemplateModel';
 
 let transporter: nodemailer.Transporter;
 
-// BUG: Typescript lo detecta como error de sintaxis, pero el SMTP lleva este tipo de objeto
-export const buildTransporter = () =>
-  nodemailer.createTransport({
+export const buildTransporter = () => {
+  return nodemailer.createTransport({
     host: config.smtp.host,
     port: config.smtp.port,
     greetingTimeout: 5000,
     secure: config.smtp.secure,
     auth: config.smtp.auth,
   });
+};
 
-export async function initTransporter(t: nodemailer.Transporter) {
-  logger.info('Initializing SMTP Server');
+export const initTransporter = (t: nodemailer.Transporter) => {
+  logger.info('[MailSenderService] - [initTransporter] - Initializing SMTP Server');
   t.verify((error) => {
     if (error) {
-      logger.error('Error while connecting to SMTP Server: %s', error);
-      return Promise.reject(error);
+      logger.error(`[MailSenderService] - [initTransporter] - Error: ${error}`);
+      throw Error('Error initializing SMTP Server');
     }
-    transporter = t;
-    logger.info('SMTP Server ready');
-    return Promise.resolve('SMTP Server ready');
   });
-}
+  transporter = t;
+  logger.trace(`[MailSenderService] - [initTransporter] - SMTP transporter created`);
+  logger.info(`[MailSenderService] - [initTransporter] - SMTP Server initialized`);
+  return transporter;
+};
 
-async function sendMailTo(mails: Array<string>, subject: string, html: string) {
-  try {
-    if (config.app.node_env === 'test') return;
-    const info = await transporter.sendMail({
-      from: config.smtp.sender,
-      to: mails.join(','),
-      subject: subject,
-      html: html,
-    });
-    logger.info(`[MailSenderService] - [sendMailTo] - Email sent: ${info.messageId}`);
-  } catch (error) {
-    logger.error(`[MailSenderService] - [sendMailTo] - Error: ${error}`);
-    throw Error('Error sending email');
-  }
-}
+export const mailSenderService = {
+  sendMailTo: async (data: Email) => {
+    logger.info(`[MailSenderService] - [sendMailTo] - Sending email to ${data.to.join(',')}`);
+    try {
+      if (!data) {
+        throw Error('Email data is required');
+      }
+      logger.trace(`[MailSenderService] - [sendMailTo] - Reading email template: ${data.bodyTemplateName}`);
+      const source = fs.readFileSync(`${__dirname}/html_templates/${data.bodyTemplateName}`, 'utf8');
+      const htmlContent = compile(source)(data.templateParams);
+      logger.trace('[MailSenderService] - [sendMailTo] - Email template compiled successfully');
 
-export default sendMailTo;
+      if (config.app.node_env === 'test') return;
+      const info = await transporter.sendMail({
+        from: config.smtp.sender,
+        to: data.to.join(','),
+        cc: data.cc?.join(','),
+        bcc: data.bcc?.join(','),
+        subject: data.subject,
+        html: htmlContent,
+        attachments: data.attachments,
+      });
+      logger.info(`[MailSenderService] - [sendMailTo] - Email sent successfully: ${info.messageId}`);
+    } catch (error) {
+      logger.error(`[MailSenderService] - [sendMailTo] - ${error}`);
+      throw Error('Error sending email');
+    }
+  },
+};
+
+// EXAMPLE USAGE
+// mailSenderService.sendMailTo(
+//   {
+//     to: ['test@email.com'],
+//     subject: 'Test email',
+//     bodyTemplateName: 'test.html',
+//     templateParams: {
+//       "name": "My name",
+//       "hometown": "Best place on earth",
+//       "kids": [
+//         { "name": "name1", "age": "51" },
+//         { "name": "nam2", "age": "22" }
+//       ]
+//     }
+//   } as Email
+// );
+
+export default mailSenderService.sendMailTo;
