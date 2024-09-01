@@ -45,7 +45,7 @@ const reactionSchema = new Schema(
 const generatedContentSchema = new Schema(
   {
     type: { type: String, enum: Object.values(ContentType), required: true },
-    content: { type: String, required: true },
+    content: { type: String, required: false },
     approved: { type: Boolean, required: true, default: false },
   },
   { _id: false }
@@ -95,7 +95,7 @@ contentModelSchema.pre('save', function (next) {
   if (this.isNew) {
     this.generated = Object.values(ContentType).map((type) => ({
       type,
-      content: '', // Deja el contenido vacío o pon un valor por defecto
+      content: '', // Deja el contenido vacío por defecto
       approved: false,
     }));
   }
