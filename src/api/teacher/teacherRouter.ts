@@ -1,5 +1,5 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
-import express, { NextFunction, Request, Response, Router } from 'express';
+import express, { NextFunction, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
@@ -14,6 +14,7 @@ import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
 
+import { directorService } from '../director/directorService';
 import { UserCreationSchema, UserDTOSchema } from '../user/userModel';
 import { teacherService } from './teacherService';
 
@@ -35,27 +36,39 @@ export const teacherRouter: Router = (() => {
     responses: createApiResponse(UserDTOSchema, 'Success'),
   });
 
-  router.post('/', validateRequest(UserCreationSchema), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      logger.trace('[TeacherRouter] - [/] - Start');
-      const teacher = req.body;
-      logger.trace(`[TeacherRouter] - [/] - Creating teacher: ${JSON.stringify(teacher)}`);
-      const createdTeacher = await teacherService.create(teacher);
-      logger.trace(`[TeacherRouter] - [/] - Teacher created: ${JSON.stringify(createdTeacher)}`);
-      const apiResponse = new ApiResponse(
-        ResponseStatus.Success,
-        'Teacher successfully created',
-        createdTeacher,
-        StatusCodes.CREATED
-      );
-      handleApiResponse(apiResponse, res);
-    } catch (e) {
-      logger.error(`[TeacherRouter] - [/] - Error: ${e}`);
-      return next(e);
-    } finally {
-      logger.trace('[TeacherRouter] - [/] - End');
+  router.post(
+    '/',
+    sessionMiddleware,
+    roleMiddleware([Role.DIRECTOR]),
+    validateRequest(UserCreationSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
+
+      try {
+        logger.trace('[TeacherRouter] - [/] - Start');
+        const teacher = req.body;
+        logger.trace(`[TeacherRouter] - [/] - Creating teacher: ${JSON.stringify(teacher)}`);
+        const directorUserId = sessionContext.user.id;
+        const createdTeacher = await teacherService.create(teacher, directorUserId);
+        logger.trace(`[TeacherRouter] - [/] - Teacher created: ${JSON.stringify(createdTeacher)}`);
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Teacher successfully created',
+          createdTeacher,
+          StatusCodes.CREATED
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        logger.error(`[TeacherRouter] - [/] - Error: ${e}`);
+        return next(e);
+      } finally {
+        logger.trace('[TeacherRouter] - [/] - End');
+      }
     }
-  });
+  );
 
   teacherRegistry.registerPath({
     method: 'get',
@@ -92,6 +105,35 @@ export const teacherRouter: Router = (() => {
       } catch (e) {
         logger.error(`[TeacherRouter] - [/me/courses] - Error: ${e}`);
         const apiError = new ApiError('Failed to retrieve courses', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      }
+    }
+  );
+
+  router.get(
+    '/',
+    sessionMiddleware,
+    roleMiddleware([Role.DIRECTOR]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
+
+      try {
+        const directorUserId = sessionContext.user.id;
+        const instituteId = await directorService.getInstituteId(directorUserId);
+        const teachers = await teacherService.findByInstituteId(instituteId);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Teachers retrieved successfully',
+          teachers,
+          StatusCodes.OK
+        );
+        res.status(StatusCodes.OK).json(apiResponse);
+      } catch (error) {
+        const apiError = new ApiError('Failed to retrieve teachers', StatusCodes.INTERNAL_SERVER_ERROR, error);
         return next(apiError);
       }
     }

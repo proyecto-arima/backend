@@ -1,3 +1,4 @@
+import { StudentModel } from '@/api/student/studentModel';
 import { User, UserCreation, UserCreationDTO, UserModel, UserNotFoundError } from '@/api/user/userModel';
 
 export const userRepository = {
@@ -28,7 +29,26 @@ export const userRepository = {
     return updatedUser;
   },
 
-  findUsersByRole: async (role: string): Promise<User[]> => {
-    return UserModel.find<User>({ role }).exec();
+  findUsersByRoleAndInstitute: async (role: string, instituteId: string): Promise<User[]> => {
+    // Encuentra los estudiantes por instituteId
+    const students = await StudentModel.find({ institute: instituteId }).exec();
+
+    // Extrae los userIds de esos estudiantes
+    const userIds = students.map((student) => student.user);
+
+    // Encuentra los usuarios por role y los userIds obtenidos
+    return UserModel.find<User>({ role, _id: { $in: userIds } }).exec();
+  },
+
+  async updateUserProfile(
+    userId: string,
+    updatedFields: Partial<{ email: string; firstName: string; lastName: string }>
+  ) {
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      { $set: updatedFields },
+      { new: true, runValidators: true }
+    ).exec();
+    return updatedUser;
   },
 };

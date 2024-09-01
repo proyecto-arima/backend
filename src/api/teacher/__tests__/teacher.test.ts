@@ -1,50 +1,13 @@
 import { StatusCodes } from 'http-status-codes';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import mongoose from 'mongoose';
 import request from 'supertest';
 
-import { connectToMongoDB, disconnectFromMongoDB } from '@/common/utils/mongodb';
+import { setupTestEnvironment } from '@/fixture';
 import { app } from '@/server';
 
 describe('Generic teacher tests', () => {
-  beforeAll(async () => {
-    const mongod = await MongoMemoryServer.create();
-    await connectToMongoDB(mongod.getUri());
-  });
+  setupTestEnvironment();
 
-  beforeEach(async () => {
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.db.collection('courses').insertMany([
-      {
-        title: 'Course 1',
-        description: 'Course for the test teacher',
-        image: 'https://example.com/image1.jpg',
-        teacherUserId: '6643eb8662e9b625cd5dda4f', // ID del docente que ejecuta la prueba
-      },
-      {
-        title: 'Course 2',
-        description: 'Course for another teacher',
-        image: 'https://example.com/image2.jpg',
-        teacherUserId: '6643eb8662e9b625cd5dda4g', // ID de otro docente
-      },
-    ]);
-
-    await mongoose.connection.db.collection('users').insertOne({
-      _id: new mongoose.Types.ObjectId('6643eb8662e9b625cd5dda4f'),
-      firstName: 'Teacher',
-      lastName: 'Proyecto Arima',
-      document: {
-        type: 'GENERIC',
-        number: '00000000',
-      },
-      email: 'teacher@proyectoarima.tech',
-      password: '$2b$10$6aJ.eouEbOlyhV99pVsrM./mAdk41tzPh6tZLv1vyFaWqB6G/5Zf.', // admin
-      role: 'TEACHER',
-      forcePasswordReset: false,
-    });
-  });
-
-  const login = async (email = 'teacher@proyectoarima.tech', password = 'admin') => {
+  const login = async (email = 'specific@proyectoarima.tech', password = 'admin') => {
     const response = await request(app).post('/auth').send({
       email,
       password,
@@ -63,10 +26,6 @@ describe('Generic teacher tests', () => {
     expect(result.success).toBe(true);
     const courses = result.data;
     expect(courses).toHaveLength(1);
-    expect(courses[0]).toHaveProperty('title', 'Course 1');
-  });
-
-  afterAll(async () => {
-    await disconnectFromMongoDB();
+    expect(courses[0]).toHaveProperty('title', 'Course 3');
   });
 });

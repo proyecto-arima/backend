@@ -3,6 +3,7 @@ import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
 
+import { adminRouter } from '@/api/admin/adminRouter';
 import { healthCheckRouter } from '@/api/healthCheck/healthCheckRouter';
 import { userRouter } from '@/api/user/userRouter';
 import { openAPIRouter } from '@/api-docs/openAPIRouter';
@@ -14,6 +15,7 @@ import { authRouter } from './api/auth/authRouter';
 import { contentRouter } from './api/course/content/contentRouter';
 import { courseRouter } from './api/course/courseRouter';
 import { directorRouter } from './api/director/directorRouter';
+import { instituteRouter } from './api/institute/instituteRouter';
 import { studentRouter } from './api/student/studentRouter';
 import { teacherRouter } from './api/teacher/teacherRouter';
 import { sessionMiddleware } from './common/middleware/session';
@@ -23,7 +25,11 @@ const app: Express = express();
 
 // Set the application to trust the reverse proxy
 app.set('trust proxy', true);
-app.use(express.json());
+app.use(
+  express.json({
+    limit: '10mb',
+  })
+);
 app.use(cookieParser());
 
 // Middlewares
@@ -38,12 +44,14 @@ app.use(requestLogger);
 app.use('/health-check', healthCheckRouter);
 app.use('/users', sessionMiddleware, userRouter);
 
+app.use('/admins', adminRouter);
 app.use('/auth', authRouter);
 app.use('/students', studentRouter);
 app.use('/teachers', teacherRouter);
-app.use('/directors', directorRouter);
+app.use('/directors', sessionMiddleware, directorRouter);
 app.use('/courses', courseRouter);
 app.use('/contents', contentRouter);
+app.use('/institutes', sessionMiddleware, instituteRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

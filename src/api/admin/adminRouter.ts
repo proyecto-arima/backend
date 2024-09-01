@@ -16,7 +16,7 @@ export const adminRegistry = new OpenAPIRegistry();
 
 adminRegistry.register('Admin', UserDTOSchema);
 
-export const studentRouter: Router = (() => {
+export const adminRouter: Router = (() => {
   const router = express.Router();
 
   adminRegistry.registerPath({

@@ -1,10 +1,13 @@
 import { Types } from 'mongoose';
 import mongoose from 'mongoose';
 
-import { ContentCreationDTO, ContentModel } from '@/api/course/content/contentModel';
+import { ContentCreationDTO, ContentDTO, ContentModel } from '@/api/course/content/contentModel';
 import { Course, CourseCreation, CourseCreationDTO, CourseDTO, CourseModel } from '@/api/course/courseModel';
 import { SectionCreationDTO, SectionModel } from '@/api/course/section/sectionModel';
+import { StudentModel } from '@/api/student/studentModel';
+import { TeacherModel } from '@/api/teacher/teacherModel';
 import { UserModel } from '@/api/user/userModel';
+import { PublicationType } from '@/common/models/publicationType';
 
 export const courseRepository = {
   // Retrieves all courses from the database
@@ -89,13 +92,21 @@ export const courseRepository = {
     return sectionDtos;
   },
 
-  addContentToSection: async (sectionId: string, contentData: ContentCreationDTO): Promise<any> => {
+  addContentToSection: async (
+    sectionId: string,
+    contentData: ContentCreationDTO,
+    key: string,
+    preSignedUrl: string
+  ): Promise<any> => {
+    const isVisible = contentData.publicationType === PublicationType.AUTOMATIC;
+
     const newContent = new ContentModel({
       title: contentData.title,
       sectionId,
+      key: key,
       publicationType: contentData.publicationType,
       publicationDate: contentData.publicationDate,
-      file: contentData.file,
+      visible: isVisible,
     });
 
     const savedContent = newContent.save();
@@ -115,7 +126,10 @@ export const courseRepository = {
 
     await section.save();
 
-    return newContent.toDto();
+    return {
+      ...newContent.toDto(),
+      preSignedUrl,
+    };
   },
 
   async addStudentsToCourse(courseId: string, students: any[]): Promise<Course> {
@@ -151,5 +165,27 @@ export const courseRepository = {
     }));
 
     return studentDtos;
+  },
+
+  getContentsBySectionId: async (sectionId: string): Promise<ContentDTO[] | null> => {
+    const contents = await ContentModel.find({ sectionId }).exec();
+
+    if (!contents) {
+      return null;
+    }
+
+    // Mapeamos cada documento a un DTO utilizando el método toDto
+    return contents.map((content) => content.toDto());
+  },
+
+  deleteCourse: async (courseId: string): Promise<void> => {
+    await StudentModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } });
+    await TeacherModel.updateMany({ 'courses.id': courseId }, { $pull: { courses: { id: courseId } } });
+    await CourseModel.deleteOne({ _id: courseId });
+  },
+
+  removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {
+    await CourseModel.updateOne({ _id: courseId }, { $pull: { students: { userId: userId } } });
+    await StudentModel.updateOne({ user: userId }, { $pull: { courses: { id: courseId } } });
   },
 };

@@ -45,6 +45,7 @@ export const mailSenderService = {
       const htmlContent = compile(source)(data.templateParams);
       logger.trace('[MailSenderService] - [sendMailTo] - Email template compiled successfully');
 
+      if (config.app.node_env === 'test') return;
       const info = await transporter.sendMail({
         from: config.smtp.sender,
         to: data.to.join(','),

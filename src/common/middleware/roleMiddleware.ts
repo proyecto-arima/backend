@@ -12,6 +12,9 @@ export const roleMiddleware = (allowedRoles: Role[]) => {
       return next(new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED, 'User is not authenticated'));
     }
 
+    console.log(allowedRoles);
+    console.log(req.sessionContext.user.role);
+
     // Verifica si el rol del usuario es el rol requerido
     if (!allowedRoles.includes(req.sessionContext.user.role)) {
       return next(new ApiError('Forbidden', StatusCodes.FORBIDDEN, 'User does not have the required role'));

@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
 
 import { ContentCreationDTO, ContentDTO } from '@/api/course/content/contentModel';
@@ -6,6 +7,7 @@ import { courseRepository } from '@/api/course/courseRepository';
 import { SectionCreationDTO } from '@/api/course/section/sectionModel';
 import { studentRepository } from '@/api/student/studentRepository';
 import { teacherRepository } from '@/api/teacher/teacherRepository';
+import { s3Get, s3Put } from '@/common/utils/awsManager';
 
 const generateMatriculationCode = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -58,9 +60,25 @@ export const courseService = {
   },
 
   async addStudentsToCourse(courseId: string, studentEmails: string[]): Promise<CourseDTO> {
-    const userStudents = await courseRepository.findStudentsByEmails(studentEmails);
+    // Obtener el curso
+    const course = await courseRepository.findByIdAsync(courseId);
 
-    if (userStudents.length != studentEmails.length) {
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    // Filtrar los estudiantes que ya existen en el curso
+    const existingEmails = new Set(course.students.map((student) => student.email));
+    const newStudentEmails = studentEmails.filter((email) => !existingEmails.has(email));
+
+    if (newStudentEmails.length === 0) {
+      return course.toDto(); // Si no hay estudiantes nuevos, retornar el curso tal como está
+    }
+
+    // Obtener los estudiantes desde la base de datos para los correos nuevos
+    const userStudents = await courseRepository.findStudentsByEmails(newStudentEmails);
+
+    if (userStudents.length !== newStudentEmails.length) {
       throw new Error('One or more student emails do not exist');
     }
 
@@ -71,8 +89,10 @@ export const courseService = {
       email: student.email,
     }));
 
+    // Agregar los nuevos estudiantes al curso
     const updatedCourse = await courseRepository.addStudentsToCourse(courseId, studentData);
 
+    // Agregar el curso a los nuevos estudiantes
     for (const userStudent of userStudents) {
       await studentRepository.addCourseToStudent(userStudent._id, {
         id: updatedCourse._id as Types.ObjectId,
@@ -82,7 +102,6 @@ export const courseService = {
 
     return updatedCourse.toDto();
   },
-
   async findCoursesByTeacherId(teacherUserId: string): Promise<CourseDTO[]> {
     return courseRepository.findCoursesByTeacherId(teacherUserId);
   },
@@ -99,8 +118,42 @@ export const courseService = {
     return await courseRepository.getStudentsOfCourse(courseId);
   },
 
-  async addContentToSection(sectionId: string, contentData: ContentCreationDTO): Promise<ContentDTO> {
+  async addContentToSection(
+    sectionId: string,
+    contentData: ContentCreationDTO,
+    file: Express.Multer.File
+  ): Promise<ContentDTO> {
     console.log('[courseService] - [addContentToSection] - Parameters:', { sectionId, contentData });
-    return await courseRepository.addContentToSection(sectionId, contentData);
+    const key = `${randomUUID()}`.toString();
+    const preSignedUrl = await s3Put(key, file);
+    return await courseRepository.addContentToSection(sectionId, contentData, key, preSignedUrl);
+  },
+
+  getContentsWithPresignedUrls: async (sectionId: string) => {
+    const contents = await courseRepository.getContentsBySectionId(sectionId);
+
+    if (!contents) {
+      return [];
+    }
+
+    const contentsWithUrls = await Promise.all(
+      contents.map(async (content) => {
+        const presignedUrl = await s3Get(content.key);
+        return {
+          ...content,
+          presignedUrl,
+        };
+      })
+    );
+
+    return contentsWithUrls;
+  },
+
+  deleteCourse: async (courseId: string): Promise<void> => {
+    await courseRepository.deleteCourse(courseId);
+  },
+
+  removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {
+    await courseRepository.removeUserFromCourse(userId, courseId);
   },
 };

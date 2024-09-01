@@ -58,12 +58,12 @@ const userModelSchemaDefinition = {
 };
 
 // Type used to tell mongoose the shape of the schema available
-type IUserSchemaDefinition = typeof userModelSchemaDefinition;
+type IUserSchemaDefinition = Omit<UserDTO, 'id'>;
 // Type used to add methods to the schema
 interface IUserSchemaDefinitionMethods {
   toDto(): UserDTO;
 }
-type UserModelDefinition = Model<IUserSchemaDefinition, Record<string, never>, IUserSchemaDefinitionMethods>;
+type UserModelDefinition = Model<IUserSchemaDefinition & Document, Record<string, never>, IUserSchemaDefinitionMethods>;
 
 /**
  * User Model Schema
@@ -115,19 +115,67 @@ export const GetUserSchema = z.object({
   params: z.object({ id: commonValidations.id }),
 });
 
+// Validación para el tipo de documento
+const DocumentTypeEnum = z.enum(['DNI', 'Pasaporte']);
+
+// Esquema de validación para el documento
+const DocumentSchema = z
+  .object({
+    type: DocumentTypeEnum,
+    number: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === 'DNI' && !/^\d{1,8}$/.test(data.number)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'DNI must have a maximum of 8 digits.',
+        path: ['number'], // Marca el error en el campo 'number'
+      });
+    }
+    if (data.type === 'Pasaporte' && !/^[a-zA-Z0-9]+$/.test(data.number)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Passport must be alphanumeric.',
+        path: ['number'], // Marca el error en el campo 'number'
+      });
+    }
+  });
+
 // Input Validation for 'POST users/register' endpoint
 export const UserCreationSchema = z.object({
   body: z.object({
-    firstName: z.string(),
-    lastName: z.string(),
-    email: z.string().email(),
-    document: z.object({
-      type: z.string(),
-      number: z.string(),
+    firstName: z
+      .string()
+      .regex(/^[a-zA-Z\s]+$/, 'First name must contain only letters')
+      .min(1, 'First name cannot be empty'),
+    lastName: z
+      .string()
+      .regex(/^[a-zA-Z\s]+$/, 'Last name must contain only letters')
+      .min(1, 'Last name cannot be empty'),
+    email: z.string().email('Invalid email format'),
+    document: DocumentSchema,
+  }),
+});
+
+export const UserDirectorCreationSchema = z.object({
+  body: z.object({
+    firstName: z
+      .string()
+      .regex(/^[a-zA-Z\s]+$/, 'First name must contain only letters')
+      .min(1, 'First name cannot be empty'),
+    lastName: z
+      .string()
+      .regex(/^[a-zA-Z\s]+$/, 'Last name must contain only letters')
+      .min(1, 'Last name cannot be empty'),
+    email: z.string().email('Invalid email format'),
+    document: DocumentSchema,
+    institute: z.object({
+      id: z.string(),
     }),
   }),
 });
 export type UserCreationDTO = z.infer<typeof UserCreationSchema.shape.body>;
+export type UserDirectorCreationDTO = z.infer<typeof UserDirectorCreationSchema.shape.body>;
 export type UserCreation = UserCreationDTO & { password: string; role: Role };
 
 // Input Validation for POST /users/login
@@ -138,6 +186,14 @@ export const UserLoginSchema = z.object({
   }),
 });
 export type UserLoginDTO = z.infer<typeof UserLoginSchema.shape.body>;
+
+export const UpdateUserProfileSchema = z.object({
+  body: z.object({
+    email: z.string().email().optional(),
+    firstName: z.string().min(1).optional(),
+    lastName: z.string().min(1).optional(),
+  }),
+});
 
 export const SessionTokenSchema = z.object({
   access_token: z.string(),
