@@ -35,6 +35,7 @@ export const initTransporter = (t: nodemailer.Transporter) => {
 
 export const mailSenderService = {
   sendMailTo: async (data: Email) => {
+    if (config.app.node_env === 'test') return;
     logger.info(`[MailSenderService] - [sendMailTo] - Sending email to ${data.to.join(',')}`);
     try {
       if (!data) {
@@ -45,7 +46,6 @@ export const mailSenderService = {
       const htmlContent = compile(source)(data.templateParams);
       logger.trace('[MailSenderService] - [sendMailTo] - Email template compiled successfully');
 
-      if (config.app.node_env === 'test') return;
       const info = await transporter.sendMail({
         from: config.smtp.sender,
         to: data.to.join(','),
