@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 
 import { directorRepository } from '@/api/director/directorRepository';
 import { TeacherModel } from '@/api/teacher/teacherModel';
@@ -40,14 +41,18 @@ export const teacherService = {
     await teacher.save();
 
     logger.trace(`[TeacherService] - [create] - Sending email to teacher ${createdUser.email}...`);
-    sendMailTo(
-      [createdUser.email],
-      'Welcome to the school',
-      `<h1>Welcome to the school</h1>
-      <p>You have been registered as a teacher in the school.
-      Your username is ${createdUser.email} and your password is ${randomPassword}.
-      Please login and change your password.</p>`
-    );
+    const token = jwt.sign({ id: createdUser.id }, config.jwt.secret as string, { expiresIn: '12h' });
+    sendMailTo({
+      to: [createdUser.email],
+      subject: 'Bienvenido a AdaptarIA!',
+      bodyTemplateName: 'teacher_welcome.html',
+      templateParams: {
+        teacherName: createdUser.firstName,
+        teacherEmail: createdUser.email,
+        teacherInstitute: instituteId,
+        reset_password_link: `${config.app.frontendUrl}/recoverPassword?token=${token}`,
+      },
+    });
     logger.trace(`[TeacherService] - [create] - Email sent.`);
     logger.trace('[TeacherService] - [create] - End');
     return createdUser;

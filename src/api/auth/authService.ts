@@ -116,15 +116,15 @@ export const authService = {
       }
       const token = jwt.sign({ id: user.toDto().id }, config.jwt.secret as string, { expiresIn: '15m' });
       user.forcePasswordReset = true;
-      const redirectLink = `${config.app.frontendUrl}/recoverPassword?token=${token}`;
-      //TODO: Fix SMTP testing on CI
-      sendMailTo(
-        [user.email],
-        '[AdaptarIA] Account access',
-        `<p>Hi ${user.email},
-        Go to the next link ${redirectLink} and use it to set your new password on adaptarIA
-        </p>`
-      );
+      sendMailTo({
+        to: [user.email],
+        subject: `[AdaptarIA] Recuperación de tu cuenta - ${user.firstName}`,
+        bodyTemplateName: 'password_recovery.html',
+        templateParams: {
+          username: user.email,
+          redirectLink: `${config.app.frontendUrl}/recoverPassword?token=${token}`,
+        },
+      });
       return Promise.resolve();
     } catch (ex) {
       logger.error(`[AuthService] - [passwordRecovery] - Internal error: ${ex}`);

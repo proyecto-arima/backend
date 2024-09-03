@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 import { directorRepository } from '@/api/director/directorRepository';
 import { StudentModel } from '@/api/student/studentModel';
@@ -46,20 +47,21 @@ export const studentService = {
     await student.save();
 
     logger.trace(`[StudentService] - [create] - Student entry created.`);
-    // TODO: Send email to user notifying them of their registration
-    // It should force the user to change their password on first login
-
     logger.trace(`[StudentService] - [create] - Sending email to user ${createdUser.email}...`);
-    sendMailTo(
-      [createdUser.email],
-      'Welcome to the school',
-      `<h1>Welcome to the school</h1>
-      <p>You have been registered as a student in the school.
-      Your username is ${createdUser.email} and your password is ${randomPassword}.
-      Please login and change your password.</p>`
-    );
-    logger.trace(`[StudentService] - [create] - Email sent.`);
 
+    const token = jwt.sign({ id: createdUser.id }, config.jwt.secret as string, { expiresIn: '72h' });
+    sendMailTo({
+      to: [createdUser.email],
+      subject: 'Bienvenido a AdaptarIA!',
+      bodyTemplateName: 'student_welcome.html',
+      templateParams: {
+        studentName: createdUser.firstName,
+        studentEmail: createdUser.email,
+        studentInstitution: instituteId,
+        reset_password_link: `${config.app.frontendUrl}/recoverPassword?token=${token}`,
+      },
+    });
+    logger.trace(`[StudentService] - [create] - Email sent`);
     return createdUser;
   },
 
