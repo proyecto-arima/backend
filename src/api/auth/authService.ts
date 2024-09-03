@@ -119,7 +119,7 @@ export const authService = {
       sendMailTo({
         to: [user.email],
         subject: `[AdaptarIA] Recuperación de tu cuenta - ${user.firstName}`,
-        bodyTemplateName: 'password_recovery.html',
+        bodyTemplateName: 'password_recovery',
         templateParams: {
           username: user.email,
           redirectLink: `${config.app.frontendUrl}/recoverPassword?token=${token}`,

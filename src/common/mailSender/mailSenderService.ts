@@ -20,7 +20,11 @@ export const buildTransporter = () => {
 };
 
 export const initTransporter = (t: nodemailer.Transporter) => {
-  logger.info('[MailSenderService] - [initTransporter] - Initializing SMTP Server');
+  logger.info('[MailSenderService] - [initTransporter] - Reading SMTP Server configuration');
+  logger.info(`[MailSenderService] - [initTransporter] - SMTP Server: ${config.smtp.host}:${config.smtp.port}`);
+  logger.info(
+    `[MailSenderService] - [initTransporter] - SMTP Server login type: ${config.smtp.auth ? 'LOGIN' : 'NO LOGIN'}`
+  );
   t.verify((error) => {
     if (error) {
       logger.error(`[MailSenderService] - [initTransporter] - Error: ${error}`);
@@ -28,7 +32,6 @@ export const initTransporter = (t: nodemailer.Transporter) => {
     }
   });
   transporter = t;
-  logger.trace(`[MailSenderService] - [initTransporter] - SMTP transporter created`);
   logger.info(`[MailSenderService] - [initTransporter] - SMTP Server initialized`);
   return transporter;
 };
@@ -40,8 +43,15 @@ export const mailSenderService = {
       if (!data) {
         throw Error('Email data is required');
       }
-      logger.trace(`[MailSenderService] - [sendMailTo] - Sending email with data: ${data}`);
-      const source = fs.readFileSync(`${__dirname}/html_templates/${data.bodyTemplateName}`, 'utf8');
+      logger.trace(`[MailSenderService] - [sendMailTo] - Sending email with data: ${JSON.stringify(data)}`);
+      const filePath = `./html_templates/${data.bodyTemplateName}.html`;
+      if (!fs.existsSync(filePath)) {
+        logger.warn(`[MailSenderService] - [sendMailTo] - Email template not found: ${filePath}`);
+        logger.warn(`[MailSenderService] - [sendMailTo] - Email not sent`);
+        return;
+      }
+      logger.trace(`[MailSenderService] - [sendMailTo] - Reading email template from: ${filePath}`);
+      const source = fs.readFileSync(filePath, 'utf8');
       const htmlContent = compile(source)(data.templateParams);
       logger.trace('[MailSenderService] - [sendMailTo] - Email template compiled successfully');
 

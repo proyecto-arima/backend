@@ -53,7 +53,7 @@ export const studentService = {
     sendMailTo({
       to: [createdUser.email],
       subject: 'Bienvenido a AdaptarIA!',
-      bodyTemplateName: 'student_welcome.html',
+      bodyTemplateName: 'student_welcome',
       templateParams: {
         studentName: createdUser.firstName,
         studentEmail: createdUser.email,

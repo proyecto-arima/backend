@@ -40,7 +40,7 @@ export const directorService = {
     sendMailTo({
       to: [createdUser.email],
       subject: 'Bienvenido a AdaptarIA!',
-      bodyTemplateName: 'director_welcome.html',
+      bodyTemplateName: 'director_welcome',
       templateParams: {
         directorName: createdUser.firstName,
         directorEmail: createdUser.email,
