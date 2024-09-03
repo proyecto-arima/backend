@@ -45,7 +45,7 @@ export const teacherService = {
     sendMailTo({
       to: [createdUser.email],
       subject: 'Bienvenido a AdaptarIA!',
-      bodyTemplateName: 'teacher_welcome.html',
+      bodyTemplateName: 'teacher_welcome',
       templateParams: {
         teacherName: createdUser.firstName,
         teacherEmail: createdUser.email,
