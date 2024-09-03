@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 import { DirectorDTO, DirectorModel } from '@/api/director/directorModel';
 import { UserDirectorCreationDTO, UserDTO } from '@/api/user/userModel';
@@ -27,9 +28,6 @@ export const directorService = {
     const createdUser: UserDTO = await userService.create({ ...user, password: hash, role: Role.DIRECTOR });
     logger.trace(`[DirectorService] - [create] - User created: ${JSON.stringify(createdUser)}`);
 
-    // TODO: Send email to user notifying them of their registration
-    // It should force the user to change their password on first login
-
     const director = new DirectorModel({
       user: createdUser.id,
       institute: user.institute.id,
@@ -38,15 +36,18 @@ export const directorService = {
     await director.save();
 
     logger.trace(`[DirectorService] - [create] - Sending email to user ${createdUser.email}...`);
-    sendMailTo(
-      [createdUser.email],
-      'Welcome to the school',
-      `<h1>Welcome to the school</h1>
-      <p>You have been registered as a director in the school. 
-      Your username is ${createdUser.email} and your password is ${randomPassword}. 
-      Please login and change your password.</p>`
-    ).then(() => logger.trace(`[Director] - [create] - Email sent.`));
-
+    const token = jwt.sign({ id: createdUser.id }, config.jwt.secret as string, { expiresIn: '12h' });
+    sendMailTo({
+      to: [createdUser.email],
+      subject: 'Bienvenido a AdaptarIA!',
+      bodyTemplateName: 'director_welcome.html',
+      templateParams: {
+        directorName: createdUser.firstName,
+        directorEmail: createdUser.email,
+        reset_password_link: `${config.app.frontendUrl}/recoverPassword?token=${token}`,
+      },
+    });
+    logger.trace(`[DirectorService] - [create] - Email sent`);
     logger.trace('[DirectorService] - [create] - End');
     return createdUser;
   },

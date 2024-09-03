@@ -36,12 +36,11 @@ export const initTransporter = (t: nodemailer.Transporter) => {
 export const mailSenderService = {
   sendMailTo: async (data: Email) => {
     if (config.app.node_env === 'test') return;
-    logger.info(`[MailSenderService] - [sendMailTo] - Sending email to ${data.to.join(',')}`);
     try {
       if (!data) {
         throw Error('Email data is required');
       }
-      logger.trace(`[MailSenderService] - [sendMailTo] - Reading email template: ${data.bodyTemplateName}`);
+      logger.trace(`[MailSenderService] - [sendMailTo] - Sending email with data: ${data}`);
       const source = fs.readFileSync(`${__dirname}/html_templates/${data.bodyTemplateName}`, 'utf8');
       const htmlContent = compile(source)(data.templateParams);
       logger.trace('[MailSenderService] - [sendMailTo] - Email template compiled successfully');
@@ -56,6 +55,7 @@ export const mailSenderService = {
         attachments: data.attachments,
       });
       logger.info(`[MailSenderService] - [sendMailTo] - Email sent successfully: ${info.messageId}`);
+      return;
     } catch (error) {
       logger.error(`[MailSenderService] - [sendMailTo] - ${error}`);
       throw Error('Error sending email');
