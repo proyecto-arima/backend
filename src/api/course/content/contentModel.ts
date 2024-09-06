@@ -2,10 +2,17 @@ import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import mongoose, { Document, Model, Schema } from 'mongoose';
 import { z } from 'zod';
 
+import { ContentType } from '@/common/models/contentType';
 import { PublicationType } from '@/common/models/publicationType';
 import { commonValidations } from '@/common/utils/commonValidation';
 
 extendZodWithOpenApi(z);
+
+const GeneratedContentSchema = z.object({
+  type: z.enum([ContentType.SUMMARY, ContentType.MIND_MAP, ContentType.GAMIFICATION, ContentType.SPEECH]),
+  content: z.string(),
+  approved: z.boolean(),
+});
 
 export const ContentDTOSchema = z.object({
   id: z.string(),
@@ -23,12 +30,7 @@ export const ContentDTOSchema = z.object({
       })
     )
     .optional(),
-  generated: z
-    .object({
-      link: z.string(),
-      approved: z.boolean(),
-    })
-    .optional(),
+  generated: z.array(GeneratedContentSchema).optional(),
 });
 export type ContentDTO = z.infer<typeof ContentDTOSchema>;
 
@@ -40,9 +42,10 @@ const reactionSchema = new Schema(
   { _id: false }
 );
 
-const generatedSchema = new Schema(
+const generatedContentSchema = new Schema(
   {
-    link: { type: String, required: false, default: '' },
+    type: { type: String, enum: Object.values(ContentType), required: true },
+    content: { type: String, required: false },
     approved: { type: Boolean, required: true, default: false },
   },
   { _id: false }
@@ -60,7 +63,11 @@ const contentModelSchemaDefinition: Record<keyof Omit<ContentDTO, 'id'>, any> = 
     default: [],
     required: false,
   },
-  generated: { type: generatedSchema, required: false, default: () => ({ link: '', approved: false }) },
+  generated: {
+    type: [generatedContentSchema],
+    required: false,
+    default: [],
+  },
 };
 
 type IContentSchemaDefinition = Omit<ContentDTO, 'id'>;
@@ -83,6 +90,17 @@ const contentModelSchema = new Schema<
   timestamps: true,
   versionKey: false,
 });
+// Middleware pre-save para generar automáticamente contenido
+contentModelSchema.pre('save', function (next) {
+  if (this.isNew) {
+    this.generated = Object.values(ContentType).map((type) => ({
+      type,
+      content: '', // Deja el contenido vacío por defecto
+      approved: false,
+    }));
+  }
+  next();
+});
 
 contentModelSchema.method('toDto', function (): ContentDTO {
   return {
@@ -94,7 +112,7 @@ contentModelSchema.method('toDto', function (): ContentDTO {
     publicationDate: this.publicationDate,
     visible: this.visible,
     reactions: this.reactions || [],
-    generated: this.generated,
+    generated: this.generated || [],
   };
 });
 
@@ -148,6 +166,7 @@ export const ReactionsResponseSchema = z.object({
 });
 
 export const ContentWithPresignedUrlSchema = ContentDTOSchema.extend({
+  status: z.string(),
   preSignedUrl: z.string(),
 });
 
@@ -165,8 +184,35 @@ export const UpdateApproveSchema = z.object({
     contentId: z.string(),
   }),
   body: z.object({
-    approve: z.boolean(),
+    mind_map: z.boolean().optional(),
+    gamification: z.boolean().optional(),
+    summary: z.boolean().optional(),
+    speech: z.boolean().optional(),
   }),
+});
+
+export const SummaryContentSchema = z.object({
+  type: z.literal('SUMMARY'),
+  content: z.string().optional(),
+  approved: z.boolean(),
+});
+
+export const MindmapContentSchema = z.object({
+  type: z.literal('MIND_MAP'),
+  content: z.string().optional(),
+  approved: z.boolean(),
+});
+
+export const GamificationContentSchema = z.object({
+  type: z.literal('GAMIFICATION'),
+  content: z.string().optional(),
+  approved: z.boolean(),
+});
+
+export const SpeechContentSchema = z.object({
+  type: z.literal('SPEECH'),
+  content: z.string().optional(),
+  approved: z.boolean(),
 });
 
 export type AddReactionsDTO = z.infer<typeof AddReactionsSchema.shape.body>;

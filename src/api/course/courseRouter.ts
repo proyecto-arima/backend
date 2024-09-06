@@ -316,19 +316,52 @@ export const courseRouter: Router = (() => {
     sessionMiddleware,
     checkSessionContext,
     hasAccessToCourseMiddleware('courseId'),
-    roleMiddleware([Role.TEACHER, Role.STUDENT]), // O según los roles permitidos
+    roleMiddleware([Role.TEACHER, Role.STUDENT]),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
+      if (!req.sessionContext || !req.sessionContext.user) {
+        return next(new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED, 'User is not authenticated'));
+      }
+
       const { sectionId } = req.params;
+      const role = req.sessionContext.user.role;
 
       try {
-        const contentsWithUrls = await courseService.getContentsWithPresignedUrls(sectionId);
-        res.status(200).json({
-          success: true,
-          message: 'Contents retrieved successfully',
-          data: contentsWithUrls,
-        });
-      } catch (error) {
-        next(error);
+        let contentsWithUrls = await courseService.getContentsWithPresignedUrls(sectionId);
+
+        if (role === Role.TEACHER) {
+          // Docente: Devolver todos los contenidos, marcar los generados como "READY" y los no generados como "PENDING"
+          contentsWithUrls = contentsWithUrls.map((content) => {
+            const status = content.generated?.every((gen) => gen.content !== '') ? 'READY' : 'PENDING';
+            return {
+              ...content,
+              status: status,
+            };
+          });
+        } else if (role === Role.STUDENT) {
+          // Estudiante: Filtrar los contenidos que estén visibles y aprobados
+          contentsWithUrls = contentsWithUrls
+            .filter((content) => {
+              const allApproved = content.generated?.every((gen) => gen.approved === true);
+              return content.visible === true && allApproved;
+            })
+            .map((content) => {
+              return {
+                ...content,
+                status: 'READY',
+              };
+            });
+        }
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Contents retrieved successfully',
+          contentsWithUrls,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        const apiError = new ApiError('Failed to retrieve content', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
       }
     }
   );

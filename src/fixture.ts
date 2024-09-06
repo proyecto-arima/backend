@@ -169,8 +169,8 @@ const insertInitialData = async () => {
     visible: true,
     contents: [
       {
-        id: new mongoose.Types.ObjectId('66b0e1f3f4bf663c33986f2d'),
-        title: 'Advanced TypeScript Techniques',
+        id: new mongoose.Types.ObjectId('66b0e07bceed604f8977c0aa'),
+        title: 'CSharp bla',
       },
     ],
   });
@@ -188,10 +188,28 @@ const insertInitialData = async () => {
         isSatisfied: true,
       },
     ],
-    generated: {
-      link: 'google.com',
-      approved: false,
-    },
+    generated: [
+      {
+        type: 'SUMMARY',
+        content: 'google.com',
+        approved: false,
+      },
+      {
+        type: 'MIND_MAP',
+        content: 'google.com',
+        approved: false,
+      },
+      {
+        type: 'GAMIFICATION',
+        content: 'google.com',
+        approved: false,
+      },
+      {
+        type: 'SPEECH',
+        content: 'google.com',
+        approved: false,
+      },
+    ],
     publicationDate: '2024-08-01T00:00:00Z',
   });
 

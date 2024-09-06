@@ -28,7 +28,7 @@ export const contentService = {
     return content.toDto();
   },
 
-  async updateContentApproval(contentId: string, approve: boolean) {
+  async updateContentApproval(contentId: string, approve: Record<string, boolean>) {
     return contentRepository.updateApproval(contentId, approve);
   },
 };

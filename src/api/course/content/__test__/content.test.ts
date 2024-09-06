@@ -61,7 +61,7 @@ describe('Content retrieval tests', () => {
     const token = await teacherLogin();
 
     const contentId = '66b0e07bceed604f8977c0aa';
-    const approveData = { approve: true };
+    const approveData = { mind_map: true, gamification: true, summary: true, speech: true };
 
     const response = await request(app)
       .patch(`/contents/${contentId}/approval`)
@@ -72,6 +72,8 @@ describe('Content retrieval tests', () => {
     const result = response.body;
     expect(result.success).toBe(true);
     expect(result.data).toHaveProperty('title', 'CSharp bla');
-    expect(result.data).toHaveProperty('generated.approved', true);
+    result.data.generated.forEach((gen: any) => {
+      expect(gen).toHaveProperty('approved', true);
+    });
   });
 });

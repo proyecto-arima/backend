@@ -5,8 +5,12 @@ import { StatusCodes } from 'http-status-codes';
 import {
   AddReactionsSchema,
   ContentDTOSchema,
+  GamificationContentSchema,
   GetContentSchema,
+  MindmapContentSchema,
   ReactionsResponseSchema,
+  SpeechContentSchema,
+  SummaryContentSchema,
   UpdateApproveSchema,
   UpdateVisibilitySchema,
 } from '@/api/course/content/contentModel';
@@ -183,7 +187,8 @@ export const contentRouter: Router = (() => {
     validateRequest(UpdateApproveSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const { contentId } = req.params;
-      const { approve } = req.body;
+      const approve = req.body;
+      console.log('approve data', approve);
 
       try {
         const updatedContent = await contentService.updateContentApproval(contentId, approve);
@@ -200,6 +205,173 @@ export const contentRouter: Router = (() => {
           StatusCodes.INTERNAL_SERVER_ERROR,
           error
         );
+        return next(apiError);
+      }
+    }
+  );
+  contentRegistry.registerPath({
+    method: 'get',
+    path: '/contents/{contentId}/summary',
+    tags: ['Content'],
+    request: { params: GetContentSchema.shape.params },
+    responses: createApiResponse(SummaryContentSchema, 'Success'), // Define el esquema de respuesta
+  });
+
+  router.get(
+    '/:contentId/summary',
+    sessionMiddleware,
+    roleMiddleware([Role.STUDENT, Role.TEACHER]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+
+      try {
+        const content = await contentService.getContentById(contentId);
+
+        if (!content) {
+          return next(new ApiError('Content not found', StatusCodes.NOT_FOUND));
+        }
+
+        const summaryContent = content.generated?.find((item) => item.type === 'SUMMARY');
+
+        if (!summaryContent) {
+          return next(new ApiError('Summary content not found', StatusCodes.NOT_FOUND));
+        }
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Summary content retrieved successfully',
+          summaryContent,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        const apiError = new ApiError('Failed to retrieve summary content', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      }
+    }
+  );
+
+  contentRegistry.registerPath({
+    method: 'get',
+    path: '/contents/{contentId}/mindmap',
+    tags: ['Content'],
+    request: { params: GetContentSchema.shape.params },
+    responses: createApiResponse(MindmapContentSchema, 'Success'), // Define el esquema de respuesta
+  });
+
+  router.get(
+    '/:contentId/mindmap',
+    sessionMiddleware,
+    roleMiddleware([Role.STUDENT, Role.TEACHER]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+
+      try {
+        const content = await contentService.getContentById(contentId);
+
+        if (!content) {
+          return next(new ApiError('Content not found', StatusCodes.NOT_FOUND));
+        }
+
+        const mindmapContent = content.generated?.find((item) => item.type === 'MIND_MAP');
+
+        if (!mindmapContent) {
+          return next(new ApiError('Summary content not found', StatusCodes.NOT_FOUND));
+        }
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Mind Map content retrieved successfully',
+          mindmapContent,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        const apiError = new ApiError('Failed to retrieve Mind Map content', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      }
+    }
+  );
+
+  contentRegistry.registerPath({
+    method: 'get',
+    path: '/contents/{contentId}/gamification',
+    tags: ['Content'],
+    request: { params: GetContentSchema.shape.params },
+    responses: createApiResponse(GamificationContentSchema, 'Success'), // Define el esquema de respuesta
+  });
+
+  router.get(
+    '/:contentId/gamification',
+    sessionMiddleware,
+    roleMiddleware([Role.STUDENT, Role.TEACHER]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+
+      try {
+        const content = await contentService.getContentById(contentId);
+
+        if (!content) {
+          return next(new ApiError('Content not found', StatusCodes.NOT_FOUND));
+        }
+
+        const gamificationContent = content.generated?.find((item) => item.type === 'GAMIFICATION');
+
+        if (!gamificationContent) {
+          return next(new ApiError('Summary content not found', StatusCodes.NOT_FOUND));
+        }
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Gamification content retrieved successfully',
+          gamificationContent,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        const apiError = new ApiError('Failed to retrieve Gamification content', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      }
+    }
+  );
+
+  contentRegistry.registerPath({
+    method: 'get',
+    path: '/contents/{contentId}/speech',
+    tags: ['Content'],
+    request: { params: GetContentSchema.shape.params },
+    responses: createApiResponse(SpeechContentSchema, 'Success'), // Define el esquema de respuesta
+  });
+
+  router.get(
+    '/:contentId/speech',
+    sessionMiddleware,
+    roleMiddleware([Role.STUDENT, Role.TEACHER]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+
+      try {
+        const content = await contentService.getContentById(contentId);
+
+        if (!content) {
+          return next(new ApiError('Content not found', StatusCodes.NOT_FOUND));
+        }
+
+        const speechContent = content.generated?.find((item) => item.type === 'SPEECH');
+
+        if (!speechContent) {
+          return next(new ApiError('Speech content not found', StatusCodes.NOT_FOUND));
+        }
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Speech content retrieved successfully',
+          speechContent,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        const apiError = new ApiError('Failed to retrieve Gamification content', StatusCodes.INTERNAL_SERVER_ERROR, e);
         return next(apiError);
       }
     }
