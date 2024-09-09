@@ -53,6 +53,21 @@ export const teacherService = {
     return createdUser;
   },
 
+  createMultiple: async (teachers: UserCreationDTO[], directorUserId: string): Promise<UserDTO[]> => {
+    logger.trace('[StudentService] - [createMultiple] - Start');
+    const createdTeachers: UserDTO[] = [];
+
+    for (const user of teachers) {
+      const createdUser: UserDTO = await teacherService.create(user, directorUserId);
+
+      logger.trace(`[StudentService] - [createMultiple] - Student created: ${JSON.stringify(createdUser)}`);
+      createdTeachers.push(createdUser);
+    }
+
+    logger.trace('[StudentService] - [createMultiple] - All students created successfully');
+    return createdTeachers;
+  },
+
   findByInstituteId: async (instituteId: string): Promise<UserDTO[]> => {
     logger.trace('[TeacherService] - [findByInstituteId] - Start');
     logger.trace(`[TeacherService] - [findByInstituteId] - Searching for teachers in institute ${instituteId}`);

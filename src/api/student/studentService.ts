@@ -61,6 +61,21 @@ export const studentService = {
     return createdUser;
   },
 
+  createMultiple: async (students: UserCreationDTO[], directorUserId: string): Promise<UserDTO[]> => {
+    logger.trace('[StudentService] - [createMultiple] - Start');
+    const createdStudents: UserDTO[] = [];
+
+    for (const user of students) {
+      const createdUser: UserDTO = await studentService.create(user, directorUserId);
+
+      logger.trace(`[StudentService] - [createMultiple] - Student created: ${JSON.stringify(createdUser)}`);
+      createdStudents.push(createdUser);
+    }
+
+    logger.trace('[StudentService] - [createMultiple] - All students created successfully');
+    return createdStudents;
+  },
+
   getLearningProfile: async (id: string): Promise<LearningProfile> => {
     const student = await StudentModel.findOne({ user: id }).exec();
     if (!student) {

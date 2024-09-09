@@ -4,7 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import { CourseDTOSchema, CourseModel } from '@/api/course/courseModel';
-import { UserCreationSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
+import { UserCreationMassiveSchema, UserCreationSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { checkSessionContext } from '@/common/middleware/checkSessionContext';
 import { roleMiddleware } from '@/common/middleware/roleMiddleware';
@@ -63,6 +63,51 @@ export const studentRouter: Router = (() => {
       } catch (error) {
         logger.error(`[StudentRouter] - [/] - Error: ${error}`);
         const apiError = new ApiError('Failed to create student', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return res.status(apiError.statusCode).json(apiError);
+      } finally {
+        logger.trace('[StudentRouter] - [/] - End');
+      }
+    }
+  );
+
+  studentRegistry.registerPath({
+    method: 'post',
+    path: '/students/massive',
+    tags: ['Student'],
+    request: {
+      body: { content: { 'application/json': { schema: UserCreationMassiveSchema.shape.body } }, description: '' },
+    },
+    responses: createApiResponse(UserDTOSchema, 'Success'),
+  });
+  router.post(
+    '/massive',
+    sessionMiddleware,
+    roleMiddleware([Role.DIRECTOR]),
+    validateRequest(UserCreationMassiveSchema), // Aseguramos que sea un array de estudiantes
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
+
+      try {
+        logger.trace('[StudentRouter] - [/] - Start');
+        logger.trace(`[StudentRouter] - [/] - Request to create students: ${JSON.stringify(req.body)}`);
+
+        const directorUserId = sessionContext.user.id;
+        const studentsDTO = await studentService.createMultiple(req.body, directorUserId);
+
+        logger.trace(`[StudentRouter] - [/] - Students created: ${JSON.stringify(studentsDTO)}. Sending response`);
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Students created successfully',
+          studentsDTO,
+          StatusCodes.CREATED
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        logger.error(`[StudentRouter] - [/] - Error: ${error}`);
+        const apiError = new ApiError('Failed to create students', StatusCodes.INTERNAL_SERVER_ERROR, error);
         return res.status(apiError.statusCode).json(apiError);
       } finally {
         logger.trace('[StudentRouter] - [/] - End');

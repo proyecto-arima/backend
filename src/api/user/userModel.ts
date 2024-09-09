@@ -157,6 +157,25 @@ export const UserCreationSchema = z.object({
   }),
 });
 
+export const UserCreationMassiveSchema = z.object({
+  body: z
+    .array(
+      z.object({
+        firstName: z
+          .string()
+          .regex(/^[a-zA-Z\s]+$/, 'First name must contain only letters')
+          .min(1, 'First name cannot be empty'),
+        lastName: z
+          .string()
+          .regex(/^[a-zA-Z\s]+$/, 'Last name must contain only letters')
+          .min(1, 'Last name cannot be empty'),
+        email: z.string().email('Invalid email format'),
+        document: DocumentSchema,
+      })
+    )
+    .min(1, 'At least one student must be provided'), // Asegurarse de que al menos un estudiante sea enviado en el array
+});
+
 export const UserDirectorCreationSchema = z.object({
   body: z.object({
     firstName: z
