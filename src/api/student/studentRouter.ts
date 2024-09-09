@@ -1,5 +1,5 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
-import express, { NextFunction, Request, Response, Router } from 'express';
+import express, { NextFunction, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
@@ -149,31 +149,24 @@ export const studentRouter: Router = (() => {
 
   studentRegistry.registerPath({
     method: 'get',
-    path: '/:id/learning-profile',
+    path: '/students/me/learning-profile',
     tags: ['Student'],
-    parameters: [
-      {
-        name: 'id',
-        in: 'path',
-        required: true,
-        schema: { type: 'string' },
-        description: 'Student ID',
-      },
-    ],
     responses: createApiResponse(z.object({ learningProfile: z.nativeEnum(LearningProfile) }), 'Success'),
   });
 
   router.get(
-    '/:id/learning-profile',
-
-    async (req: Request, res: Response, next: NextFunction) => {
+    '/me/learning-profile',
+    sessionMiddleware,
+    checkSessionContext,
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
       try {
-        const studentId = req.params.id;
-        logger.trace(
-          `[StudentRouter] - [/students/:id/learning-profile] - Retrieving learning profile for student with id: ${studentId}`
-        );
+        const userId = sessionContext.user.id;
 
-        const learningProfile = await studentService.getLearningProfile(studentId);
+        const learningProfile = await studentService.getLearningProfile(userId);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
@@ -183,7 +176,7 @@ export const studentRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (error) {
-        logger.error(`[StudentRouter] - [/students/:id/learning-profile] - Error: ${error}`);
+        logger.error(`[StudentRouter] - [/students/me/learning-profile] - Error: ${error}`);
         const apiError = new ApiError('Failed to retrieve learning profile', StatusCodes.INTERNAL_SERVER_ERROR, error);
         return next(apiError);
       }

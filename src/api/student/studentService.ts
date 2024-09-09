@@ -2,7 +2,6 @@ import bcrypt from 'bcrypt';
 
 import { directorRepository } from '@/api/director/directorRepository';
 import { StudentModel } from '@/api/student/studentModel';
-import { studentRepository } from '@/api/student/studentRepository';
 import { UserCreationDTO, UserDTO } from '@/api/user/userModel';
 import sendMailTo from '@/common/mailSender/mailSenderService';
 import { LearningProfile } from '@/common/models/learningProfile';
@@ -63,10 +62,11 @@ export const studentService = {
   },
 
   getLearningProfile: async (id: string): Promise<LearningProfile> => {
-    const student = await studentRepository.findById(id);
+    const student = await StudentModel.findOne({ user: id }).exec();
     if (!student) {
-      throw new Error('Student not found');
+      return Promise.reject(new Error('Student not found'));
     }
+
     return student.learningProfile;
   },
 

@@ -72,14 +72,10 @@ describe('Generic student tests', () => {
     expect(result.data).toHaveProperty('id');
   });*/
 
-  it('GET /students/:id/learning-profile', async () => {
+  it('GET /students/me/learning-profile', async () => {
     const token = await studentLogin();
 
-    const studentId = '6643eb8662e9b625cd5dda3c';
-
-    const response = await request(app)
-      .get(`/students/${studentId}/learning-profile`)
-      .set('Authorization', `Bearer ${token}`);
+    const response = await request(app).get(`/students/me/learning-profile`).set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(StatusCodes.OK);
     const result = response.body;
