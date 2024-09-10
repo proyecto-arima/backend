@@ -36,12 +36,12 @@ export const userService = {
     } else if (user.role === Role.TEACHER) {
       const teacher = await TeacherModel.findOne({ userId: id }).exec();
       if (teacher) {
-        instituteId = teacher.institute.id;
+        instituteId = teacher?.institute?.id;
       }
     } else if (user.role === Role.STUDENT) {
       const student = await StudentModel.findOne({ userId: id }).exec();
       if (student) {
-        instituteId = student.institute.id;
+        instituteId = student?.institute?.id;
         learningProfile = student.learningProfile;
       }
     }
