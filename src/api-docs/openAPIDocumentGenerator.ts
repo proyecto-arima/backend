@@ -8,6 +8,7 @@ import { healthCheckRegistry } from '@/api/healthCheck/healthCheckRouter';
 import { instituteRegistry } from '@/api/institute/instituteRouter';
 import { testRegistry } from '@/api/learningTest/testRouter';
 import { studentRegistry } from '@/api/student/studentRouter';
+import { surveyRegistry } from '@/api/survey/surveyRouter';
 import { teacherRegistry } from '@/api/teacher/teacherRouter';
 import { userRegistry } from '@/api/user/userRouter';
 
@@ -23,6 +24,7 @@ export function generateOpenAPIDocument() {
     contentRegistry,
     instituteRegistry,
     testRegistry,
+    surveyRegistry,
   ]);
   const generator = new OpenApiGeneratorV3(registry.definitions);
 

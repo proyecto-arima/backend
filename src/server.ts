@@ -18,6 +18,7 @@ import { directorRouter } from './api/director/directorRouter';
 import { instituteRouter } from './api/institute/instituteRouter';
 import { testRouter } from './api/learningTest/testRouter';
 import { studentRouter } from './api/student/studentRouter';
+import { surveyRouter } from './api/survey/surveyRouter';
 import { teacherRouter } from './api/teacher/teacherRouter';
 import { sessionMiddleware } from './common/middleware/session';
 import { config } from './common/utils/config';
@@ -53,6 +54,7 @@ app.use('/directors', sessionMiddleware, directorRouter);
 app.use('/courses', courseRouter);
 app.use('/contents', contentRouter);
 app.use('/test', testRouter);
+app.use('/survey', surveyRouter);
 app.use('/institutes', sessionMiddleware, instituteRouter);
 
 // Swagger UI
