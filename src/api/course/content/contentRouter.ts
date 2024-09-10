@@ -12,6 +12,7 @@ import {
   SpeechContentSchema,
   SummaryContentSchema,
   UpdateApproveSchema,
+  UpdateTitleSchema,
   UpdateVisibilitySchema,
 } from '@/api/course/content/contentModel';
 import { contentService } from '@/api/course/content/contentService';
@@ -372,6 +373,43 @@ export const contentRouter: Router = (() => {
         handleApiResponse(apiResponse, res);
       } catch (e) {
         const apiError = new ApiError('Failed to retrieve Gamification content', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      }
+    }
+  );
+
+  contentRegistry.registerPath({
+    method: 'patch',
+    path: '/contents/{contentId}/title',
+    tags: ['Content'],
+    request: {
+      params: UpdateTitleSchema.shape.params,
+      body: { content: { 'application/json': { schema: UpdateTitleSchema.shape.body } } },
+    },
+    responses: createApiResponse(ContentDTOSchema, 'Success'),
+  });
+
+  router.patch(
+    '/:contentId/title',
+    sessionMiddleware,
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(UpdateTitleSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+      const { title } = req.body;
+
+      try {
+        const updatedContent = await contentService.updateContentTitle(contentId, title);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Content title updated successfully',
+          updatedContent,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        const apiError = new ApiError('Failed to update content title', StatusCodes.INTERNAL_SERVER_ERROR, error);
         return next(apiError);
       }
     }

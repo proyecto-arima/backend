@@ -31,4 +31,9 @@ export const sectionRepository = {
 
     return updatedSection.toDto();
   },
+
+  async updateContentInSection(contentId: string, newTitle: string): Promise<void> {
+    // Actualizar el título en el array de contenidos de la sección
+    await SectionModel.updateOne({ 'contents.id': contentId }, { $set: { 'contents.$.title': newTitle } });
+  },
 };

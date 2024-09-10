@@ -1,6 +1,8 @@
 import { ContentDTO, ContentModel } from '@/api/course/content/contentModel';
 import { contentRepository } from '@/api/course/content/contentRepository';
 
+import { sectionRepository } from '../section/sectionRepository';
+
 export const contentService = {
   addReactionToContent: async (contentId: string, isSatisfied: boolean, userId: string): Promise<ContentDTO | null> => {
     const updatedContent = await contentRepository.addReactionToContent(contentId, isSatisfied, userId);
@@ -30,5 +32,20 @@ export const contentService = {
 
   async updateContentApproval(contentId: string, approve: Record<string, boolean>) {
     return contentRepository.updateApproval(contentId, approve);
+  },
+
+  async updateContentTitle(contentId: string, newTitle: string): Promise<ContentDTO> {
+    const content = await ContentModel.findById(contentId);
+
+    if (!content) {
+      throw new Error('Content not found');
+    }
+
+    content.title = newTitle;
+    await content.save();
+
+    sectionRepository.updateContentInSection(contentId, newTitle);
+
+    return content.toDto();
   },
 };

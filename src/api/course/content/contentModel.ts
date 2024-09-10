@@ -215,6 +215,15 @@ export const SpeechContentSchema = z.object({
   approved: z.boolean(),
 });
 
+export const UpdateTitleSchema = z.object({
+  params: z.object({
+    contentId: z.string(),
+  }),
+  body: z.object({
+    title: z.string(),
+  }),
+});
+
 export type AddReactionsDTO = z.infer<typeof AddReactionsSchema.shape.body>;
 export type ContentCreationDTO = z.infer<typeof ContentCreationSchema.shape.body>;
 export type ContentCreation = ContentCreationDTO;
