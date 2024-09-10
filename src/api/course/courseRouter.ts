@@ -20,6 +20,7 @@ import {
   SectionCreationSchema,
   SectionDTOSchema,
   SectionFetchingSchema,
+  SectionUpdateSchema,
 } from '@/api/course/section/sectionModel';
 import { sectionService } from '@/api/course/section/sectionService';
 import { StudentDTOSchema } from '@/api/student/studentModel';
@@ -177,6 +178,52 @@ export const courseRouter: Router = (() => {
         return next(apiError);
       } finally {
         logger.trace('[CourseRouter] - [/:courseId/section] - End');
+      }
+    }
+  );
+
+  courseRegistry.registerPath({
+    method: 'patch',
+    path: '/courses/{courseId}/sections/{sectionId}',
+    tags: ['Course'],
+    request: {
+      params: SectionUpdateSchema.shape.params,
+      body: { content: { 'application/json': { schema: SectionUpdateSchema.shape.body } }, description: '' },
+    },
+    responses: createApiResponse(CourseDTOSchema, 'Success'),
+  });
+
+  router.patch(
+    '/:courseId/sections/:sectionId',
+    sessionMiddleware,
+    checkSessionContext,
+    hasAccessToCourseMiddleware('courseId'),
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(SectionUpdateSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { courseId, sectionId } = req.params;
+      const updateData = req.body;
+
+      try {
+        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId] - Start');
+        logger.trace(`[CourseRouter] - [/:courseId/sections/:sectionId] - Updating section: ${sectionId}`);
+
+        // Llamar al servicio para actualizar la sección
+        const updatedSection = await courseService.updateSection(courseId, sectionId, updateData);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Section updated successfully',
+          updatedSection,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        logger.error(`[CourseRouter] - [/:courseId/sections/:sectionId] - Error: ${e}`);
+        const apiError = new ApiError('Failed to update section', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      } finally {
+        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId] - End');
       }
     }
   );

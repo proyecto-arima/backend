@@ -1,6 +1,6 @@
 import { ContentModel } from '@/api/course/content/contentModel';
 import { CourseModel } from '@/api/course/courseModel';
-import { Section, SectionModel } from '@/api/course/section/sectionModel';
+import { Section, SectionDTO, SectionModel, SectionUpdateDTO } from '@/api/course/section/sectionModel';
 
 export const sectionRepository = {
   deleteSection: async (sectionId: string, courseId: string): Promise<void> => {
@@ -15,5 +15,20 @@ export const sectionRepository = {
       throw new Error('Section not found');
     }
     return section;
+  },
+
+  async updateSection(sectionId: string, updateData: SectionUpdateDTO): Promise<SectionDTO> {
+    // Actualizar la sección directamente en la colección de secciones
+    const updatedSection = await SectionModel.findByIdAndUpdate(
+      sectionId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).exec();
+
+    if (!updatedSection) {
+      throw new Error('Section not found');
+    }
+
+    return updatedSection.toDto();
   },
 };

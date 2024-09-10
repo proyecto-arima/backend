@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 
 import { ContentCreationDTO, ContentDTO, ContentModel } from '@/api/course/content/contentModel';
 import { Course, CourseCreation, CourseCreationDTO, CourseDTO, CourseModel } from '@/api/course/courseModel';
-import { SectionCreationDTO, SectionModel } from '@/api/course/section/sectionModel';
+import { SectionCreationDTO, SectionModel, SectionUpdateDTO } from '@/api/course/section/sectionModel';
 import { StudentModel } from '@/api/student/studentModel';
 import { TeacherModel } from '@/api/teacher/teacherModel';
 import { UserModel } from '@/api/user/userModel';
@@ -187,5 +187,26 @@ export const courseRepository = {
   removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {
     await CourseModel.updateOne({ _id: courseId }, { $pull: { students: { userId: userId } } });
     await StudentModel.updateOne({ user: userId }, { $pull: { courses: { id: courseId } } });
+  },
+
+  async updateSection(courseId: string, sectionId: string, updateData: SectionUpdateDTO): Promise<void> {
+    // Buscar el curso por su ID
+    const course = await CourseModel.findById(courseId).exec();
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    // Buscar la sección dentro del array de secciones
+    const section = course.sections?.find((section) => section.id.toString() === sectionId);
+    if (!section) {
+      throw new Error('Section not found');
+    }
+
+    // Actualizar los campos permitidos
+    if (updateData.name) section.name = updateData.name;
+    if (updateData.description !== undefined) section.description = updateData.description;
+
+    // Guardar los cambios en el curso
+    await course.save();
   },
 };
