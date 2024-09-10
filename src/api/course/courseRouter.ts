@@ -190,7 +190,7 @@ export const courseRouter: Router = (() => {
       params: SectionUpdateSchema.shape.params,
       body: { content: { 'application/json': { schema: SectionUpdateSchema.shape.body } }, description: '' },
     },
-    responses: createApiResponse(CourseDTOSchema, 'Success'),
+    responses: createApiResponse(SectionDTOSchema, 'Success'),
   });
 
   router.patch(
