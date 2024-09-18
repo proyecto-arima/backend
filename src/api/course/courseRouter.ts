@@ -262,7 +262,7 @@ export const courseRouter: Router = (() => {
     responses: createApiResponse(ContentWithPresignedUrlSchema, 'Success'),
   });
   router.post(
-    '/:courseId/sections/:sectionId/content',
+    '/:courseId/sections/:sectionId/contents',
     sessionMiddleware,
     checkSessionContext,
     hasAccessToCourseMiddleware('courseId'),
@@ -312,7 +312,7 @@ export const courseRouter: Router = (() => {
     responses: createApiResponse(z.array(ContentWithPresignedUrlSchema), 'Success'),
   });
   router.get(
-    '/:courseId/sections/:sectionId/content',
+    '/:courseId/sections/:sectionId/contents',
     sessionMiddleware,
     checkSessionContext,
     hasAccessToCourseMiddleware('courseId'),

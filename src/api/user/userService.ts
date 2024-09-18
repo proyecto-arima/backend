@@ -24,24 +24,24 @@ export const userService = {
       throw new InvalidCredentialsError();
     }
 
-    let instituteId: string | null = null;
+    let instituteId: any = null;
     let learningProfile: string | null = null;
 
     // Verifica el rol del usuario
     if (user.role === Role.DIRECTOR) {
-      const director = await DirectorModel.findOne({ userId: id }).exec();
+      const director = await DirectorModel.findOne({ user: { _id: id } }).exec();
       if (director) {
-        instituteId = director.institute.id;
+        instituteId = director.institute;
       }
     } else if (user.role === Role.TEACHER) {
-      const teacher = await TeacherModel.findOne({ userId: id }).exec();
+      const teacher = await TeacherModel.findOne({ user: { _id: id } }).exec();
       if (teacher) {
-        instituteId = teacher?.institute?.id;
+        instituteId = teacher?.institute;
       }
     } else if (user.role === Role.STUDENT) {
-      const student = await StudentModel.findOne({ userId: id }).exec();
+      const student = await StudentModel.findOne({ user: { _id: id } }).exec();
       if (student) {
-        instituteId = student?.institute?.id;
+        instituteId = student?.institute;
         learningProfile = student.learningProfile;
       }
     }

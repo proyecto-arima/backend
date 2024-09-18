@@ -10,6 +10,6 @@ export default defineConfig({
   minify: false,
   skipNodeModulesBundle: true,
   loader: {
-    '.html': 'text'
-  }
+    '.html': 'text',
+  },
 });

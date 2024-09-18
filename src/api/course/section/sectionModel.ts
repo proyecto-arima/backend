@@ -13,6 +13,7 @@ export const SectionDTOSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   visible: z.boolean(),
+  image: z.string().url(),
   contents: z
     .array(
       z.object({
@@ -36,6 +37,7 @@ const contentSchemaDefinition = new Schema(
 const sectionModelSchemaDefinition: Record<keyof Omit<SectionDTO, 'id'>, any> = {
   name: { type: String, required: true },
   description: { type: String, required: false },
+  image: { type: String, required: true },
   visible: { type: Boolean, required: true },
   contents: { type: [contentSchemaDefinition], required: true },
 };
@@ -70,6 +72,7 @@ sectionModelSchema.method('toDto', function (): SectionDTO {
     id: this._id.toString(),
     name: this.name.toString(),
     description: this.description?.toString(),
+    image: this.image?.toString(),
     visible: this.visible,
     contents: this.contents?.map((content: any) => ({
       id: content.id.toString(),
@@ -94,6 +97,7 @@ export const SectionCreationSchema = z.object({
   body: z.object({
     name: z.string(),
     description: z.string().optional(),
+    image: z.string().url(),
     visible: z.boolean(),
   }),
 });

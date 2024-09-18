@@ -42,6 +42,7 @@ export const courseRepository = {
     const newSection = new SectionModel({
       name: sectionData.name,
       description: sectionData.description,
+      image: sectionData.image,
       visible: sectionData.visible,
     });
 
@@ -59,6 +60,7 @@ export const courseRepository = {
       id: savedSection._id as Types.ObjectId,
       name: newSection.name,
       description: newSection.description ?? '',
+      image: newSection.image,
     });
 
     await course.save();
