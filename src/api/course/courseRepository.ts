@@ -2,7 +2,14 @@ import { Types } from 'mongoose';
 import mongoose from 'mongoose';
 
 import { ContentCreationDTO, ContentDTO, ContentModel } from '@/api/course/content/contentModel';
-import { Course, CourseCreation, CourseCreationDTO, CourseDTO, CourseModel } from '@/api/course/courseModel';
+import {
+  Course,
+  CourseCreation,
+  CourseCreationDTO,
+  CourseDTO,
+  CourseModel,
+  CourseUpdateDTO,
+} from '@/api/course/courseModel';
 import { SectionCreationDTO, SectionModel, SectionUpdateDTO } from '@/api/course/section/sectionModel';
 import { StudentModel } from '@/api/student/studentModel';
 import { TeacherModel } from '@/api/teacher/teacherModel';
@@ -208,5 +215,15 @@ export const courseRepository = {
 
     // Guardar los cambios en el curso
     await course.save();
+  },
+
+  updateCourse: async (courseId: string, updateData: Partial<CourseUpdateDTO>): Promise<Course> => {
+    const updatedCourse = await CourseModel.findByIdAndUpdate(courseId, updateData, { new: true }).exec();
+
+    if (!updatedCourse) {
+      throw new Error(`Course with id ${courseId} not found`);
+    }
+
+    return updatedCourse;
   },
 };

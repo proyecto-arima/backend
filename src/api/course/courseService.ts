@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
 
 import { ContentCreationDTO, ContentDTO } from '@/api/course/content/contentModel';
-import { Course, CourseCreation, CourseDTO } from '@/api/course/courseModel';
+import { Course, CourseCreation, CourseDTO, CourseUpdateDTO } from '@/api/course/courseModel';
 import { courseRepository } from '@/api/course/courseRepository';
 import { SectionCreationDTO, SectionDTO, SectionUpdateDTO } from '@/api/course/section/sectionModel';
 import { studentRepository } from '@/api/student/studentRepository';
@@ -163,5 +163,22 @@ export const courseService = {
     await courseRepository.updateSection(courseId, sectionId, updateData);
     const updatedSection = await sectionRepository.updateSection(sectionId, updateData);
     return updatedSection;
+  },
+
+  update: async (courseId: string, courseUpdateData: CourseUpdateDTO): Promise<CourseDTO> => {
+    const course = await courseRepository.findByIdAsync(courseId);
+
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    // Actualiza los campos permitidos
+    if (courseUpdateData.title) course.title = courseUpdateData.title;
+    if (courseUpdateData.description) course.description = courseUpdateData.description;
+    if (courseUpdateData.image) course.image = courseUpdateData.image;
+
+    await course.save();
+
+    return course.toDto();
   },
 };
