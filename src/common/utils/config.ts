@@ -107,6 +107,7 @@ const testConfig = {
       region: '',
       bucket: '',
       prefix: '',
+      imagesBucket: '',
     },
   },
   app: {
@@ -116,6 +117,10 @@ const testConfig = {
     rate_limit_max_requests: 100,
     rate_limit_window_ms: 900000,
     frontendUrl: 'http://localhost:3000',
+  },
+  openai: {
+    organization: '',
+    apiKey: '',
   },
 };
 

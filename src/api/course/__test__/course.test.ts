@@ -72,6 +72,7 @@ describe('Generic course tests', () => {
       name: 'profundizando conceptos',
       description: 'aprenderemos mas sobre ts',
       visible: true,
+      image: 'https://example.com/image.jpg',
     };
 
     const response = await request(app)
@@ -225,7 +226,7 @@ describe('Generic course tests', () => {
     expect(studentExists).toBe(false);
   });
 
-  it('POST /courses/:courseId/sections/:sectionId/content', async () => {
+  it('POST /courses/:courseId/sections/:sectionId/contents', async () => {
     const token = await login();
 
     const courseId = '66b2ba4bb24f72c9f4aac1d5';
@@ -236,7 +237,7 @@ describe('Generic course tests', () => {
     };
 
     const response = await request(app)
-      .post(`/courses/${courseId}/sections/${sectionId}/content`)
+      .post(`/courses/${courseId}/sections/${sectionId}/contents`)
       .field('title', contentData.title)
       .field('publicationType', contentData.publicationType)
       .attach('file', Buffer.from('dummy content'), 'testfile.txt')
@@ -247,14 +248,14 @@ describe('Generic course tests', () => {
     expect(result.success).toBe(true);
   });
 
-  it('GET /courses/:courseId/sections/:sectionId/content', async () => {
+  it('GET /courses/:courseId/sections/:sectionId/contents', async () => {
     const token = await login(); // Puedes ajustar el rol según los permitidos
 
     const courseId = '66b2ba4bb24f72c9f4aac1d5';
     const sectionId = '66b0e07bceed604f8977c1cc';
 
     const response = await request(app)
-      .get(`/courses/${courseId}/sections/${sectionId}/content`)
+      .get(`/courses/${courseId}/sections/${sectionId}/contents`)
       .set('Authorization', `Bearer ${token}`);
 
     expect(response.status).toBe(StatusCodes.OK);
