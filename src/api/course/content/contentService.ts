@@ -48,4 +48,13 @@ export const contentService = {
 
     return content.toDto();
   },
+
+  async deleteContent(contentId: string): Promise<void> {
+    const content = await ContentModel.findById(contentId);
+
+    if (!content) {
+      throw new Error('Content not found');
+    }
+    return contentRepository.deleteContent(contentId, content.sectionId);
+  },
 };
