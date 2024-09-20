@@ -15,7 +15,7 @@ import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers'
 import { logger } from '@/common/utils/serverLogger';
 
 import { directorService } from '../director/directorService';
-import { UserCreationSchema, UserDTOSchema } from '../user/userModel';
+import { UserCreationMassiveSchema, UserCreationSchema, UserDTOSchema } from '../user/userModel';
 import { teacherService } from './teacherService';
 
 const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
@@ -64,6 +64,51 @@ export const teacherRouter: Router = (() => {
       } catch (e) {
         logger.error(`[TeacherRouter] - [/] - Error: ${e}`);
         return next(e);
+      } finally {
+        logger.trace('[TeacherRouter] - [/] - End');
+      }
+    }
+  );
+
+  teacherRegistry.registerPath({
+    method: 'post',
+    path: '/teachers/massive',
+    tags: ['Teacher'],
+    request: {
+      body: { content: { 'application/json': { schema: UserCreationMassiveSchema.shape.body } }, description: '' },
+    },
+    responses: createApiResponse(UserDTOSchema, 'Success'),
+  });
+  router.post(
+    '/massive',
+    sessionMiddleware,
+    roleMiddleware([Role.DIRECTOR]),
+    validateRequest(UserCreationMassiveSchema), // Aseguramos que sea un array de estudiantes
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
+
+      try {
+        logger.trace('[TeacherRouter] - [/] - Start');
+        logger.trace(`[TeacherRouter] - [/] - Request to create teachers: ${JSON.stringify(req.body)}`);
+
+        const directorUserId = sessionContext.user.id;
+        const teachersDTO = await teacherService.createMultiple(req.body, directorUserId);
+
+        logger.trace(`[TeacherRouter] - [/] - teachers created: ${JSON.stringify(teachersDTO)}. Sending response`);
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'teachers created successfully',
+          teachersDTO,
+          StatusCodes.CREATED
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        logger.error(`[TeacherRouter] - [/] - Error: ${error}`);
+        const apiError = new ApiError('Failed to create teachers', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return res.status(apiError.statusCode).json(apiError);
       } finally {
         logger.trace('[TeacherRouter] - [/] - End');
       }

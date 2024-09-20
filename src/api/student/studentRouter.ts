@@ -1,10 +1,10 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
-import express, { NextFunction, Request, Response, Router } from 'express';
+import express, { NextFunction, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import { CourseDTOSchema, CourseModel } from '@/api/course/courseModel';
-import { UserCreationSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
+import { UserCreationMassiveSchema, UserCreationSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { checkSessionContext } from '@/common/middleware/checkSessionContext';
 import { roleMiddleware } from '@/common/middleware/roleMiddleware';
@@ -63,6 +63,51 @@ export const studentRouter: Router = (() => {
       } catch (error) {
         logger.error(`[StudentRouter] - [/] - Error: ${error}`);
         const apiError = new ApiError('Failed to create student', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return res.status(apiError.statusCode).json(apiError);
+      } finally {
+        logger.trace('[StudentRouter] - [/] - End');
+      }
+    }
+  );
+
+  studentRegistry.registerPath({
+    method: 'post',
+    path: '/students/massive',
+    tags: ['Student'],
+    request: {
+      body: { content: { 'application/json': { schema: UserCreationMassiveSchema.shape.body } }, description: '' },
+    },
+    responses: createApiResponse(UserDTOSchema, 'Success'),
+  });
+  router.post(
+    '/massive',
+    sessionMiddleware,
+    roleMiddleware([Role.DIRECTOR]),
+    validateRequest(UserCreationMassiveSchema), // Aseguramos que sea un array de estudiantes
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
+
+      try {
+        logger.trace('[StudentRouter] - [/] - Start');
+        logger.trace(`[StudentRouter] - [/] - Request to create students: ${JSON.stringify(req.body)}`);
+
+        const directorUserId = sessionContext.user.id;
+        const studentsDTO = await studentService.createMultiple(req.body, directorUserId);
+
+        logger.trace(`[StudentRouter] - [/] - Students created: ${JSON.stringify(studentsDTO)}. Sending response`);
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Students created successfully',
+          studentsDTO,
+          StatusCodes.CREATED
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        logger.error(`[StudentRouter] - [/] - Error: ${error}`);
+        const apiError = new ApiError('Failed to create students', StatusCodes.INTERNAL_SERVER_ERROR, error);
         return res.status(apiError.statusCode).json(apiError);
       } finally {
         logger.trace('[StudentRouter] - [/] - End');
@@ -149,31 +194,24 @@ export const studentRouter: Router = (() => {
 
   studentRegistry.registerPath({
     method: 'get',
-    path: '/:id/learning-profile',
+    path: '/students/me/learning-profile',
     tags: ['Student'],
-    parameters: [
-      {
-        name: 'id',
-        in: 'path',
-        required: true,
-        schema: { type: 'string' },
-        description: 'Student ID',
-      },
-    ],
     responses: createApiResponse(z.object({ learningProfile: z.nativeEnum(LearningProfile) }), 'Success'),
   });
 
   router.get(
-    '/:id/learning-profile',
-
-    async (req: Request, res: Response, next: NextFunction) => {
+    '/me/learning-profile',
+    sessionMiddleware,
+    checkSessionContext,
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
       try {
-        const studentId = req.params.id;
-        logger.trace(
-          `[StudentRouter] - [/students/:id/learning-profile] - Retrieving learning profile for student with id: ${studentId}`
-        );
+        const userId = sessionContext.user.id;
 
-        const learningProfile = await studentService.getLearningProfile(studentId);
+        const learningProfile = await studentService.getLearningProfile(userId);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
@@ -183,7 +221,7 @@ export const studentRouter: Router = (() => {
         );
         handleApiResponse(apiResponse, res);
       } catch (error) {
-        logger.error(`[StudentRouter] - [/students/:id/learning-profile] - Error: ${error}`);
+        logger.error(`[StudentRouter] - [/students/me/learning-profile] - Error: ${error}`);
         const apiError = new ApiError('Failed to retrieve learning profile', StatusCodes.INTERNAL_SERVER_ERROR, error);
         return next(apiError);
       }

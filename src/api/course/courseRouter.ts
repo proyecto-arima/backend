@@ -10,6 +10,8 @@ import {
   CourseCreationSchema,
   CourseDTO,
   CourseDTOSchema,
+  CourseUpdateDTO,
+  CourseUpdateSchema,
   DeleteCourseSchema,
   DeleteUserFromCourseSchema,
   GetCourseSchema,
@@ -20,6 +22,7 @@ import {
   SectionCreationSchema,
   SectionDTOSchema,
   SectionFetchingSchema,
+  SectionUpdateSchema,
 } from '@/api/course/section/sectionModel';
 import { sectionService } from '@/api/course/section/sectionService';
 import { StudentDTOSchema } from '@/api/student/studentModel';
@@ -177,6 +180,52 @@ export const courseRouter: Router = (() => {
         return next(apiError);
       } finally {
         logger.trace('[CourseRouter] - [/:courseId/section] - End');
+      }
+    }
+  );
+
+  courseRegistry.registerPath({
+    method: 'patch',
+    path: '/courses/{courseId}/sections/{sectionId}',
+    tags: ['Course'],
+    request: {
+      params: SectionUpdateSchema.shape.params,
+      body: { content: { 'application/json': { schema: SectionUpdateSchema.shape.body } }, description: '' },
+    },
+    responses: createApiResponse(SectionDTOSchema, 'Success'),
+  });
+
+  router.patch(
+    '/:courseId/sections/:sectionId',
+    sessionMiddleware,
+    checkSessionContext,
+    hasAccessToCourseMiddleware('courseId'),
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(SectionUpdateSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { courseId, sectionId } = req.params;
+      const updateData = req.body;
+
+      try {
+        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId] - Start');
+        logger.trace(`[CourseRouter] - [/:courseId/sections/:sectionId] - Updating section: ${sectionId}`);
+
+        // Llamar al servicio para actualizar la sección
+        const updatedSection = await courseService.updateSection(courseId, sectionId, updateData);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Section updated successfully',
+          updatedSection,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        logger.error(`[CourseRouter] - [/:courseId/sections/:sectionId] - Error: ${e}`);
+        const apiError = new ApiError('Failed to update section', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      } finally {
+        logger.trace('[CourseRouter] - [/:courseId/sections/:sectionId] - End');
       }
     }
   );
@@ -548,6 +597,59 @@ export const courseRouter: Router = (() => {
       } catch (error) {
         const apiError = new ApiError('Failed to remove user from course', StatusCodes.INTERNAL_SERVER_ERROR, error);
         return next(apiError);
+      }
+    }
+  );
+
+  courseRegistry.registerPath({
+    method: 'patch',
+    path: '/courses/:courseId',
+    tags: ['Course'],
+    request: {
+      body: { content: { 'application/json': { schema: CourseUpdateSchema.shape.body } }, description: '' },
+      params: CourseUpdateSchema.shape.params,
+    },
+    responses: createApiResponse(CourseDTOSchema, 'Success'),
+  });
+  router.patch(
+    '/:courseId',
+    sessionMiddleware,
+    checkSessionContext,
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(CourseUpdateSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        logger.trace('[CourseRouter] - [/update] - Session context is missing, sending error response');
+        return next(UNAUTHORIZED);
+      }
+
+      try {
+        const courseId = req.params.courseId;
+
+        // Obtener datos para actualizar
+        const courseUpdateData: CourseUpdateDTO = {
+          ...req.body,
+        };
+
+        logger.trace(`[CourseRouter] - [/update] - Updating course with ID: ${courseId}`);
+
+        const updatedCourse: CourseDTO = await courseService.update(courseId, courseUpdateData);
+        logger.trace(`[CourseRouter] - [/update] - Course updated: ${JSON.stringify(updatedCourse)}. Sending response`);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Course updated successfully',
+          updatedCourse,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        logger.error(`[CourseRouter] - [/update] - Error: ${error}`);
+        const apiError = new ApiError('Failed to update course', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
+      } finally {
+        logger.trace('[CourseRouter] - [/update] - End');
       }
     }
   );

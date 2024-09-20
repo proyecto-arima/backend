@@ -208,3 +208,15 @@ export const DeleteUserFromCourseSchema = z.object({
 });
 export type CourseCreationDTO = z.infer<typeof CourseCreationSchema.shape.body>;
 export type CourseCreation = CourseCreationDTO;
+
+export const CourseUpdateSchema = z.object({
+  params: z.object({
+    courseId: z.string(),
+  }),
+  body: z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    image: z.string().optional(),
+  }),
+});
+export type CourseUpdateDTO = z.infer<typeof CourseUpdateSchema.shape.body>;

@@ -102,6 +102,18 @@ export const SectionCreationSchema = z.object({
   }),
 });
 
+export const SectionUpdateSchema = z.object({
+  params: z.object({
+    courseId: z.string(),
+    sectionId: z.string(),
+  }),
+  body: z.object({
+    name: z.string(),
+    description: z.string().optional(),
+    visible: z.boolean().optional(),
+  }),
+});
+
 export const DeleteSectionSchema = z.object({
   params: z.object({
     courseId: z.string(),
@@ -111,6 +123,7 @@ export const DeleteSectionSchema = z.object({
 
 export type SectionCreationDTO = z.infer<typeof SectionCreationSchema.shape.body>;
 export type SectionCreation = SectionCreationDTO;
+export type SectionUpdateDTO = z.infer<typeof SectionUpdateSchema.shape.body>;
 
 export const SectionFetchingSchema = z.object({
   params: z.object({

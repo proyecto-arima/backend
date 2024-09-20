@@ -3,7 +3,6 @@ import jwt from 'jsonwebtoken';
 
 import { directorRepository } from '@/api/director/directorRepository';
 import { StudentModel } from '@/api/student/studentModel';
-import { studentRepository } from '@/api/student/studentRepository';
 import { UserCreationDTO, UserDTO } from '@/api/user/userModel';
 import sendMailTo from '@/common/mailSender/mailSenderService';
 import { LearningProfile } from '@/common/models/learningProfile';
@@ -64,11 +63,27 @@ export const studentService = {
     return createdUser;
   },
 
-  getLearningProfile: async (id: string): Promise<LearningProfile> => {
-    const student = await studentRepository.findById(id);
-    if (!student) {
-      throw new Error('Student not found');
+  createMultiple: async (students: UserCreationDTO[], directorUserId: string): Promise<UserDTO[]> => {
+    logger.trace('[StudentService] - [createMultiple] - Start');
+    const createdStudents: UserDTO[] = [];
+
+    for (const user of students) {
+      const createdUser: UserDTO = await studentService.create(user, directorUserId);
+
+      logger.trace(`[StudentService] - [createMultiple] - Student created: ${JSON.stringify(createdUser)}`);
+      createdStudents.push(createdUser);
     }
+
+    logger.trace('[StudentService] - [createMultiple] - All students created successfully');
+    return createdStudents;
+  },
+
+  getLearningProfile: async (id: string): Promise<LearningProfile> => {
+    const student = await StudentModel.findOne({ user: id }).exec();
+    if (!student) {
+      return Promise.reject(new Error('Student not found'));
+    }
+
     return student.learningProfile;
   },
 

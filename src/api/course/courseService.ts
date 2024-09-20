@@ -2,12 +2,14 @@ import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
 
 import { ContentCreationDTO, ContentDTO } from '@/api/course/content/contentModel';
-import { Course, CourseCreation, CourseDTO } from '@/api/course/courseModel';
+import { Course, CourseCreation, CourseDTO, CourseUpdateDTO } from '@/api/course/courseModel';
 import { courseRepository } from '@/api/course/courseRepository';
-import { SectionCreationDTO } from '@/api/course/section/sectionModel';
+import { SectionCreationDTO, SectionDTO, SectionUpdateDTO } from '@/api/course/section/sectionModel';
 import { studentRepository } from '@/api/student/studentRepository';
 import { teacherRepository } from '@/api/teacher/teacherRepository';
 import { s3Get, s3Put } from '@/common/utils/awsManager';
+
+import { sectionRepository } from './section/sectionRepository';
 
 const generateMatriculationCode = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -155,5 +157,28 @@ export const courseService = {
 
   removeUserFromCourse: async (userId: string, courseId: string): Promise<void> => {
     await courseRepository.removeUserFromCourse(userId, courseId);
+  },
+
+  async updateSection(courseId: string, sectionId: string, updateData: SectionUpdateDTO): Promise<SectionDTO> {
+    await courseRepository.updateSection(courseId, sectionId, updateData);
+    const updatedSection = await sectionRepository.updateSection(sectionId, updateData);
+    return updatedSection;
+  },
+
+  update: async (courseId: string, courseUpdateData: CourseUpdateDTO): Promise<CourseDTO> => {
+    const course = await courseRepository.findByIdAsync(courseId);
+
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    // Actualiza los campos permitidos
+    if (courseUpdateData.title) course.title = courseUpdateData.title;
+    if (courseUpdateData.description) course.description = courseUpdateData.description;
+    if (courseUpdateData.image) course.image = courseUpdateData.image;
+
+    await course.save();
+
+    return course.toDto();
   },
 };
