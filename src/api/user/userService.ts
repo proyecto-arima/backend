@@ -1,10 +1,9 @@
 import { DirectorModel } from '@/api/director/directorModel';
-import { InstituteModel } from '@/api/institute/instituteModel';
+import { InstituteDTO, InstituteModel } from '@/api/institute/instituteModel';
 import { StudentModel } from '@/api/student/studentModel';
 import { TeacherModel } from '@/api/teacher/teacherModel';
 import { User, UserCreation, UserDTO } from '@/api/user/userModel';
 import { userRepository } from '@/api/user/userRepository';
-import { LearningProfile } from '@/common/models/learningProfile';
 import { Role } from '@/common/models/role';
 
 import { InvalidCredentialsError } from '../auth/authModel';
@@ -18,50 +17,49 @@ export const userService = {
     return users.map((user: User) => user.toDto());
   },
 
+  // Retrieves a single user by their ID
   findById: async (id: string): Promise<any> => {
     const user: User = await userRepository.findByIdAsync(id);
     if (!user) {
       throw new InvalidCredentialsError();
     }
 
-    let instituteName: string | null = null;
-    let learningProfile: LearningProfile | null = null;
+    let instituteId: any = null;
+    let learningProfile: string | null = null;
 
     // Verifica el rol del usuario
     if (user.role === Role.DIRECTOR) {
-      const director = await DirectorModel.findOne({ user: id }).lean().exec();
+      const director = await DirectorModel.findOne({ user: { _id: id } }).exec();
       if (director) {
-        const foundInstitute = await InstituteModel.findById(director.institute).select('name').lean().exec();
-        if (foundInstitute) {
-          instituteName = foundInstitute.name;
-        }
+        instituteId = director.institute;
       }
     } else if (user.role === Role.TEACHER) {
-      const teacher = await TeacherModel.findOne({ user: id }).lean().exec();
+      const teacher = await TeacherModel.findOne({ user: { _id: id } }).exec();
       if (teacher) {
-        const foundInstitute = await InstituteModel.findById(teacher.institute).select('name').lean().exec();
-        if (foundInstitute) {
-          instituteName = foundInstitute.name;
-        }
+        instituteId = teacher?.institute;
       }
     } else if (user.role === Role.STUDENT) {
-      const student = await StudentModel.findOne({ user: id }).lean().exec();
+      const student = await StudentModel.findOne({ user: { _id: id } }).exec();
       if (student) {
-        const foundInstitute = await InstituteModel.findById(student.institute).select('name').lean().exec();
-        if (foundInstitute) {
-          instituteName = foundInstitute.name;
-        }
-        if (student.learningProfile) {
-          learningProfile = student.learningProfile;
-        }
+        instituteId = student?.institute;
+        learningProfile = student.learningProfile;
+      }
+    }
+
+    // Trae la información de la institución si existe
+    let institute: InstituteDTO | null = null;
+    if (instituteId) {
+      const foundInstitute = await InstituteModel.findById(instituteId).exec();
+      if (foundInstitute) {
+        institute = foundInstitute.toDto();
       }
     }
 
     // Retorna el UserDTO con la información adicional
     return {
       ...user.toDto(),
-      ...(instituteName && { instituteName }), // Solo agrega `instituteName` si no es `null` o `undefined`
-      ...(learningProfile && { learningProfile }),
+      ...(institute && { institute }), // Solo agrega `institute` si no es `null` o `undefined`
+      ...(learningProfile && { learningProfile }), // Solo agrega `learningProfile` si no es `null` o `undefined`
     };
   },
 
