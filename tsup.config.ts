@@ -2,9 +2,13 @@ import { defineConfig } from 'tsup';
 
 export default defineConfig({
   entry: ['./src'],
-  splitting: false,
+  format: ['cjs', 'esm'],
+  outDir: 'dist',
   sourcemap: true,
   clean: true,
+  splitting: false,
+  minify: false,
+  skipNodeModulesBundle: true,
   loader: {
     '.html': 'text',
   },

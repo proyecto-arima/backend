@@ -43,6 +43,7 @@ const insertInitialData = async () => {
           id: new mongoose.Types.ObjectId('66b0e07bceed604f8977c1cc'),
           name: 'Aprendiendo mas',
           description: 'dale que vos podes, entra a mi seccion.',
+          image: 'https://example.com/image.jpg',
         },
       ],
     },
@@ -167,6 +168,7 @@ const insertInitialData = async () => {
     name: 'Aprendiendo mas',
     description: 'dale que vos podes, entra a mi seccion.',
     visible: true,
+    image: 'https://example.com/image.jpg',
     contents: [
       {
         id: new mongoose.Types.ObjectId('66b0e07bceed604f8977c0aa'),

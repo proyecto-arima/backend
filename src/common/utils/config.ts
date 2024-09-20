@@ -30,6 +30,7 @@ const ConfigSchema = z.object({
       region: z.string().default('us-east-1'),
       bucket: z.string(),
       prefix: z.string(),
+      imagesBucket: z.string(),
     }),
   }),
   app: z.object({
@@ -39,6 +40,10 @@ const ConfigSchema = z.object({
     rate_limit_max_requests: z.number().default(100),
     rate_limit_window_ms: z.number().default(15 * 60 * 1000),
     frontendUrl: z.string(),
+  }),
+  openai: z.object({
+    organization: z.string(),
+    apiKey: z.string(),
   }),
 });
 export type Config = z.infer<typeof ConfigSchema>;
@@ -65,6 +70,7 @@ const envConfig = {
       region: process.env.AWS_REGION,
       bucket: process.env.BUCKET,
       prefix: process.env.PREFIX,
+      imagesBucket: process.env.IMAGES_BUCKET,
     },
   },
   app: {
@@ -74,6 +80,10 @@ const envConfig = {
     rate_limit_max_requests: parseInt(process.env.COMMON_RATE_LIMIT_MAX_REQUESTS as string),
     rate_limit_window_ms: parseInt(process.env.COMMON_RATE_LIMIT_WINDOW_MS as string),
     frontendUrl: process.env.FRONTEND_URL,
+  },
+  openai: {
+    organization: process.env.OPENAI_ORGANIZATION,
+    apiKey: process.env.OPENAI_API_KEY,
   },
 };
 
@@ -97,6 +107,7 @@ const testConfig = {
       region: '',
       bucket: '',
       prefix: '',
+      imagesBucket: '',
     },
   },
   app: {
@@ -106,6 +117,10 @@ const testConfig = {
     rate_limit_max_requests: 100,
     rate_limit_window_ms: 900000,
     frontendUrl: 'http://localhost:3000',
+  },
+  openai: {
+    organization: '',
+    apiKey: '',
   },
 };
 

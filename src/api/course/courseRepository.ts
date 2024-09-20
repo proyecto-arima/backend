@@ -46,11 +46,16 @@ export const courseRepository = {
 
   addSectionToCourse: async (courseId: string, sectionData: SectionCreationDTO): Promise<any> => {
     // Crear la nueva sección
+    console.log('Section data:', sectionData);
+
     const newSection = new SectionModel({
       name: sectionData.name,
       description: sectionData.description,
+      image: sectionData.image,
       visible: sectionData.visible,
     });
+
+    console.log('NEW SECTION:', newSection);
 
     const savedSection = await newSection.save();
 
@@ -66,6 +71,7 @@ export const courseRepository = {
       id: savedSection._id as Types.ObjectId,
       name: newSection.name,
       description: newSection.description ?? '',
+      image: newSection.image,
     });
 
     await course.save();

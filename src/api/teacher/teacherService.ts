@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 
 import { directorRepository } from '@/api/director/directorRepository';
 import { TeacherModel } from '@/api/teacher/teacherModel';
@@ -40,14 +41,18 @@ export const teacherService = {
     await teacher.save();
 
     logger.trace(`[TeacherService] - [create] - Sending email to teacher ${createdUser.email}...`);
-    sendMailTo(
-      [createdUser.email],
-      'Welcome to the school',
-      `<h1>Welcome to the school</h1>
-      <p>You have been registered as a teacher in the school.
-      Your username is ${createdUser.email} and your password is ${randomPassword}.
-      Please login and change your password.</p>`
-    );
+    const token = jwt.sign({ id: createdUser.id }, config.jwt.secret as string, { expiresIn: '12h' });
+    sendMailTo({
+      to: [createdUser.email],
+      subject: 'Bienvenido a AdaptarIA!',
+      bodyTemplateName: 'teacher_welcome',
+      templateParams: {
+        teacherName: createdUser.firstName,
+        teacherEmail: createdUser.email,
+        teacherInstitute: instituteId,
+        reset_password_link: `${config.app.frontendUrl}/recoverPassword?token=${token}`,
+      },
+    });
     logger.trace(`[TeacherService] - [create] - Email sent.`);
     logger.trace('[TeacherService] - [create] - End');
     return createdUser;
@@ -71,13 +76,9 @@ export const teacherService = {
   findByInstituteId: async (instituteId: string): Promise<UserDTO[]> => {
     logger.trace('[TeacherService] - [findByInstituteId] - Start');
     logger.trace(`[TeacherService] - [findByInstituteId] - Searching for teachers in institute ${instituteId}`);
-    const teachers = await TeacherModel.find({ instituteId: instituteId }).exec();
+    const teachers = await TeacherModel.find({ institute: instituteId }).populate('user').exec();
     logger.trace(`[TeacherService] - [findByInstituteId] - Found ${teachers.length} teachers`);
-    // TODO: Put instituteId in the USER
-    const teacherIds = teachers.map((teacher) => teacher.user.id);
-    const teacherUsersPromises = teacherIds.map((teacherId) => userService.findById(teacherId));
-    const teachersUsers = await Promise.all(teacherUsersPromises);
     logger.trace('[TeacherService] - [findByInstituteId] - End');
-    return teachersUsers;
+    return teachers.map((teacher) => (teacher as any).user.toDto());
   },
 };

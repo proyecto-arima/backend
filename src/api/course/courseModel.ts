@@ -32,6 +32,7 @@ export const CourseDTOSchema = z.object({
         id: z.string(),
         name: z.string(),
         description: z.string(),
+        image: z.string(),
         /*
         contents: z
           .array(
@@ -73,6 +74,7 @@ const sectionSchemaDefinition = new Schema(
     id: { type: Schema.Types.ObjectId, ref: 'Section' },
     name: { type: String, required: true },
     description: { type: String, required: true },
+    image: { type: String, required: true },
     //contents: { type: [contentSchemaDefinition], required: true },
   },
   { _id: false }
@@ -101,6 +103,7 @@ type ICourseSchemaDefinition = {
     id: mongoose.Types.ObjectId;
     name: string;
     description: string;
+    image: string;
     //contents: Array<{ id: mongoose.Types.ObjectId; title: string }>;
   }>;
 };
@@ -149,6 +152,7 @@ courseModelSchema.method('toDto', function (): CourseDTO {
         id: section.id?.toString() || '',
         name: section.name?.toString() || '',
         description: section.description?.toString() || '',
+        image: section.image?.toString() || '',
         /*contents: section.contents.map((content: any) => ({
           id: content.id.toString(),
           title: content.title.toString(),
