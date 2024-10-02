@@ -55,7 +55,7 @@ export const studentService = {
       templateParams: {
         studentName: createdUser.firstName,
         studentEmail: createdUser.email,
-        studentInstitution: instituteId,
+        studentInstitution: student.toDto().institute.name,
         reset_password_link: `${config.app.frontendUrl}/recoverPassword?token=${token}`,
       },
     });
