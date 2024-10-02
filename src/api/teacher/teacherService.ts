@@ -44,12 +44,12 @@ export const teacherService = {
     const token = jwt.sign({ id: createdUser.id }, config.jwt.secret as string, { expiresIn: '12h' });
     sendMailTo({
       to: [createdUser.email],
-      subject: 'Bienvenido a AdaptarIA!',
+      subject: '¡Bienvenido/a a AdaptarIA!',
       bodyTemplateName: 'teacher_welcome',
       templateParams: {
         teacherName: createdUser.firstName,
         teacherEmail: createdUser.email,
-        teacherInstitute: instituteId,
+        teacherInstitute: teacher.toDto().institute.name,
         reset_password_link: `${config.app.frontendUrl}/recoverPassword?token=${token}`,
       },
     });

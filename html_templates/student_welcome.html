@@ -5,21 +5,20 @@
   </head>
   <body>
     <h1>¡Bienvenido/a a AdaptarIA!</h1>
-    <p>Estimado/a estudiante {{ studentName }},</p>
+    <p>Estimado/a {{ studentName }},</p>
     <p>Estamos emocionados de tenerte como estudiante en nuestra plataforma de aprendizaje!</p>
     <p>Aquí tienes algunos detalles importantes sobre tu cuenta:</p>
 
     <ul>
       <li>Tu nombre de usuario: {{ studentEmail }}</li>
-      <li>Tu institucion educativa: {{ studentInstitution }}</li>
+      <li>Tu institución educativa: {{ studentInstitution }}</li>
     </ul>
 
     <p>
-      Por favor, si piensas que hay algun error con tus datos no dudes en contactarte con tu insitucion para que puedan
-      corregirlo.
+      Por favor, si piensas que hay algún error con tus datos no dudes en contactarte con el administrador de AdaptarIA
     </p>
     <p>
-      Para completar tu registro, deberas establecer tu contraseña. Puedes hacerlo haciendo clic en el siguiente enlace:
+      Para completar tu registro, debes establecer tu contraseña. Puedes hacerlo haciendo clic en el siguiente enlace:
     </p>
     <a href="{{ reset_password_link }}">{{ reset_password_link }}</a>
 

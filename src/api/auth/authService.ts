@@ -118,7 +118,7 @@ export const authService = {
       user.forcePasswordReset = true;
       sendMailTo({
         to: [user.email],
-        subject: `[AdaptarIA] Recuperación de tu cuenta - ${user.firstName}`,
+        subject: `[AdaptarIA] Recuperación de tu cuenta`,
         bodyTemplateName: 'password_recovery',
         templateParams: {
           username: user.email,
