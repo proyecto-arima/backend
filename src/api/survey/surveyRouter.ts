@@ -3,7 +3,13 @@ import express, { NextFunction, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-import { SurveyCreationSchema, SurveyDTOSchema } from '@/api/survey/surveyModel';
+import {
+  ResultsResponseSchema,
+  StudentResultsQuerySchema,
+  SurveyCreationSchema,
+  SurveyDTOSchema,
+  TeacherResultsQuerySchema,
+} from '@/api/survey/surveyModel';
 import { surveyService } from '@/api/survey/surveyService';
 import { userService } from '@/api/user/userService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
@@ -83,10 +89,19 @@ export const surveyRouter: Router = (() => {
     }
   );
 
+  surveyRegistry.registerPath({
+    method: 'get',
+    path: '/survey/student-results',
+    tags: ['Survey'],
+    request: {
+      params: StudentResultsQuerySchema,
+    },
+    responses: createApiResponse(ResultsResponseSchema, 'Success'),
+  });
   router.get(
     '/student-results',
     sessionMiddleware,
-    roleMiddleware([Role.TEACHER]),
+    roleMiddleware([Role.TEACHER, Role.DIRECTOR]),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       try {
         const { courseId, dateFrom, dateTo } = req.query;
@@ -112,13 +127,25 @@ export const surveyRouter: Router = (() => {
     }
   );
 
+  surveyRegistry.registerPath({
+    method: 'get',
+    path: '/survey/teacher-results',
+    tags: ['Survey'],
+    request: {
+      params: TeacherResultsQuerySchema,
+    },
+    responses: createApiResponse(ResultsResponseSchema, 'Success'),
+  });
   router.get(
     '/teacher-results',
     sessionMiddleware,
     roleMiddleware([Role.DIRECTOR]),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       try {
-        const responses = await surveyService.calculateTeachersSurveyResults();
+        const { dateFrom, dateTo } = req.query;
+
+        // Llamar al servicio con los filtros
+        const responses = await surveyService.calculateTeachersSurveyResults(dateFrom as string, dateTo as string);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,

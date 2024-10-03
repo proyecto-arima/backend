@@ -34,12 +34,6 @@ export interface Percentages {
   question5: number[];
 }
 
-export interface FilterOptions {
-  courseId?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}
-
 /**
  * Survey Model Schema Definition
  */
@@ -102,6 +96,30 @@ export const SurveyCreationSchema = z.object({
     answers: z.array(z.number().int().min(1).max(5)).length(5),
     free: z.string().optional(),
   }),
+});
+
+export const ResultsResponseSchema = z.object({
+  percentages: z.union([
+    z.object({
+      question1: z.array(z.number().min(0).max(100)),
+      question2: z.array(z.number().min(0).max(100)),
+      question3: z.array(z.number().min(0).max(100)),
+      question4: z.array(z.number().min(0).max(100)),
+      question5: z.array(z.number().min(0).max(100)),
+    }),
+    z.null(), // O bien, null si no hay resultados
+  ]),
+});
+
+export const StudentResultsQuerySchema = z.object({
+  dateFrom: z.string().optional(), // Fecha de inicio opcional
+  dateTo: z.string().optional(), // Fecha de fin opcional
+  courseId: z.string().optional(), // ID del curso opcional
+});
+
+export const TeacherResultsQuerySchema = z.object({
+  dateFrom: z.string().optional(), // Fecha de inicio opcional
+  dateTo: z.string().optional(), // Fecha de fin opcional
 });
 
 export type SurveyCreationDTO = z.infer<typeof SurveyCreationSchema.shape.body>;

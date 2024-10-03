@@ -37,7 +37,7 @@ export const surveyService = {
     courseId?: string,
     dateFrom?: string,
     dateTo?: string
-  ): Promise<Percentages> => {
+  ): Promise<Percentages | null> => {
     const surveyFilter: any = {};
 
     // Filtro por fechas (opcional)
@@ -69,14 +69,9 @@ export const surveyService = {
     const surveys = await StudentSurveyModel.find(surveyFilter);
 
     const totalResponses = surveys.length;
-    if (totalResponses === 0)
-      return {
-        question1: [0, 0, 0, 0, 0],
-        question2: [0, 0, 0, 0, 0],
-        question3: [0, 0, 0, 0, 0],
-        question4: [0, 0, 0, 0, 0],
-        question5: [0, 0, 0, 0, 0],
-      };
+    if (totalResponses === 0) {
+      return null;
+    }
 
     // Inicializar un objeto para contar respuestas
     const responseCounts: ResponseCounts = {
@@ -117,19 +112,28 @@ export const surveyService = {
     return percentages; // Retornar los resultados
   },
 
-  calculateTeachersSurveyResults: async (): Promise<Percentages> => {
-    // Obtener todas las encuestas completadas
-    const surveys = await TeacherSurveyModel.find({}); // Cambia a TeacherSurveyModel si es necesario
+  calculateTeachersSurveyResults: async (dateFrom?: string, dateTo?: string): Promise<Percentages | null> => {
+    const surveyFilter: any = {};
+
+    // Filtro por fechas (opcional)
+    if (dateFrom && dateTo) {
+      surveyFilter.createdAt = {
+        $gte: new Date(dateFrom),
+        $lte: new Date(dateTo),
+      };
+    } else if (dateFrom) {
+      surveyFilter.createdAt = { $gte: new Date(dateFrom) };
+    } else if (dateTo) {
+      surveyFilter.createdAt = { $lte: new Date(dateTo) };
+    }
+
+    // Obtener las encuestas que coincidan con el filtro
+    const surveys = await TeacherSurveyModel.find(surveyFilter);
 
     const totalResponses = surveys.length;
-    if (totalResponses === 0)
-      return {
-        question1: [0, 0, 0, 0, 0],
-        question2: [0, 0, 0, 0, 0],
-        question3: [0, 0, 0, 0, 0],
-        question4: [0, 0, 0, 0, 0],
-        question5: [0, 0, 0, 0, 0],
-      };
+    if (totalResponses === 0) {
+      return null;
+    }
 
     // Inicializar un objeto para contar respuestas
     const responseCounts: ResponseCounts = {
