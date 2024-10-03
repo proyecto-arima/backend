@@ -55,6 +55,7 @@ const userModelSchemaDefinition = {
     },
   },
   forcePasswordReset: { type: Boolean, default: true },
+  nextDateSurvey: { type: Date },
 };
 
 // Type used to tell mongoose the shape of the schema available
@@ -216,6 +217,7 @@ export const UpdateUserProfileSchema = z.object({
 
 export const SessionTokenSchema = z.object({
   access_token: z.string(),
+  requiresSurvey: z.boolean().optional(),
 });
 export type SessionToken = z.infer<typeof SessionTokenSchema>;
 

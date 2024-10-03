@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { SurveyCreationSchema, SurveyDTOSchema } from '@/api/survey/surveyModel';
 import { surveyService } from '@/api/survey/surveyService';
+import { userService } from '@/api/user/userService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { roleMiddleware } from '@/common/middleware/roleMiddleware';
 import { sessionMiddleware, SessionRequest } from '@/common/middleware/session';
@@ -53,6 +54,12 @@ export const surveyRouter: Router = (() => {
         } else {
           await surveyService.createStudentSurvey(userId, answers, free);
         }
+
+        // Calcular la fecha dentro de un mes
+        const nextMonthDate = new Date();
+        nextMonthDate.setMonth(nextMonthDate.getMonth() + 1); // Agregar un mes a la fecha actual
+        await userService.updateNextDateSurvey(userId, nextMonthDate);
+
         const apiResponse = new ApiResponse(ResponseStatus.Success, 'Survey saved successfully', null, StatusCodes.OK);
         handleApiResponse(apiResponse, res);
       } catch (error) {

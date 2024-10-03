@@ -45,8 +45,19 @@ export const authService = {
       const token: SessionPayload = SessionPayloadSchema.parse({ id: foundUser.toDto().id });
       const access_token = jwt.sign(token, config.jwt.secret as string, { expiresIn: '12h' });
 
-      logger.info(`[AuthService] - [login] - User ${getUsernameObfuscated(user.email)} logged in successfully`);
-      return { access_token };
+      let requiresSurvey: boolean | undefined;
+      if (foundUser.role === 'TEACHER' || foundUser.role === 'STUDENT') {
+        const currentDate = new Date();
+        const nextDateSurvey = foundUser.nextDateSurvey ? new Date(foundUser.nextDateSurvey as any) : null;
+        requiresSurvey = nextDateSurvey ? currentDate >= nextDateSurvey : false;
+      }
+
+      const response: SessionToken = { access_token };
+      if (requiresSurvey !== undefined) {
+        response.requiresSurvey = requiresSurvey;
+      }
+
+      return response;
     } catch (ex) {
       logger.trace(`[AuthService] - [login] - Error found: ${ex}`);
       if (ex instanceof InvalidCredentialsError) {

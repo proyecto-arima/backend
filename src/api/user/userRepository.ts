@@ -51,4 +51,8 @@ export const userRepository = {
     ).exec();
     return updatedUser;
   },
+
+  async updateNextDateSurvey(userId: string, date: Date): Promise<void> {
+    await UserModel.updateOne({ _id: userId }, { nextDateSurvey: date });
+  },
 };

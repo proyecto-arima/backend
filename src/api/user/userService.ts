@@ -64,7 +64,15 @@ export const userService = {
   },
 
   create: async (user: UserCreation): Promise<UserDTO> => {
-    const createdUser: User = await userRepository.create(user);
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+    const userWithSurveyFields = {
+      ...user,
+      nextDateSurvey: nextMonth, // La fecha de la encuesta es en un mes
+    };
+
+    const createdUser: User = await userRepository.create(userWithSurveyFields);
     return createdUser.toDto();
   },
 
@@ -93,5 +101,9 @@ export const userService = {
     }
 
     return updatedUser.toDto();
+  },
+
+  async updateNextDateSurvey(userId: string, date: Date): Promise<void> {
+    await userRepository.updateNextDateSurvey(userId, date);
   },
 };
