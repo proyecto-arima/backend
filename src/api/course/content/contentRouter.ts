@@ -415,5 +415,41 @@ export const contentRouter: Router = (() => {
     }
   );
 
+  contentRegistry.registerPath({
+    method: 'delete',
+    path: '/contents/{contentId}',
+    tags: ['Content'],
+    request: {
+      params: UpdateTitleSchema.shape.params,
+      body: { content: { 'application/json': { schema: UpdateTitleSchema.shape.body } } },
+    },
+    responses: createApiResponse(ContentDTOSchema, 'Success'),
+  });
+
+  router.delete(
+    '/:contentId',
+    sessionMiddleware,
+    roleMiddleware([Role.TEACHER]),
+    validateRequest(GetContentSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+
+      try {
+        await contentService.deleteContent(contentId);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Content deleted successfully',
+          null,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        const apiError = new ApiError('Failed to update content title', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
+      }
+    }
+  );
+
   return router;
 })();

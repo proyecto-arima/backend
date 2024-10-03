@@ -1,4 +1,5 @@
 import { Content, ContentDTO, ContentModel } from '@/api/course/content/contentModel';
+import { SectionModel } from '@/api/course/section/sectionModel';
 
 export const contentRepository = {
   async getReactionsByContentId(
@@ -61,5 +62,10 @@ export const contentRepository = {
     await content.save();
 
     return content;
+  },
+
+  deleteContent: async (contentId: string, sectionId: string): Promise<void> => {
+    await SectionModel.updateOne({ _id: sectionId }, { $pull: { contents: { id: contentId } } });
+    await ContentModel.deleteOne({ _id: contentId });
   },
 };
