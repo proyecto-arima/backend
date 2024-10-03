@@ -22,4 +22,13 @@ export const surveyService = {
     await survey.save();
     return survey.toDto();
   },
+
+  // En surveyService
+  findStudentSurveyByUserId: async (userId: string): Promise<any> => {
+    return StudentSurveyModel.findOne({ userId }).exec();
+  },
+
+  findTeacherSurveyByUserId: async (userId: string): Promise<any> => {
+    return TeacherSurveyModel.findOne({ userId }).exec();
+  },
 };

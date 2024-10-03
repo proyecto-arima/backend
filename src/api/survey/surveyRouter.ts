@@ -49,12 +49,26 @@ export const surveyRouter: Router = (() => {
       const role = sessionContext.user.role;
 
       try {
+        // Verificar si el usuario ya respondió la encuesta
+        let existingSurvey;
         if (role === 'TEACHER') {
-          await surveyService.createTeacherSurvey(userId, answers, free);
+          existingSurvey = await surveyService.findTeacherSurveyByUserId(userId);
         } else {
-          await surveyService.createStudentSurvey(userId, answers, free);
+          existingSurvey = await surveyService.findStudentSurveyByUserId(userId);
         }
 
+        // Si existe una encuesta, actualizarla
+        if (existingSurvey) {
+          existingSurvey.answers = answers;
+          existingSurvey.free = free;
+          await existingSurvey.save();
+        } else {
+          if (role === 'TEACHER') {
+            await surveyService.createTeacherSurvey(userId, answers, free);
+          } else {
+            await surveyService.createStudentSurvey(userId, answers, free);
+          }
+        }
         // Calcular la fecha dentro de un mes
         const nextMonthDate = new Date();
         nextMonthDate.setMonth(nextMonthDate.getMonth() + 1); // Agregar un mes a la fecha actual
