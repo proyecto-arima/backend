@@ -1,3 +1,4 @@
+import { StudentModel } from '@/api/student/studentModel';
 import { Percentages, ResponseCounts, StudentSurveyModel, TeacherSurveyModel } from '@/api/survey/surveyModel';
 
 export const surveyService = {
@@ -32,9 +33,40 @@ export const surveyService = {
     return TeacherSurveyModel.findOne({ userId }).exec();
   },
 
-  calculateStudentsSurveyResults: async (): Promise<Percentages> => {
-    // Obtener todas las encuestas completadas
-    const surveys = await StudentSurveyModel.find({}); // Cambia a TeacherSurveyModel si es necesario
+  calculateStudentsSurveyResults: async (
+    courseId?: string,
+    dateFrom?: string,
+    dateTo?: string
+  ): Promise<Percentages> => {
+    const surveyFilter: any = {};
+
+    // Filtro por fechas (opcional)
+    if (dateFrom && dateTo) {
+      surveyFilter.createdAt = {
+        $gte: new Date(dateFrom),
+        $lte: new Date(dateTo),
+      };
+    } else if (dateFrom) {
+      surveyFilter.createdAt = { $gte: new Date(dateFrom) };
+    } else if (dateTo) {
+      surveyFilter.createdAt = { $lte: new Date(dateTo) };
+    }
+
+    // Filtro por curso (opcional)
+    if (courseId) {
+      const studentsInCourse = await StudentModel.find({
+        'courses.id': courseId,
+      }).select('user'); // Solo necesitamos el campo user (userId)
+
+      // Obtener los ids de los estudiantes en el curso
+      const studentIds = studentsInCourse.map((student) => student.user);
+
+      // Filtrar encuestas de estos estudiantes
+      surveyFilter.userId = { $in: studentIds };
+    }
+
+    // Obtener las encuestas que coincidan con el filtro
+    const surveys = await StudentSurveyModel.find(surveyFilter);
 
     const totalResponses = surveys.length;
     if (totalResponses === 0)

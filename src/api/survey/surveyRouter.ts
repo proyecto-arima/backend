@@ -89,7 +89,14 @@ export const surveyRouter: Router = (() => {
     roleMiddleware([Role.TEACHER]),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       try {
-        const responses = await surveyService.calculateStudentsSurveyResults();
+        const { courseId, dateFrom, dateTo } = req.query;
+
+        // Llamar al servicio con los filtros
+        const responses = await surveyService.calculateStudentsSurveyResults(
+          courseId as string,
+          dateFrom as string,
+          dateTo as string
+        );
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,

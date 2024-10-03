@@ -34,6 +34,12 @@ export interface Percentages {
   question5: number[];
 }
 
+export interface FilterOptions {
+  courseId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
 /**
  * Survey Model Schema Definition
  */
