@@ -77,7 +77,30 @@ export const surveyRouter: Router = (() => {
         const apiResponse = new ApiResponse(ResponseStatus.Success, 'Survey saved successfully', null, StatusCodes.OK);
         handleApiResponse(apiResponse, res);
       } catch (error) {
-        const apiError = new ApiError('Failed to calculate profile', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        const apiError = new ApiError('Failed to save survey', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
+      }
+    }
+  );
+
+  router.get(
+    '/results',
+    sessionMiddleware,
+    //roleMiddleware([Role.TEACHER, Role.STUDENT]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      try {
+        // Llamada al servicio para calcular los resultados de la encuesta
+        const responses = await surveyService.calculateStudentsSurveyResults();
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Students retrieved successfully',
+          responses,
+          StatusCodes.OK
+        );
+        res.status(StatusCodes.OK).json(apiResponse);
+      } catch (error) {
+        const apiError = new ApiError('Failed to calculate survey results', StatusCodes.INTERNAL_SERVER_ERROR, error);
         return next(apiError);
       }
     }

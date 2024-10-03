@@ -16,6 +16,25 @@ export const SurveyDTOSchema = z.object({
 export type SurveyDTO = z.infer<typeof SurveyDTOSchema>;
 
 /**
+ * ResponseCounts and Percentages Interfaces
+ */
+export interface ResponseCounts {
+  question1: number[];
+  question2: number[];
+  question3: number[];
+  question4: number[];
+  question5: number[];
+}
+
+export interface Percentages {
+  question1: number[];
+  question2: number[];
+  question3: number[];
+  question4: number[];
+  question5: number[];
+}
+
+/**
  * Survey Model Schema Definition
  */
 const surveyModelSchemaDefinition: Record<keyof Omit<SurveyDTO, 'id'>, any> = {
