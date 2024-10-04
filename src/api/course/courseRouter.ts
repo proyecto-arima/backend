@@ -15,6 +15,7 @@ import {
   DeleteCourseSchema,
   DeleteUserFromCourseSchema,
   GetCourseSchema,
+  VerifyMatriculationCodeSchema,
 } from '@/api/course/courseModel';
 import { courseService } from '@/api/course/courseService';
 import {
@@ -442,6 +443,53 @@ export const courseRouter: Router = (() => {
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
           'Students added to course successfully',
+          updatedCourse,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        logger.error(`[CourseRouter] - [/:courseId/students] - Error: ${e}`);
+        const apiError = new ApiError('Failed to add students to course', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      } finally {
+        logger.trace('[CourseRouter] - [/:courseId/students] - End');
+      }
+    }
+  );
+
+  courseRegistry.registerPath({
+    method: 'post',
+    path: '/courses/{courseId}/matriculation',
+    tags: ['Course'],
+    request: {
+      params: VerifyMatriculationCodeSchema.shape.params,
+      body: { content: { 'application/json': { schema: VerifyMatriculationCodeSchema.shape.body } }, description: '' },
+    },
+    responses: createApiResponse(CourseDTOSchema, 'Success'),
+  });
+  router.post(
+    '/:courseId/matriculation',
+    sessionMiddleware,
+    checkSessionContext,
+    roleMiddleware([Role.STUDENT]),
+    validateRequest(VerifyMatriculationCodeSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { courseId } = req.params;
+      const { studentEmail: studentEmail } = req.body;
+      const { matriculationCode: matriculationCode } = req.body;
+
+      try {
+        logger.trace('[CourseRouter] - [/:courseId/students] - Start');
+        const emailArray = [studentEmail];
+        const updatedCourse = await courseService.addStudentWithMatriculationCode(
+          courseId,
+          matriculationCode,
+          emailArray
+        );
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Student added to course successfully',
           updatedCourse,
           StatusCodes.OK
         );

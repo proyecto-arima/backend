@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
 
 import { ContentCreationDTO, ContentDTO } from '@/api/course/content/contentModel';
-import { Course, CourseCreation, CourseDTO, CourseUpdateDTO } from '@/api/course/courseModel';
+import { Course, CourseCreation, CourseDTO, CourseModel, CourseUpdateDTO } from '@/api/course/courseModel';
 import { courseRepository } from '@/api/course/courseRepository';
 import { SectionCreationDTO, SectionDTO, SectionUpdateDTO } from '@/api/course/section/sectionModel';
 import { studentRepository } from '@/api/student/studentRepository';
@@ -104,6 +104,30 @@ export const courseService = {
 
     return updatedCourse.toDto();
   },
+
+  async verifyMatriculationCode(courseId: string, matriculationCode: string): Promise<boolean> {
+    const course = await CourseModel.findById(courseId);
+
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    // Compara el código de matriculación
+    return course.matriculationCode === matriculationCode;
+  },
+
+  async addStudentWithMatriculationCode(
+    courseId: string,
+    matriculationCode: string,
+    studentEmails: string[]
+  ): Promise<CourseDTO> {
+    if (await courseService.verifyMatriculationCode(courseId, matriculationCode)) {
+      return this.addStudentsToCourse(courseId, studentEmails);
+    } else {
+      throw new Error('Matriculation code is incorrect');
+    }
+  },
+
   async findCoursesByTeacherId(teacherUserId: string): Promise<CourseDTO[]> {
     return courseRepository.findCoursesByTeacherId(teacherUserId);
   },

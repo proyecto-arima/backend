@@ -219,4 +219,16 @@ export const CourseUpdateSchema = z.object({
     image: z.string().optional(),
   }),
 });
+
+// Define el esquema Zod para la validación
+export const VerifyMatriculationCodeSchema = z.object({
+  params: z.object({
+    courseId: z.string(), // courseId en la URL
+  }),
+  body: z.object({
+    studentEmail: z.string(),
+    matriculationCode: z.string(), // Código de matriculación en el cuerpo
+  }),
+});
+
 export type CourseUpdateDTO = z.infer<typeof CourseUpdateSchema.shape.body>;
