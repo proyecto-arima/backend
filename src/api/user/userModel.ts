@@ -227,3 +227,12 @@ export class UserNotFoundError extends Error {
     this.name = 'UserNotFoundError';
   }
 }
+
+export const UpdateUserRoleSchema = z.object({
+  body: z.object({
+    newRole: z.nativeEnum(Role), // El nuevo rol debe estar dentro del enum de roles
+  }),
+  params: z.object({
+    userId: z.string(), // ID del usuario que inicio sesion
+  }),
+});

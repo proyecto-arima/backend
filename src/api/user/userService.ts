@@ -1,8 +1,9 @@
+import { courseService } from '@/api/course/courseService';
 import { DirectorModel } from '@/api/director/directorModel';
 import { InstituteDTO, InstituteModel } from '@/api/institute/instituteModel';
 import { StudentModel } from '@/api/student/studentModel';
 import { TeacherModel } from '@/api/teacher/teacherModel';
-import { User, UserCreation, UserDTO } from '@/api/user/userModel';
+import { User, UserCreation, UserDTO, UserModel } from '@/api/user/userModel';
 import { userRepository } from '@/api/user/userRepository';
 import { Role } from '@/common/models/role';
 
@@ -105,5 +106,96 @@ export const userService = {
 
   async updateNextDateSurvey(userId: string, date: Date): Promise<void> {
     await userRepository.updateNextDateSurvey(userId, date);
+  },
+
+  async updateUserRole(userId: string, newRole: Role): Promise<UserDTO> {
+    // Buscar al usuario por ID
+    const user = await UserModel.findById(userId);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Obtener el rol actual del usuario
+    const currentRole = user.role;
+
+    // Regla 1: Estudiante solo puede ser promovido a Docente
+    if (currentRole === Role.STUDENT && newRole !== Role.TEACHER) {
+      throw new Error('A student can only be promoted to teacher.');
+    }
+
+    // Regla 2: Docente puede ser promovido a Directivo o regresar a Estudiante
+    if (currentRole === Role.TEACHER && !(newRole === Role.STUDENT || newRole === Role.DIRECTOR)) {
+      throw new Error('A teacher can only be promoted to director or demoted to student.');
+    }
+
+    // Actualizar el rol del usuario
+    user.role = newRole;
+
+    // Si el usuario es un estudiante y va a ser promovido a docente
+    if (currentRole === Role.STUDENT && newRole === Role.TEACHER) {
+      // Buscar al estudiante por el userId
+      const student = await StudentModel.findOne({ user: userId });
+
+      if (!student) {
+        throw new Error('Student not found');
+      }
+
+      // Por cada curso en el que esté inscrito el estudiante
+      for (const course of student.courses) {
+        await courseService.removeUserFromCourse(userId, course.id);
+      }
+
+      // Aquí podrías crear el nuevo docente con la información necesaria
+      const teacher = new TeacherModel({
+        user: userId,
+        institute: student.institute,
+        courses: [],
+      });
+
+      // Opcional: Eliminar al estudiante si ya no es necesario
+      await StudentModel.deleteOne({ user: userId });
+      await teacher.save();
+    }
+
+    //si pasa de teacher a student:
+    if (currentRole === Role.TEACHER) {
+      // Buscar al docente por el userId
+      const teacher = await TeacherModel.findOne({ user: userId });
+
+      if (!teacher) {
+        throw new Error('teacher not found');
+      }
+
+      // Por cada curso en el que esté inscrito el estudiante
+      for (const course of teacher.courses) {
+        await courseService.deleteCourse(course.id);
+      }
+
+      await TeacherModel.deleteOne({ user: userId });
+
+      if (newRole === Role.STUDENT) {
+        const student = new StudentModel({
+          user: userId,
+          institute: teacher.institute,
+          courses: [],
+        });
+
+        student.save();
+      } else if (newRole === Role.DIRECTOR) {
+        const director = new DirectorModel({
+          user: userId,
+          institute: teacher.institute,
+        });
+        director.save();
+      }
+    }
+    // Guardar los cambios en la base de datos
+    await user.save();
+
+    // Convertir el usuario actualizado a DTO
+    const updatedUserDTO = user.toDto();
+
+    return updatedUserDTO;
   },
 };
