@@ -2,7 +2,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 import { directorRepository } from '@/api/director/directorRepository';
-import { StudentModel } from '@/api/student/studentModel';
+import { StudentFilter, StudentModel, StudentResponse } from '@/api/student/studentModel';
+import { studentRepository } from '@/api/student/studentRepository';
 import { UserCreationDTO, UserDTO } from '@/api/user/userModel';
 import sendMailTo from '@/common/mailSender/mailSenderService';
 import { LearningProfile } from '@/common/models/learningProfile';
@@ -89,5 +90,21 @@ export const studentService = {
 
   getAllStudents: async (userId: string): Promise<UserDTO[]> => {
     return userService.getAllStudents(userId);
+  },
+
+  getStudentsByFilters: async (filters: StudentFilter): Promise<StudentResponse[] | null> => {
+    const students = await studentRepository.findStudentsByFilters(filters);
+
+    // Si no se encuentran resultados, lanzar un error o devolver un mensaje
+    if (students.length === 0) {
+      return null;
+    }
+
+    // Formatear la respuesta con solo los campos requeridos
+    return students.map((student) => ({
+      email: student.user.email,
+      firstName: student.user.name,
+      learningProfile: student.learningProfile,
+    }));
   },
 };
