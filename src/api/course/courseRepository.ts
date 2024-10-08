@@ -16,6 +16,8 @@ import { TeacherModel } from '@/api/teacher/teacherModel';
 import { UserModel } from '@/api/user/userModel';
 import { PublicationType } from '@/common/models/publicationType';
 
+import { imagesService } from '../images/imagesService';
+
 export const courseRepository = {
   // Retrieves all courses from the database
   findAllAsync: async (): Promise<Course[]> => CourseModel.find<Course>(),
@@ -44,18 +46,23 @@ export const courseRepository = {
     return courses.map((course) => course.toDto());
   },
 
-  addSectionToCourse: async (courseId: string, sectionData: SectionCreationDTO): Promise<any> => {
-    // Crear la nueva sección
-    console.log('Section data:', sectionData);
+  addSectionToCourse: async (
+    courseId: string,
+    sectionData: SectionCreationDTO,
+    file?: Express.Multer.File
+  ): Promise<any> => {
+    let image: string | undefined;
 
     const newSection = new SectionModel({
       name: sectionData.name,
       description: sectionData.description,
-      image: sectionData.image,
       visible: sectionData.visible,
     });
 
-    console.log('NEW SECTION:', newSection);
+    if (file) {
+      image = await imagesService.uploadToS3(file.buffer, crypto.randomUUID());
+      newSection.image = image;
+    }
 
     const savedSection = await newSection.save();
 

@@ -63,6 +63,7 @@ export const courseRouter: Router = (() => {
     sessionMiddleware,
     checkSessionContext,
     roleMiddleware([Role.TEACHER]),
+    upload.single('file'),
     validateRequest(CourseCreationSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const sessionContext = req.sessionContext;
@@ -81,7 +82,9 @@ export const courseRouter: Router = (() => {
           ...req.body,
         };
 
-        const createdCourse: CourseDTO = await courseService.create(courseData, teacherUserId);
+        const file = req.file;
+
+        const createdCourse: CourseDTO = await courseService.create(courseData, teacherUserId, file);
         logger.trace(`[CourseRouter] - [/create] - Course created: ${JSON.stringify(createdCourse)}. Sending response`);
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
@@ -156,17 +159,19 @@ export const courseRouter: Router = (() => {
     checkSessionContext,
     hasAccessToCourseMiddleware('courseId'),
     roleMiddleware([Role.TEACHER]),
+    upload.single('file'),
     validateRequest(SectionCreationSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const { courseId } = req.params;
       const sectionData = req.body;
+      const file = req.file;
 
       try {
         logger.trace('[CourseRouter] - [/:courseId/section] - Start');
         const courseReq = GetCourseSchema.parse({ params: req.params });
         logger.trace(`[CourseRouter] - [/:courseId/section] - Retrieving course with id: ${courseReq.params.id}...`);
 
-        const updatedCourse = await courseService.addSectionToCourse(courseId, sectionData);
+        const updatedCourse = await courseService.addSectionToCourse(courseId, sectionData, file);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
@@ -664,6 +669,7 @@ export const courseRouter: Router = (() => {
     sessionMiddleware,
     checkSessionContext,
     roleMiddleware([Role.TEACHER]),
+    upload.single('file'),
     validateRequest(CourseUpdateSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const sessionContext = req.sessionContext;
@@ -674,6 +680,7 @@ export const courseRouter: Router = (() => {
 
       try {
         const courseId = req.params.courseId;
+        const file = req.file;
 
         // Obtener datos para actualizar
         const courseUpdateData: CourseUpdateDTO = {
@@ -682,7 +689,7 @@ export const courseRouter: Router = (() => {
 
         logger.trace(`[CourseRouter] - [/update] - Updating course with ID: ${courseId}`);
 
-        const updatedCourse: CourseDTO = await courseService.update(courseId, courseUpdateData);
+        const updatedCourse: CourseDTO = await courseService.update(courseId, courseUpdateData, file);
         logger.trace(`[CourseRouter] - [/update] - Course updated: ${JSON.stringify(updatedCourse)}. Sending response`);
 
         const apiResponse = new ApiResponse(
