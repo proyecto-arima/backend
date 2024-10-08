@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import { CourseDTOSchema, CourseModel } from '@/api/course/courseModel';
+import { StudentFilterSchema, StudentResponseArraySchema } from '@/api/student/studentModel';
 import { UserCreationMassiveSchema, UserCreationSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { checkSessionContext } from '@/common/middleware/checkSessionContext';
@@ -223,6 +224,55 @@ export const studentRouter: Router = (() => {
       } catch (error) {
         logger.error(`[StudentRouter] - [/students/me/learning-profile] - Error: ${error}`);
         const apiError = new ApiError('Failed to retrieve learning profile', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
+      }
+    }
+  );
+
+  studentRegistry.registerPath({
+    method: 'get',
+    path: '/students/learning-profile',
+    tags: ['Student'],
+    request: {
+      params: StudentFilterSchema,
+    },
+    responses: createApiResponse(StudentResponseArraySchema, 'Success'),
+  });
+  router.get(
+    '/learning-profile',
+    sessionMiddleware,
+    checkSessionContext,
+    roleMiddleware([Role.TEACHER, Role.DIRECTOR]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
+      try {
+        const { courseId, studentUserId, learningProfile, teacherUserId } = req.query;
+
+        // Si el rol es Teacher y está tratando de filtrar por teacherUserId, devolvemos un error
+        if (sessionContext.user.role === Role.TEACHER && teacherUserId) {
+          return next(new ApiError('Unauthorized filter', StatusCodes.FORBIDDEN));
+        }
+
+        const students = await studentService.getStudentsByFilters({
+          courseId: courseId as string,
+          studentUserId: studentUserId as string,
+          learningProfile: learningProfile as string,
+          teacherUserId: teacherUserId as string,
+        });
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Students retrieved successfully',
+          students,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        logger.error(`[StudentRouter] - [/students/me/learning-profile] - Error: ${error}`);
+        const apiError = new ApiError('Failed to retrieve students', StatusCodes.INTERNAL_SERVER_ERROR, error);
         return next(apiError);
       }
     }

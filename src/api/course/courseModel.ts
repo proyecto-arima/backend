@@ -189,7 +189,6 @@ export const CourseCreationSchema = z.object({
   body: z.object({
     title: z.string(),
     description: z.string().optional(),
-    image: z.string().url().optional(),
     studentEmails: z.array(z.string().email()).optional(), // Array de emails
   }),
 });
@@ -216,7 +215,18 @@ export const CourseUpdateSchema = z.object({
   body: z.object({
     title: z.string().optional(),
     description: z.string().optional(),
-    image: z.string().optional(),
   }),
 });
+
+// Define el esquema Zod para la validación
+export const VerifyMatriculationCodeSchema = z.object({
+  params: z.object({
+    courseId: z.string(), // courseId en la URL
+  }),
+  body: z.object({
+    studentEmail: z.string(),
+    matriculationCode: z.string(), // Código de matriculación en el cuerpo
+  }),
+});
+
 export type CourseUpdateDTO = z.infer<typeof CourseUpdateSchema.shape.body>;

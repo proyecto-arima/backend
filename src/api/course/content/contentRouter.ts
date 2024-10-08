@@ -451,5 +451,113 @@ export const contentRouter: Router = (() => {
     }
   );
 
+  contentRegistry.registerPath({
+    method: 'patch',
+    path: '/contents/{contentId}/summary',
+    tags: ['Content'],
+    request: { params: GetContentSchema.shape.params },
+    responses: createApiResponse(SummaryContentSchema, 'Success'), // Define el esquema de respuesta
+  });
+
+  router.patch(
+    '/:contentId/summary',
+    sessionMiddleware,
+    roleMiddleware([Role.TEACHER]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+      const { newContent } = req.body;
+
+      try {
+        const content = await contentService.updateGeneratedContent(contentId, 'SUMMARY', newContent);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Generated content updated successfully',
+          content,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        const apiError = new ApiError('Failed to retrieve summary content', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      }
+    }
+  );
+
+  router.patch(
+    '/:contentId/mindmap',
+    sessionMiddleware,
+    roleMiddleware([Role.TEACHER]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+      const { newContent } = req.body;
+
+      try {
+        const content = await contentService.updateGeneratedContent(contentId, 'MIND_MAP', newContent);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Generated content updated successfully',
+          content,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        const apiError = new ApiError('Failed to retrieve summary content', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      }
+    }
+  );
+
+  router.patch(
+    '/:contentId/gamification',
+    sessionMiddleware,
+    roleMiddleware([Role.TEACHER]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+      const { newContent } = req.body;
+
+      try {
+        const content = await contentService.updateGeneratedContent(contentId, 'GAMIGICATION', newContent);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Generated content updated successfully',
+          content,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        const apiError = new ApiError('Failed to retrieve summary content', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      }
+    }
+  );
+
+  router.patch(
+    '/:contentId/speech',
+    sessionMiddleware,
+    roleMiddleware([Role.TEACHER]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+      const { newContent } = req.body;
+
+      try {
+        const content = await contentService.updateGeneratedContent(contentId, 'SPEECH', newContent);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Generated content updated successfully',
+          content,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        const apiError = new ApiError('Failed to retrieve summary content', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      }
+    }
+  );
+
   return router;
 })();

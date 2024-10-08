@@ -97,7 +97,6 @@ export const SectionCreationSchema = z.object({
   body: z.object({
     name: z.string(),
     description: z.string().optional(),
-    image: z.string().url(),
     visible: z.boolean(),
   }),
 });

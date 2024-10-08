@@ -112,5 +112,35 @@ export const StudentCreationSchema = z.object({
     }),
   }),
 });
+
+export interface StudentFilter {
+  courseId?: string;
+  studentUserId?: string;
+  learningProfile?: string;
+  teacherUserId?: string;
+}
+
+export interface StudentResponse {
+  email: string;
+  learningProfile: string;
+}
+
+// Definir el esquema de los filtros (StudentFilter)
+export const StudentFilterSchema = z.object({
+  courseId: z.string().optional(),
+  studentUserId: z.string().optional(),
+  learningProfile: z.string().optional(),
+  teacherUserId: z.string().optional(),
+});
+
+// Definir el esquema de la respuesta (StudentResponse)
+export const StudentResponseSchema = z.object({
+  email: z.string(),
+  learningProfile: z.string(),
+});
+
+// Si esperas una lista de estudiantes en la respuesta
+export const StudentResponseArraySchema = z.array(StudentResponseSchema);
+
 export type StudentCreationDTO = z.infer<typeof StudentCreationSchema.shape.body>;
 export type StudentCreation = StudentCreationDTO;

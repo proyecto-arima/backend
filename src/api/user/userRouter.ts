@@ -3,7 +3,13 @@ import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
-import { GetUserSchema, UpdateUserProfileSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
+import {
+  GetUserSchema,
+  UpdateUserProfileSchema,
+  UpdateUserRoleSchema,
+  UserDTO,
+  UserDTOSchema,
+} from '@/api/user/userModel';
 import { userService } from '@/api/user/userService';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { sessionMiddleware, SessionRequest } from '@/common/middleware/session';
@@ -139,6 +145,49 @@ export const userRouter: Router = (() => {
           ResponseStatus.Success,
           'User profile updated successfully',
           updatedUser,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        const apiError = new ApiError('Failed to update user profile', StatusCodes.INTERNAL_SERVER_ERROR, error);
+        return next(apiError);
+      }
+    }
+  );
+
+  userRegistry.registerPath({
+    method: 'patch',
+    path: '/users/:userId/role',
+    tags: ['User'],
+    request: {
+      params: UpdateUserRoleSchema.shape.params,
+      body: { content: { 'application/json': { schema: UpdateUserRoleSchema.shape.body } }, description: '' },
+    },
+    responses: createApiResponse(UserDTOSchema, 'Success'),
+  });
+
+  router.patch(
+    '/:userId/role',
+    sessionMiddleware,
+    validateRequest(UpdateUserProfileSchema),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      try {
+        const directorId = req.sessionContext?.user?.id;
+
+        if (!directorId) {
+          return next(UNAUTHORIZED);
+        }
+
+        const { userId } = req.params;
+        const { newRole } = req.body;
+
+        // Actualizar solo los campos proporcionados
+        const updatedUserDTO = await userService.updateUserRole(userId, newRole);
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'User role updated successfully',
+          updatedUserDTO,
           StatusCodes.OK
         );
         handleApiResponse(apiResponse, res);

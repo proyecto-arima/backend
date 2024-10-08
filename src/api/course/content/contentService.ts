@@ -57,4 +57,23 @@ export const contentService = {
     }
     return contentRepository.deleteContent(contentId, content.sectionId);
   },
+
+  async updateGeneratedContent(contentId: string, contentType: string, newContent: string): Promise<ContentDTO> {
+    const content = await ContentModel.findById(contentId);
+
+    if (!content) {
+      throw new Error('Content not found');
+    }
+
+    const generatedContent = content.generated?.find((item) => item.type === contentType);
+
+    if (!generatedContent) {
+      throw new Error('Generated content not found');
+    }
+
+    generatedContent.content = newContent;
+    await content.save();
+
+    return content.toDto();
+  },
 };

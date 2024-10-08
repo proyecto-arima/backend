@@ -31,7 +31,7 @@ export const imagesRouter: Router = (() => {
       const url = await imagesService.createImage(imageDTO);
       const apiResponse = new ApiResponse(
         ResponseStatus.Success,
-        'Teacher successfully created',
+        'Image successfully created',
         url,
         StatusCodes.CREATED
       );

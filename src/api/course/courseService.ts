@@ -2,13 +2,14 @@ import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
 
 import { ContentCreationDTO, ContentDTO } from '@/api/course/content/contentModel';
-import { Course, CourseCreation, CourseDTO, CourseUpdateDTO } from '@/api/course/courseModel';
+import { Course, CourseCreation, CourseDTO, CourseModel, CourseUpdateDTO } from '@/api/course/courseModel';
 import { courseRepository } from '@/api/course/courseRepository';
 import { SectionCreationDTO, SectionDTO, SectionUpdateDTO } from '@/api/course/section/sectionModel';
 import { studentRepository } from '@/api/student/studentRepository';
 import { teacherRepository } from '@/api/teacher/teacherRepository';
 import { s3Get, s3Put } from '@/common/utils/awsManager';
 
+import { imagesService } from '../images/imagesService';
 import { sectionRepository } from './section/sectionRepository';
 
 const generateMatriculationCode = (): string => {
@@ -25,14 +26,21 @@ export const courseService = {
     return course.toDto();
   },
 
-  create: async (course: CourseCreation, teacherUserId: string): Promise<CourseDTO> => {
+  create: async (course: CourseCreation, teacherUserId: string, file?: Express.Multer.File): Promise<CourseDTO> => {
     const matriculationCode = generateMatriculationCode();
     const { studentEmails = [], ...courseData } = course;
 
     const userStudents = await courseRepository.findStudentsByEmails(studentEmails);
 
+    // Solo sube la imagen si 'file' no es undefined o null
+    let image: string | undefined;
+    if (file) {
+      image = await imagesService.uploadToS3(file.buffer, crypto.randomUUID());
+    }
+
     const courseWithCode = {
       ...courseData,
+      image,
       matriculationCode,
       teacherUserId,
       students: userStudents.map((student) => ({
@@ -104,12 +112,40 @@ export const courseService = {
 
     return updatedCourse.toDto();
   },
+
+  async verifyMatriculationCode(courseId: string, matriculationCode: string): Promise<boolean> {
+    const course = await CourseModel.findById(courseId);
+
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    // Compara el código de matriculación
+    return course.matriculationCode === matriculationCode;
+  },
+
+  async addStudentWithMatriculationCode(
+    courseId: string,
+    matriculationCode: string,
+    studentEmails: string[]
+  ): Promise<CourseDTO> {
+    if (await courseService.verifyMatriculationCode(courseId, matriculationCode)) {
+      return this.addStudentsToCourse(courseId, studentEmails);
+    } else {
+      throw new Error('Matriculation code is incorrect');
+    }
+  },
+
   async findCoursesByTeacherId(teacherUserId: string): Promise<CourseDTO[]> {
     return courseRepository.findCoursesByTeacherId(teacherUserId);
   },
 
-  async addSectionToCourse(courseId: string, sectionData: SectionCreationDTO): Promise<CourseDTO> {
-    return await courseRepository.addSectionToCourse(courseId, sectionData);
+  async addSectionToCourse(
+    courseId: string,
+    sectionData: SectionCreationDTO,
+    file?: Express.Multer.File
+  ): Promise<CourseDTO> {
+    return await courseRepository.addSectionToCourse(courseId, sectionData, file);
   },
 
   async getSectionsOfCourse(courseId: string): Promise<any> {
@@ -165,17 +201,26 @@ export const courseService = {
     return updatedSection;
   },
 
-  update: async (courseId: string, courseUpdateData: CourseUpdateDTO): Promise<CourseDTO> => {
+  update: async (
+    courseId: string,
+    courseUpdateData: CourseUpdateDTO,
+    file?: Express.Multer.File
+  ): Promise<CourseDTO> => {
     const course = await courseRepository.findByIdAsync(courseId);
 
     if (!course) {
       throw new Error('Course not found');
     }
 
+    let image: string | undefined;
+    if (file) {
+      image = await imagesService.uploadToS3(file.buffer, crypto.randomUUID());
+      course.image = image;
+    }
+
     // Actualiza los campos permitidos
     if (courseUpdateData.title) course.title = courseUpdateData.title;
     if (courseUpdateData.description) course.description = courseUpdateData.description;
-    if (courseUpdateData.image) course.image = courseUpdateData.image;
 
     await course.save();
 
