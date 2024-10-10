@@ -16,6 +16,10 @@ const ConfigSchema = z.object({
       .optional(),
     sender: z.string().email(),
   }),
+  googleAuth: z.object({
+    clientId: z.string(),
+    clientSecret: z.string(),
+  }),
   mongodb: z.object({
     uri: z.string(),
   }),
@@ -56,6 +60,10 @@ const envConfig = {
     secure: setTLS(),
     sender: process.env.SMTP_SENDER,
   },
+  googleAuth: {
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  },
   mongodb: {
     uri: process.env.MONGODB_URI,
   },
@@ -92,6 +100,10 @@ const testConfig = {
     host: 'smtp.test.com',
     port: 587,
     sender: 'test@test.com',
+  },
+  googleAuth: {
+    clientId: 'test',
+    clientSecret: 'test',
   },
   mongodb: {
     uri: 'mongodb://localhost:27017/test',

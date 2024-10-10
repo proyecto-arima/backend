@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt, { JsonWebTokenError } from 'jsonwebtoken';
+import { Profile } from 'passport-google-oauth20';
 
 import { SessionToken, UserLoginDTO } from '@/api/user/userModel';
 import { userRepository } from '@/api/user/userRepository';
@@ -143,6 +144,20 @@ export const authService = {
     } finally {
       logger.trace(`[AuthService] - [passwordRecovery] - End`);
     }
+  },
+
+  loginWithGoogle: async (profile: Profile) => {
+    // Buscar al usuario por email usando el repositorio
+    const user = await userRepository.loginWithGoogle(profile);
+
+    // Generar un token JWT para el usuario
+    const token = jwt.sign(
+      { userId: user._id, email: user.email, role: user.role },
+      config.jwt.secret as string, // Usa tu clave secreta del sistema
+      { expiresIn: '12h' }
+    );
+
+    return { user, token }; // Retornar el usuario y el token JWT
   },
 };
 

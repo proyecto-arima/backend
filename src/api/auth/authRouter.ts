@@ -2,6 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { JsonWebTokenError } from 'jsonwebtoken';
+import passport from 'passport';
 import { z } from 'zod';
 
 import { SessionToken, SessionTokenSchema, UserLoginSchema } from '@/api/user/userModel';
@@ -164,6 +165,28 @@ export const authRouter: Router = (() => {
     const response = new ApiResponse(ResponseStatus.Success, 'User logged in', null, StatusCodes.OK);
     return handleApiResponse(response, res);
   });
+
+  // Ruta de redirección después de autenticarse con Google
+  router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+  // Ruta de callback para cuando Google redirige de vuelta después de la autenticación
+  router.get(
+    '/google/callback',
+    passport.authenticate('google', { session: false, failureRedirect: '/login' }),
+    async (req, res) => {
+      try {
+        // Extraer el perfil de Google del usuario autenticado
+        const profile = req.user as any; // El perfil debería estar disponible aquí
+        const { user, token } = await authService.loginWithGoogle(profile);
+
+        // Enviar el token JWT y los detalles del usuario como respuesta
+        res.json({ user, token });
+      } catch (error) {
+        console.error('Error in Google login callback:', error);
+        res.status(500).json({ message: 'Error logging in with Google' });
+      }
+    }
+  );
 
   return router;
 })();
