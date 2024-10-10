@@ -1,6 +1,7 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import multer from 'multer';
 
 import { roleMiddleware } from '@/common/middleware/roleMiddleware';
 import { SessionRequest } from '@/common/middleware/session';
@@ -10,6 +11,8 @@ import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers'
 
 import { ImageCreationDTOSchema, ImageDTO } from './imagesModel';
 import { imagesService } from './imagesService';
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 export const imagesRegistry = new OpenAPIRegistry();
 
@@ -38,6 +41,20 @@ export const imagesRouter: Router = (() => {
       handleApiResponse(apiResponse, res);
     }
   );
+
+  router.get('/url', upload.single('file'), async (req: SessionRequest, res: Response) => {
+    const file = req.file;
+
+    console.log(req);
+
+    if (!file) {
+      return res.status(400).send('File is required');
+    }
+    const url = await imagesService.getImageUrl(file);
+
+    const apiResponse = new ApiResponse(ResponseStatus.Success, 'Url obtained successfully', url, StatusCodes.OK);
+    handleApiResponse(apiResponse, res);
+  });
 
   return router;
 })();

@@ -9,7 +9,6 @@ import { studentRepository } from '@/api/student/studentRepository';
 import { teacherRepository } from '@/api/teacher/teacherRepository';
 import { s3Get, s3Put } from '@/common/utils/awsManager';
 
-import { imagesService } from '../images/imagesService';
 import { sectionRepository } from './section/sectionRepository';
 
 const generateMatriculationCode = (): string => {
@@ -26,21 +25,14 @@ export const courseService = {
     return course.toDto();
   },
 
-  create: async (course: CourseCreation, teacherUserId: string, file?: Express.Multer.File): Promise<CourseDTO> => {
+  create: async (course: CourseCreation, teacherUserId: string): Promise<CourseDTO> => {
     const matriculationCode = generateMatriculationCode();
     const { studentEmails = [], ...courseData } = course;
 
     const userStudents = await courseRepository.findStudentsByEmails(studentEmails);
 
-    // Solo sube la imagen si 'file' no es undefined o null
-    let image: string | undefined;
-    if (file) {
-      image = await imagesService.uploadToS3(file.buffer, crypto.randomUUID());
-    }
-
     const courseWithCode = {
       ...courseData,
-      image,
       matriculationCode,
       teacherUserId,
       students: userStudents.map((student) => ({
@@ -140,12 +132,8 @@ export const courseService = {
     return courseRepository.findCoursesByTeacherId(teacherUserId);
   },
 
-  async addSectionToCourse(
-    courseId: string,
-    sectionData: SectionCreationDTO,
-    file?: Express.Multer.File
-  ): Promise<CourseDTO> {
-    return await courseRepository.addSectionToCourse(courseId, sectionData, file);
+  async addSectionToCourse(courseId: string, sectionData: SectionCreationDTO): Promise<CourseDTO> {
+    return await courseRepository.addSectionToCourse(courseId, sectionData);
   },
 
   async getSectionsOfCourse(courseId: string): Promise<any> {
@@ -201,27 +189,18 @@ export const courseService = {
     return updatedSection;
   },
 
-  update: async (
-    courseId: string,
-    courseUpdateData: CourseUpdateDTO,
-    file?: Express.Multer.File
-  ): Promise<CourseDTO> => {
+  update: async (courseId: string, courseUpdateData: CourseUpdateDTO): Promise<CourseDTO> => {
     const course = await courseRepository.findByIdAsync(courseId);
 
     if (!course) {
       throw new Error('Course not found');
     }
 
-    let image: string | undefined;
-    if (file) {
-      image = await imagesService.uploadToS3(file.buffer, crypto.randomUUID());
-      course.image = image;
-    }
-
     // Actualiza los campos permitidos
     if (courseUpdateData.title) course.title = courseUpdateData.title;
     if (courseUpdateData.description) course.description = courseUpdateData.description;
 
+    if (courseUpdateData.image) course.image = courseUpdateData.image;
     await course.save();
 
     return course.toDto();

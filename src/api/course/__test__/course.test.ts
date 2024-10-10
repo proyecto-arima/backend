@@ -45,7 +45,6 @@ describe('Generic course tests', () => {
     return result.data?.['access_token'];
   };
 
-  /*
   it('POST /courses/', async () => {
     const token = await login();
 
@@ -62,9 +61,8 @@ describe('Generic course tests', () => {
     const result = response.body;
     expect(result.success).toBeTruthy();
     expect(result.data).toHaveProperty('id');
-  });*/
+  });
 
-  /*
   it('POST /courses/:id/section', async () => {
     const token = await login();
 
@@ -73,6 +71,7 @@ describe('Generic course tests', () => {
     const sectionData = {
       name: 'profundizando conceptos',
       description: 'aprenderemos mas sobre ts',
+      image: 'https://example.com/image.jpg',
       visible: true,
     };
 
@@ -85,7 +84,7 @@ describe('Generic course tests', () => {
     const result = response.body;
     expect(result.success).toBe(true);
     expect(result.data).toHaveProperty('id');
-  });*/
+  });
 
   it('POST /courses/:id/students', async () => {
     const token = await login();
