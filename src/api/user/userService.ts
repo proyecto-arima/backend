@@ -56,11 +56,19 @@ export const userService = {
       }
     }
 
+    let requiresSurvey: boolean | null = null;
+    if (user.role === 'TEACHER' || user.role === 'STUDENT') {
+      const currentDate = new Date();
+      const nextDateSurvey = user.nextDateSurvey ? new Date(user.nextDateSurvey as any) : null;
+      requiresSurvey = nextDateSurvey ? currentDate >= nextDateSurvey : false;
+    }
+
     // Retorna el UserDTO con la información adicional
     return {
       ...user.toDto(),
       ...(institute && { institute }), // Solo agrega `institute` si no es `null` o `undefined`
       ...(learningProfile && { learningProfile }), // Solo agrega `learningProfile` si no es `null` o `undefined`
+      ...{ requiresSurvey },
     };
   },
 
