@@ -16,8 +16,6 @@ import { TeacherModel } from '@/api/teacher/teacherModel';
 import { UserModel } from '@/api/user/userModel';
 import { PublicationType } from '@/common/models/publicationType';
 
-import { imagesService } from '../images/imagesService';
-
 export const courseRepository = {
   // Retrieves all courses from the database
   findAllAsync: async (): Promise<Course[]> => CourseModel.find<Course>(),
@@ -46,23 +44,13 @@ export const courseRepository = {
     return courses.map((course) => course.toDto());
   },
 
-  addSectionToCourse: async (
-    courseId: string,
-    sectionData: SectionCreationDTO,
-    file?: Express.Multer.File
-  ): Promise<any> => {
-    let image: string | undefined;
-
+  addSectionToCourse: async (courseId: string, sectionData: SectionCreationDTO): Promise<any> => {
     const newSection = new SectionModel({
       name: sectionData.name,
       description: sectionData.description,
+      image: sectionData.image,
       visible: sectionData.visible,
     });
-
-    if (file) {
-      image = await imagesService.uploadToS3(file.buffer, crypto.randomUUID());
-      newSection.image = image;
-    }
 
     const savedSection = await newSection.save();
 
@@ -103,6 +91,7 @@ export const courseRepository = {
       name: section.name,
       description: section.description,
       visible: section.visible,
+      image: section.image,
       contents: section.contents?.map((content) => ({
         id: content.id.toString(),
         title: content.title,

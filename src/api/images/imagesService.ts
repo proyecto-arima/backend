@@ -72,4 +72,12 @@ export const imagesService = {
 
     return imageUrl;
   },
+
+  getImageUrl: async (file?: Express.Multer.File): Promise<string | null> => {
+    if (file) {
+      return await imagesService.uploadToS3(file.buffer, crypto.randomUUID());
+    } else {
+      return null;
+    }
+  },
 };
