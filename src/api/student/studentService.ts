@@ -40,6 +40,7 @@ export const studentService = {
     const student = new StudentModel({
       user: createdUser.id,
       institute: instituteId,
+      learningProfile: 'SIN_PERFIL',
       courses: [],
     });
 
