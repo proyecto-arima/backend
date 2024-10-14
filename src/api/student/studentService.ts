@@ -93,19 +93,21 @@ export const studentService = {
     return userService.getAllStudents(userId);
   },
 
-  getStudentsByFilters: async (filters: StudentFilter): Promise<StudentResponse[] | null> => {
-    const students = await studentRepository.findStudentsByFilters(filters);
+  getStudentsByFilters: async (filters: StudentFilter, teacherLogged: string): Promise<StudentResponse[] | null> => {
+    const students = await studentRepository.findStudentsByFilters(filters, teacherLogged);
 
     // Si no se encuentran resultados, lanzar un error o devolver un mensaje
-    if (students.length === 0) {
+    if (students != null) {
+      // Formatear la respuesta con solo los campos requeridos
+      return students.map((student) => ({
+        id: student.user.id,
+        email: student.user.email,
+        firstName: student.user.firstName,
+        lastName: student.user.lastName,
+        learningProfile: student.learningProfile,
+      }));
+    } else {
       return null;
     }
-
-    // Formatear la respuesta con solo los campos requeridos
-    return students.map((student) => ({
-      email: student.user.email,
-      firstName: student.user.name,
-      learningProfile: student.learningProfile,
-    }));
   },
 };

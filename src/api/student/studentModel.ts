@@ -21,7 +21,8 @@ export const StudentDTOSchema = z.object({
   user: z.object({
     id: z.string(),
     email: z.string(),
-    name: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
   }),
   institute: z.object({
     id: z.string(),
@@ -83,7 +84,12 @@ const studentModelSchema = new Schema<
 studentModelSchema.method('toDto', function (): StudentDTO {
   return {
     id: this._id.toString(),
-    user: this.user,
+    user: {
+      id: this.user.toString(),
+      email: this.user.email,
+      firstName: this.user.firstName, // Cambié de name a firstName
+      lastName: this.user.lastName, // Cambié de lastname a lastName
+    },
     institute: this.institute,
     learningProfile: this.learningProfile.toString() as LearningProfile,
     courses: this.courses.map((course: any) => ({
