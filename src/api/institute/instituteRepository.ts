@@ -11,4 +11,12 @@ export const instituteRepository = {
     await institute.save();
     return institute.toDto();
   },
+
+  findById: async (id: string): Promise<InstituteDTO> => {
+    const institute = await InstituteModel.findById(id).exec();
+    if (!institute) {
+      return Promise.reject(new Error('Institute not found'));
+    }
+    return institute.toDto();
+  },
 };
