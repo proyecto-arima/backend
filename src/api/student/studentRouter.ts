@@ -250,18 +250,27 @@ export const studentRouter: Router = (() => {
       }
       try {
         const { courseId, studentUserId, learningProfile, teacherUserId } = req.query;
+        let teacherLogged = '';
+        if (sessionContext.user.role == Role.TEACHER) {
+          teacherLogged = sessionContext.user.id;
+        }
 
         // Si el rol es Teacher y está tratando de filtrar por teacherUserId, devolvemos un error
         if (sessionContext.user.role === Role.TEACHER && teacherUserId) {
           return next(new ApiError('Unauthorized filter', StatusCodes.FORBIDDEN));
         }
 
-        const students = await studentService.getStudentsByFilters({
-          courseId: courseId as string,
-          studentUserId: studentUserId as string,
-          learningProfile: learningProfile as string,
-          teacherUserId: teacherUserId as string,
-        });
+        const students = await studentService.getStudentsByFilters(
+          {
+            courseId: courseId as string,
+            studentUserId: studentUserId as string,
+            learningProfile: learningProfile as string,
+            teacherUserId: teacherUserId as string,
+          },
+          teacherLogged
+        );
+
+        console.log(students);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
