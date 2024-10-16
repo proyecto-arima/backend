@@ -11,7 +11,6 @@ import { Role } from '@/common/models/role';
 import { config } from '@/common/utils/config';
 import { logger } from '@/common/utils/serverLogger';
 
-import { instituteRepository } from '../institute/instituteRepository';
 import { userService } from '../user/userService';
 
 export const studentService = {
@@ -51,7 +50,7 @@ export const studentService = {
     logger.trace(`[StudentService] - [create] - Sending email to user ${createdUser.email}...`);
 
     const token = jwt.sign({ id: createdUser.id }, config.jwt.secret as string, { expiresIn: '72h' });
-    const institute = await instituteRepository.findById(instituteId);
+
     sendMailTo({
       to: [createdUser.email],
       subject: 'Bienvenido a AdaptarIA!',
@@ -59,7 +58,7 @@ export const studentService = {
       templateParams: {
         studentName: createdUser.firstName,
         studentEmail: createdUser.email,
-        studentInstitution: institute.name,
+        studentInstitution: student.toDto().institute.name,
         reset_password_link: `${config.app.frontendUrl}/recoverPassword?token=${token}`,
       },
     });
