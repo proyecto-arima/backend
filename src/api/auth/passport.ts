@@ -2,15 +2,16 @@ import passport from 'passport';
 import { Profile, Strategy as GoogleStrategy } from 'passport-google-oauth20';
 
 import { userRepository } from '@/api/user/userRepository';
+import { config } from '@/common/utils/config';
 
 import { authService } from './authService';
 
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      callbackURL: 'http://localhost:8080/auth/google/callback',
+      clientID: config.googleAuth.clientId,
+      clientSecret: config.googleAuth.clientSecret,
+      callbackURL: `${config.googleAuth.callbackUrl}/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile: Profile, done) => {
       try {
