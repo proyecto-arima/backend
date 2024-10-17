@@ -2,6 +2,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
+import passport from 'passport';
 
 import { adminRouter } from '@/api/admin/adminRouter';
 import { healthCheckRouter } from '@/api/healthCheck/healthCheckRouter';
@@ -65,5 +66,11 @@ app.use(openAPIRouter);
 // Error handlers
 app.use(errorHandler());
 app.use('*', unexpectedRequest);
+
+// init passport on every route call
+app.use(passport.initialize());
+
+//allow passport to use "express-session"
+app.use(passport.session());
 
 export { app };
