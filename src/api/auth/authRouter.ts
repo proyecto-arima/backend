@@ -5,6 +5,8 @@ import { JsonWebTokenError } from 'jsonwebtoken';
 import passport from 'passport';
 import { z } from 'zod';
 
+require('./passport');
+
 import { SessionToken, SessionTokenSchema, UserLoginSchema } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { sessionMiddleware, SessionRequest } from '@/common/middleware/session';
