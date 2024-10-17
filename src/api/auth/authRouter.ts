@@ -1,11 +1,11 @@
+import './passport';
+
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { JsonWebTokenError } from 'jsonwebtoken';
 import passport from 'passport';
 import { z } from 'zod';
-
-require('./passport');
 
 import { SessionToken, SessionTokenSchema, UserLoginSchema } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
