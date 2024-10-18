@@ -171,6 +171,36 @@ export const contentRouter: Router = (() => {
   );
 
   contentRegistry.registerPath({
+    method: 'post',
+    path: '/contents/{contentId}/regenerate',
+    tags: ['Content'],
+    request: { params: GetContentSchema.shape.params },
+    responses: createApiResponse(ContentDTOSchema, 'Success'),
+  });
+  router.post(
+    '/:contentId/regenerate',
+    sessionMiddleware,
+    roleMiddleware([Role.TEACHER]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      const { contentId } = req.params;
+
+      try {
+        const content = await contentService.regenerateContent(contentId);
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Content regenerated successfully',
+          content,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (e) {
+        const apiError = new ApiError('Failed to regenerate content', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        return next(apiError);
+      }
+    }
+  );
+
+  contentRegistry.registerPath({
     method: 'patch',
     path: '/contents/{contentId}/approval',
     tags: ['Content'],
