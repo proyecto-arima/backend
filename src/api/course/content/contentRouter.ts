@@ -241,7 +241,11 @@ export const contentRouter: Router = (() => {
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
           'Summary content retrieved successfully',
-          summaryContent,
+          {
+            approved: summaryContent.approved,
+            content: summaryContent.content,
+            title: content.title,
+          },
           StatusCodes.OK
         );
         handleApiResponse(apiResponse, res);
@@ -518,7 +522,7 @@ export const contentRouter: Router = (() => {
       const { newContent } = req.body;
 
       try {
-        const content = await contentService.updateGeneratedContent(contentId, 'GAMIGICATION', newContent);
+        const content = await contentService.updateGeneratedContent(contentId, 'GAMIFICATION', newContent);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,

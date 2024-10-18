@@ -198,6 +198,7 @@ export const SummaryContentSchema = z.object({
   type: z.literal('SUMMARY'),
   content: z.string().optional(),
   approved: z.boolean(),
+  title: z.string().optional(),
 });
 
 export const MindmapContentSchema = z.object({
