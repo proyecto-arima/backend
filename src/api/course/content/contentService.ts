@@ -76,4 +76,18 @@ export const contentService = {
 
     return content.toDto();
   },
+
+  async regenerateContent(contentId: string): Promise<ContentDTO> {
+    const content = await ContentModel.findById(contentId);
+
+    if (!content) {
+      throw new Error('Content not found');
+    }
+
+    content.status = 'RETRY';
+
+    await content.save();
+
+    return content.toDto();
+  },
 };

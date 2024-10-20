@@ -22,6 +22,7 @@ export const ContentDTOSchema = z.object({
   publicationType: z.enum([PublicationType.AUTOMATIC, PublicationType.DEFERRED]),
   publicationDate: z.date().optional(),
   visible: z.boolean(),
+  status: z.string(),
   reactions: z
     .array(
       z.object({
@@ -58,6 +59,7 @@ const contentModelSchemaDefinition: Record<keyof Omit<ContentDTO, 'id'>, any> = 
   publicationType: { type: String, enum: Object.values(PublicationType), required: true },
   publicationDate: { type: Date, required: false },
   visible: { type: Boolean, required: true, default: true },
+  status: { type: String, required: true, default: 'PENDING' },
   reactions: {
     type: [reactionSchema],
     default: [],
@@ -113,6 +115,7 @@ contentModelSchema.method('toDto', function (): ContentDTO {
     visible: this.visible,
     reactions: this.reactions || [],
     generated: this.generated || [],
+    status: this.status,
   };
 });
 
@@ -195,6 +198,7 @@ export const SummaryContentSchema = z.object({
   type: z.literal('SUMMARY'),
   content: z.string().optional(),
   approved: z.boolean(),
+  title: z.string().optional(),
 });
 
 export const MindmapContentSchema = z.object({

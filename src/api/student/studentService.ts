@@ -11,6 +11,7 @@ import { Role } from '@/common/models/role';
 import { config } from '@/common/utils/config';
 import { logger } from '@/common/utils/serverLogger';
 
+import { instituteRepository } from '../institute/instituteRepository';
 import { userService } from '../user/userService';
 
 export const studentService = {
@@ -40,6 +41,7 @@ export const studentService = {
     const student = new StudentModel({
       user: createdUser.id,
       institute: instituteId,
+      learningProfile: 'SIN_PERFIL',
       courses: [],
     });
 
@@ -49,6 +51,7 @@ export const studentService = {
     logger.trace(`[StudentService] - [create] - Sending email to user ${createdUser.email}...`);
 
     const token = jwt.sign({ id: createdUser.id }, config.jwt.secret as string, { expiresIn: '72h' });
+    const institute = await instituteRepository.findById(instituteId);
     sendMailTo({
       to: [createdUser.email],
       subject: 'Bienvenido a AdaptarIA!',
@@ -56,7 +59,7 @@ export const studentService = {
       templateParams: {
         studentName: createdUser.firstName,
         studentEmail: createdUser.email,
-        studentInstitution: student.toDto().institute.name,
+        studentInstitution: institute.name,
         reset_password_link: `${config.app.frontendUrl}/recoverPassword?token=${token}`,
       },
     });
@@ -92,19 +95,21 @@ export const studentService = {
     return userService.getAllStudents(userId);
   },
 
-  getStudentsByFilters: async (filters: StudentFilter): Promise<StudentResponse[] | null> => {
-    const students = await studentRepository.findStudentsByFilters(filters);
+  getStudentsByFilters: async (filters: StudentFilter, teacherLogged: string): Promise<StudentResponse[] | null> => {
+    const students = await studentRepository.findStudentsByFilters(filters, teacherLogged);
 
     // Si no se encuentran resultados, lanzar un error o devolver un mensaje
-    if (students.length === 0) {
+    if (students != null) {
+      // Formatear la respuesta con solo los campos requeridos
+      return students.map((student) => ({
+        id: student.user.id,
+        email: student.user.email,
+        firstName: student.user.firstName,
+        lastName: student.user.lastName,
+        learningProfile: student.learningProfile,
+      }));
+    } else {
       return null;
     }
-
-    // Formatear la respuesta con solo los campos requeridos
-    return students.map((student) => ({
-      email: student.user.email,
-      firstName: student.user.name,
-      learningProfile: student.learningProfile,
-    }));
   },
 };

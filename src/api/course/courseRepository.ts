@@ -116,6 +116,7 @@ export const courseRepository = {
       publicationType: contentData.publicationType,
       publicationDate: contentData.publicationDate,
       visible: isVisible,
+      status: 'PENDING',
     });
 
     const savedContent = newContent.save();

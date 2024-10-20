@@ -42,7 +42,7 @@ export const imagesRouter: Router = (() => {
     }
   );
 
-  router.get('/url', upload.single('file'), async (req: SessionRequest, res: Response) => {
+  router.post('/url', upload.single('file'), async (req: SessionRequest, res: Response) => {
     const file = req.file;
 
     console.log(req);

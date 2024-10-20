@@ -19,8 +19,17 @@ export const studentRepository = {
     await StudentModel.updateOne({ user: studentUserId }, { $push: { courses: course } }).exec();
   },
 
-  findStudentsByFilters: async (filters: StudentFilter) => {
+  findStudentsByFilters: async (filters: StudentFilter, teacherLogged: string) => {
     const studentFilter: any = {};
+
+    if (teacherLogged != '') {
+      const coursesTaughtByTeacher = await CourseModel.find({ teacherUserId: teacherLogged }).select('_id');
+      const courseIds = coursesTaughtByTeacher.map((course) => course._id);
+
+      if (courseIds.length > 0) {
+        studentFilter['courses.id'] = { $in: courseIds }; // Filtrar los estudiantes que están en estos cursos
+      }
+    }
 
     if (filters.courseId) {
       studentFilter['courses.id'] = filters.courseId;
@@ -40,6 +49,8 @@ export const studentRepository = {
 
       if (courseIds.length > 0) {
         studentFilter['courses.id'] = { $in: courseIds }; // Filtrar los estudiantes que están en estos cursos
+      } else {
+        return null;
       }
     }
 

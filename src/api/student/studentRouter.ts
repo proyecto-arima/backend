@@ -4,7 +4,8 @@ import { StatusCodes } from 'http-status-codes';
 import { z } from 'zod';
 
 import { CourseDTOSchema, CourseModel } from '@/api/course/courseModel';
-import { StudentFilterSchema, StudentResponseArraySchema } from '@/api/student/studentModel';
+import { StudentFilterSchema, StudentModel, StudentResponseArraySchema } from '@/api/student/studentModel';
+import { TeacherModel } from '@/api/teacher/teacherModel';
 import { UserCreationMassiveSchema, UserCreationSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { checkSessionContext } from '@/common/middleware/checkSessionContext';
@@ -250,18 +251,27 @@ export const studentRouter: Router = (() => {
       }
       try {
         const { courseId, studentUserId, learningProfile, teacherUserId } = req.query;
+        let teacherLogged = '';
+        if (sessionContext.user.role == Role.TEACHER) {
+          teacherLogged = sessionContext.user.id;
+        }
 
         // Si el rol es Teacher y está tratando de filtrar por teacherUserId, devolvemos un error
         if (sessionContext.user.role === Role.TEACHER && teacherUserId) {
           return next(new ApiError('Unauthorized filter', StatusCodes.FORBIDDEN));
         }
 
-        const students = await studentService.getStudentsByFilters({
-          courseId: courseId as string,
-          studentUserId: studentUserId as string,
-          learningProfile: learningProfile as string,
-          teacherUserId: teacherUserId as string,
-        });
+        const students = await studentService.getStudentsByFilters(
+          {
+            courseId: courseId as string,
+            studentUserId: studentUserId as string,
+            learningProfile: learningProfile as string,
+            teacherUserId: teacherUserId as string,
+          },
+          teacherLogged
+        );
+
+        console.log(students);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
@@ -274,6 +284,58 @@ export const studentRouter: Router = (() => {
         logger.error(`[StudentRouter] - [/students/me/learning-profile] - Error: ${error}`);
         const apiError = new ApiError('Failed to retrieve students', StatusCodes.INTERNAL_SERVER_ERROR, error);
         return next(apiError);
+      }
+    }
+  );
+
+  router.get(
+    '/me/courses-to-matriculate',
+    sessionMiddleware,
+    checkSessionContext,
+    roleMiddleware([Role.STUDENT]),
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      try {
+        const sessionContext = req.sessionContext;
+        if (!sessionContext?.user?.id) {
+          logger.trace('[TeacherRouter] - [/me/courses] - Session context is missing, sending error response');
+          return next(UNAUTHORIZED);
+        }
+
+        const studentUserId = sessionContext.user.id;
+
+        // Busca el estudiante
+        const student = await StudentModel.findOne({ user: studentUserId });
+        if (!student) {
+          return res.status(404).json({ message: 'Estudiante no encontrado' });
+        }
+
+        // Obtiene los IDs de los cursos en los que el estudiante está inscrito
+        const studentCoursesIds = student.courses.map((course) => course.id.toString());
+
+        // Busca los docentes que pertenezcan al mismo instituto que el estudiante
+        const studentInstituteId = student.institute;
+        const teachers = await TeacherModel.find({ institute: studentInstituteId })
+          .populate('user')
+          .populate('courses')
+          .exec();
+
+        // Extrae los cursos de cada docente
+        const allCourses = teachers.flatMap((teacher) => teacher.courses);
+
+        // Filtra los cursos en los que el estudiante no está inscrito
+        const coursesToMatriculate = allCourses.filter((course) => !studentCoursesIds.includes(course.id.toString()));
+
+        // Responde con los cursos en los que el estudiante no está inscrito
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'Courses available for enrollment retrieved successfully',
+          coursesToMatriculate,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        console.error('Error al obtener los cursos:', error);
+        return res.status(500).json({ message: 'Error al obtener los cursos' });
       }
     }
   );

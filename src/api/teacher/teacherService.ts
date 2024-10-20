@@ -76,9 +76,9 @@ export const teacherService = {
   findByInstituteId: async (instituteId: string): Promise<UserDTO[]> => {
     logger.trace('[TeacherService] - [findByInstituteId] - Start');
     logger.trace(`[TeacherService] - [findByInstituteId] - Searching for teachers in institute ${instituteId}`);
-    const teachers = await TeacherModel.find({ institute: instituteId }).populate('user').exec();
+    const teachers = await TeacherModel.find({ institute: instituteId }).populate('user').populate('courses').exec();
     logger.trace(`[TeacherService] - [findByInstituteId] - Found ${teachers.length} teachers`);
     logger.trace('[TeacherService] - [findByInstituteId] - End');
-    return teachers.map((teacher) => (teacher as any).user.toDto());
+    return teachers.map((teacher) => (teacher as any).toDto());
   },
 };

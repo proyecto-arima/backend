@@ -1,16 +1,21 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
-import express, { Request, Response, Router } from 'express';
+import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
+import { TeacherModel } from '@/api/teacher/teacherModel';
 import { UserDirectorCreationSchema, UserDTO, UserDTOSchema } from '@/api/user/userModel';
+import { checkSessionContext } from '@/common/middleware/checkSessionContext';
 import { roleMiddleware } from '@/common/middleware/roleMiddleware';
+import { sessionMiddleware, SessionRequest } from '@/common/middleware/session';
 import { ApiError } from '@/common/models/apiError';
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
 
+import { DirectorModel } from './directorModel';
 import { directorService } from './directorService';
+const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
 
 export const directorRegistry = new OpenAPIRegistry();
 
@@ -69,6 +74,55 @@ export const directorRouter: Router = (() => {
       logger.trace('[DirectorRouter] - [GET /] - End');
     }
   });
+
+  router.get(
+    '/courses',
+    sessionMiddleware,
+    checkSessionContext,
+    roleMiddleware([Role.DIRECTOR]), // Asegura que solo los directores puedan acceder
+    async (req: SessionRequest, res: Response, next: NextFunction) => {
+      try {
+        const sessionContext = req.sessionContext;
+        if (!sessionContext?.user?.id) {
+          logger.trace('[TeacherRouter] - [/me/courses] - Session context is missing, sending error response');
+          return next(UNAUTHORIZED);
+        }
+
+        // Obtén el ID del director logueado desde el contexto de la sesión
+        const directorId = sessionContext.user.id;
+
+        // Busca el director en la base de datos para obtener el instituteId
+        const director = await DirectorModel.findOne({ user: directorId });
+        if (!director) {
+          return res.status(404).json({ message: 'Director no encontrado' });
+        }
+
+        // Busca los docentes donde pertenezcan al mismo instituto que el director
+        const directorInstituteId = director.institute;
+
+        const teachers = await TeacherModel.find({ institute: directorInstituteId })
+          .populate('user')
+          .populate('courses')
+          .exec();
+
+        // Extrae los cursos de cada docente
+        const courses = teachers.flatMap((teacher) => teacher.courses);
+
+        console.log(courses, 'CURSOS');
+
+        const apiResponse = new ApiResponse(
+          ResponseStatus.Success,
+          'courses retrieved successfully',
+          courses,
+          StatusCodes.OK
+        );
+        handleApiResponse(apiResponse, res);
+      } catch (error) {
+        console.error('Error al obtener los cursos:', error);
+        return res.status(500).json({ message: 'Error al obtener los cursos' });
+      }
+    }
+  );
 
   return router;
 })();
