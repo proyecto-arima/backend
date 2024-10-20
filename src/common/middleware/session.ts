@@ -37,7 +37,9 @@ export const sessionMiddleware = async (req: SessionRequest, res: Response, next
     logger.trace(`[Session Middleware] - SessionPayload: ${JSON.stringify(sessionPayload)}`);
     logger.trace(`[Session Middleware] - Finding user by id...`);
     const user = await userRepository.findByIdAsync(sessionPayload.id.toString());
-    logger.trace(`[Session Middleware] - User: ${JSON.stringify(user)}`);
+    logger.trace(
+      `[Session Middleware] - User: ${JSON.stringify([user.toDto().id, user.email, user.role, user.nextDateSurvey])}`
+    );
     const sessionContext: SessionContext = SessionContextSchema.parse({ user });
 
     if (!sessionContext) {

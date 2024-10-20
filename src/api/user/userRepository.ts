@@ -58,23 +58,16 @@ export const userRepository = {
     await UserModel.updateOne({ _id: userId }, { nextDateSurvey: date });
   },
 
-  loginWithGoogle: async (profile: Profile) => {
-    // Extraer el email del perfil de Google
+  loginWithGoogle: async (profile: Profile): Promise<User | null> => {
     const email = profile.emails?.[0]?.value;
-
     if (!email) {
-      throw new Error('Email not found in Google profile');
+      return null;
     }
 
-    // Buscar un usuario existente por email
-    const existingUser = await UserModel.findOne({ email });
-
+    const existingUser = await UserModel.findOne<User>({ email });
     if (!existingUser) {
-      // Si el usuario no existe, lanzar un error
-      throw new Error('User with this email not found');
+      return null;
     }
-
-    // Si existe, retornar el usuario para iniciar sesión
     return existingUser;
   },
 };
