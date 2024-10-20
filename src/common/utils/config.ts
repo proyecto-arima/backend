@@ -19,7 +19,7 @@ const ConfigSchema = z.object({
   googleAuth: z.object({
     clientId: z.string(),
     clientSecret: z.string(),
-    callbackUrl: z.string(),
+    callbackUrlHost: z.string(),
   }),
   mongodb: z.object({
     uri: z.string(),
@@ -77,7 +77,7 @@ const envConfig = {
   googleAuth: {
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackUrl: process.env.GOOGLE_CALLBACK_URL_HOST,
+    callbackUrlHost: process.env.GOOGLE_CALLBACK_URL_HOST,
   },
   mongodb: {
     uri: process.env.MONGODB_URI,
