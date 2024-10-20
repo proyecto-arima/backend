@@ -11,24 +11,19 @@ passport.use(
     {
       clientID: config.googleAuth.clientId,
       clientSecret: config.googleAuth.clientSecret,
-      callbackURL: `${config.googleAuth.callbackUrl}/auth/google/callback`,
+      callbackURL: `${config.googleAuth.callbackUrlHost}`,
     },
     async (accessToken, refreshToken, profile: Profile, done) => {
       try {
-        // Utilizamos el método loginWithGoogle del servicio para buscar el usuario
         const user = await authService.loginWithGoogle(profile);
-
-        // Si el usuario existe, lo pasamos a Passport
         return done(null, user);
       } catch (err) {
-        // Si ocurre un error o no se encuentra el usuario, devolvemos el error
-        return done(err, false); // Pasa 'false' en lugar de 'null' cuando no hay usuario
+        return done(err, false);
       }
     }
   )
 );
 
-// Serializar y deserializar el usuario
 passport.serializeUser((user: any, done) => {
   done(null, user.id);
 });

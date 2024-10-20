@@ -27,6 +27,9 @@ import { config } from './common/utils/config';
 
 const app: Express = express();
 
+// init passport on every route call
+app.use(passport.initialize());
+
 // Set the application to trust the reverse proxy
 app.set('trust proxy', true);
 app.use(
@@ -66,11 +69,5 @@ app.use(openAPIRouter);
 // Error handlers
 app.use(errorHandler());
 app.use('*', unexpectedRequest);
-
-// init passport on every route call
-app.use(passport.initialize());
-
-//allow passport to use "express-session"
-app.use(passport.session());
 
 export { app };
