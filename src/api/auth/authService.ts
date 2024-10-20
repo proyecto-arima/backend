@@ -28,7 +28,14 @@ export const authService = {
       if (!foundUser) {
         throw new InvalidCredentialsError();
       }
-      logger.trace(`[AuthService] - [login] - User found: ${JSON.stringify(foundUser)}`);
+      logger.trace(
+        `[AuthService] - [login] - User found: ${JSON.stringify([
+          foundUser.toDto().id,
+          foundUser.email,
+          foundUser.role,
+          foundUser.nextDateSurvey,
+        ])}`
+      );
 
       logger.trace(`[AuthService] - [login] - Comparing passwords...`);
       const isPasswordValid = await bcrypt.compare(user.password, foundUser.password);
@@ -147,17 +154,42 @@ export const authService = {
   },
 
   loginWithGoogle: async (profile: Profile) => {
-    // Buscar al usuario por email usando el repositorio
-    const user = await userRepository.loginWithGoogle(profile);
+    try {
+      logger.trace(`[AuthService] - [loginWithGoogle] - Start`);
+      logger.trace(`[AuthService] - [loginWithGoogle] - Requested login with Google`);
+      const foundUser = await userRepository.loginWithGoogle(profile);
+      if (!foundUser) {
+        return undefined;
+      }
+      logger.trace(`[AuthService] - [loginWithGoogle] - Google user valid, creating session`);
+      const token: SessionPayload = SessionPayloadSchema.parse({ id: foundUser.toDto().id });
+      const access_token = jwt.sign(token, config.jwt.secret as string, { expiresIn: '12h' });
 
-    // Generar un token JWT para el usuario
-    const token = jwt.sign(
-      { userId: user._id, email: user.email, role: user.role },
-      config.jwt.secret as string, // Usa tu clave secreta del sistema
-      { expiresIn: '12h' }
-    );
+      let requiresSurvey: boolean | undefined;
+      const user = { ...foundUser.toDto(), nextDateSurvey: foundUser.nextDateSurvey };
 
-    return { user, token }; // Retornar el usuario y el token JWT
+      if (foundUser.role === 'TEACHER' || foundUser.role === 'STUDENT') {
+        const currentDate = new Date();
+        const nextDateSurvey = user.nextDateSurvey ? new Date(user.nextDateSurvey as any) : null;
+        requiresSurvey = nextDateSurvey ? currentDate >= nextDateSurvey : false;
+      }
+
+      const response: SessionToken = { access_token };
+      if (requiresSurvey !== undefined) {
+        response.requiresSurvey = requiresSurvey;
+      }
+      logger.trace(`[AuthService] - [loginWithGoogle] - User logged in with Google`);
+      return response;
+    } catch (ex) {
+      logger.trace(`[AuthService] - [loginWithGoogle] - Error found: ${ex}`);
+      if (ex instanceof InvalidCredentialsError) {
+        logger.trace(`[AuthService] - [loginWithGoogle] - Invalid credentials for user`);
+        throw new InvalidCredentialsError('Invalid credentials');
+      } else {
+        logger.error(`[AuthService] - [loginWithGoogle] - Internal error: ${ex}`);
+        throw new Error(`Internal error: ${ex}`);
+      }
+    }
   },
 };
 
