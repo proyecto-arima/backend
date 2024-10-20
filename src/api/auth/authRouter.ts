@@ -1,7 +1,10 @@
+import './passport';
+
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { NextFunction, Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { JsonWebTokenError } from 'jsonwebtoken';
+import passport from 'passport';
 import { z } from 'zod';
 
 import { SessionToken, SessionTokenSchema, UserLoginSchema } from '@/api/user/userModel';
@@ -9,6 +12,7 @@ import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { sessionMiddleware, SessionRequest } from '@/common/middleware/session';
 import { ApiError } from '@/common/models/apiError';
 import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
+import { config } from '@/common/utils/config';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 import { logger } from '@/common/utils/serverLogger';
 
@@ -78,7 +82,7 @@ export const authRouter: Router = (() => {
         httpOnly: true,
         maxAge: 12 * 60 * 60 * 1000,
         sameSite: 'lax',
-        secure: false,
+        secure: config.app.node_env === 'production',
       });
       logger.trace('[AuthRouter] - [/] - Sending response');
       const response = new ApiResponse(ResponseStatus.Success, 'User logged in', session, StatusCodes.OK);
@@ -155,15 +159,51 @@ export const authRouter: Router = (() => {
     }
   });
 
-  /*
-    Check if the user is logged in or token is valid
-  */
   router.get('/', sessionMiddleware, async (req: Request, res: Response) => {
     logger.trace('[AuthRouter] - [/] - Start');
     logger.trace('[AuthRouter] - [/] - Sending response');
     const response = new ApiResponse(ResponseStatus.Success, 'User logged in', null, StatusCodes.OK);
     return handleApiResponse(response, res);
   });
+
+  router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+  router.get(
+    '/google/callback',
+    passport.authenticate('google', {
+      session: false,
+      scope: ['email', 'profile'],
+      failureRedirect: `${config.app.frontendUrl}/login`,
+    }),
+    async (req: Request, res: Response) => {
+      try {
+        logger.trace('[AuthRouter] - [/google/callback] - Start');
+        const profile = req.user as any;
+        const access_token = profile.access_token;
+
+        if (!access_token) {
+          return res.redirect(`${config.app.frontendUrl}/login`);
+        }
+
+        logger.trace('[AuthRouter] - [/google/callback] - Setting Google generated access token cookie');
+        res.cookie('access_token', access_token, {
+          httpOnly: false,
+          maxAge: 12 * 60 * 60 * 1000,
+          sameSite: 'lax',
+          secure: config.app.node_env === 'production',
+        });
+
+        logger.trace('[AuthRouter] - [/google/callback] - Sending response');
+        return res.redirect(`${config.app.frontendUrl}/me/profile`);
+      } catch (error) {
+        logger.error(
+          `[AuthRouter] - [/google/callback] - An unexpected error occurred while logging in with Google: ${error}`
+        );
+        res.clearCookie('access_token');
+        return res.redirect(`${config.app.frontendUrl}/login`);
+      }
+    }
+  );
 
   return router;
 })();

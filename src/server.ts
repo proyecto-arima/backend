@@ -2,6 +2,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
+import passport from 'passport';
 
 import { adminRouter } from '@/api/admin/adminRouter';
 import { healthCheckRouter } from '@/api/healthCheck/healthCheckRouter';
@@ -25,6 +26,9 @@ import { sessionMiddleware } from './common/middleware/session';
 import { config } from './common/utils/config';
 
 const app: Express = express();
+
+// init passport on every route call
+app.use(passport.initialize());
 
 // Set the application to trust the reverse proxy
 app.set('trust proxy', true);

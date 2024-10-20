@@ -1,3 +1,5 @@
+import { Profile } from 'passport-google-oauth20';
+
 import { StudentModel } from '@/api/student/studentModel';
 import { User, UserCreation, UserCreationDTO, UserModel, UserNotFoundError } from '@/api/user/userModel';
 
@@ -54,5 +56,18 @@ export const userRepository = {
 
   async updateNextDateSurvey(userId: string, date: Date): Promise<void> {
     await UserModel.updateOne({ _id: userId }, { nextDateSurvey: date });
+  },
+
+  loginWithGoogle: async (profile: Profile): Promise<User | null> => {
+    const email = profile.emails?.[0]?.value;
+    if (!email) {
+      return null;
+    }
+
+    const existingUser = await UserModel.findOne<User>({ email });
+    if (!existingUser) {
+      return null;
+    }
+    return existingUser;
   },
 };

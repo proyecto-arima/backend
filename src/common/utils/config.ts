@@ -16,6 +16,11 @@ const ConfigSchema = z.object({
       .optional(),
     sender: z.string().email(),
   }),
+  googleAuth: z.object({
+    clientId: z.string(),
+    clientSecret: z.string(),
+    callbackUrlHost: z.string(),
+  }),
   mongodb: z.object({
     uri: z.string(),
   }),
@@ -48,6 +53,19 @@ const ConfigSchema = z.object({
 });
 export type Config = z.infer<typeof ConfigSchema>;
 
+export function setSmtpAuth() {
+  return process.env.SMTP_AUTH_TYPE == 'login'
+    ? {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      }
+    : undefined;
+}
+
+export function setTLS() {
+  return process.env.SMTP_TLS == 'on' ? true : false;
+}
+
 const envConfig = {
   smtp: {
     host: process.env.SMTP_HOST,
@@ -55,6 +73,11 @@ const envConfig = {
     auth: setSmtpAuth(),
     secure: setTLS(),
     sender: process.env.SMTP_SENDER,
+  },
+  googleAuth: {
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackUrlHost: process.env.GOOGLE_CALLBACK_URL_HOST,
   },
   mongodb: {
     uri: process.env.MONGODB_URI,
@@ -93,6 +116,11 @@ const testConfig = {
     port: 587,
     sender: 'test@test.com',
   },
+  googleAuth: {
+    clientId: 'test',
+    clientSecret: 'test',
+    callbackUrlHost: 'test',
+  },
   mongodb: {
     uri: 'mongodb://localhost:27017/test',
   },
@@ -126,16 +154,3 @@ const testConfig = {
 
 export const config: Config =
   process.env.NODE_ENV === 'test' ? ConfigSchema.parse(testConfig) : ConfigSchema.parse(envConfig);
-
-export function setSmtpAuth() {
-  return process.env.SMTP_AUTH_TYPE == 'login'
-    ? {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      }
-    : undefined;
-}
-
-export function setTLS() {
-  return process.env.SMTP_TLS == 'on' ? true : false;
-}
