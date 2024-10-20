@@ -119,7 +119,7 @@ const testConfig = {
   googleAuth: {
     clientId: 'test',
     clientSecret: 'test',
-    callbackUrl: 'test',
+    callbackUrlHost: 'test',
   },
   mongodb: {
     uri: 'mongodb://localhost:27017/test',
