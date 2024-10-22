@@ -322,9 +322,6 @@ export const courseRouter: Router = (() => {
       const { sectionId } = req.params;
       const contentData = req.body;
       const file = req.file;
-
-      console.log(req);
-
       if (!file) {
         return next(new ApiError('File is required', StatusCodes.BAD_REQUEST));
       }

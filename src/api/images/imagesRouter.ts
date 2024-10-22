@@ -44,9 +44,6 @@ export const imagesRouter: Router = (() => {
 
   router.post('/url', upload.single('file'), async (req: SessionRequest, res: Response) => {
     const file = req.file;
-
-    console.log(req);
-
     if (!file) {
       return res.status(400).send('File is required');
     }

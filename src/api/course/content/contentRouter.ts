@@ -219,8 +219,6 @@ export const contentRouter: Router = (() => {
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const { contentId } = req.params;
       const approve = req.body;
-      console.log('approve data', approve);
-
       try {
         const updatedContent = await contentService.updateContentApproval(contentId, approve);
         const apiResponse = new ApiResponse(

@@ -11,13 +11,11 @@ export const directorRepository = {
 
   getInstituteId: async (directorUserId: string): Promise<string> => {
     const director = await directorRepository.findByUserIdAsync(directorUserId);
-    console.log(director);
     return director.institute.toString();
   },
 
   findAll: async (): Promise<DirectorDTO[]> => {
     const directors = await DirectorModel.find().populate('user').populate('institute').exec();
-    console.log(directors);
     return directors.map((director) => director.toDto());
   },
 };

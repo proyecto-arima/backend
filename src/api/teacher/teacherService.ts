@@ -20,7 +20,6 @@ export const teacherService = {
     logger.trace(`[TeacherService] - [create] - Creating teacher: ${JSON.stringify(user)}`);
     logger.trace(`[TeacherService] - [create] - Generating random password...`);
     const randomPassword = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
-    console.log('TEACHER PASS:', randomPassword);
     if (config.app.node_env === 'development') {
       logger.trace(`[TeacherService] - [create] - Random password: ${randomPassword}`);
     }
@@ -32,7 +31,6 @@ export const teacherService = {
     logger.trace(`[TeacherService] - [create] - Teacher created: ${JSON.stringify(createdUser)}`);
 
     const instituteId = await directorRepository.getInstituteId(directorUserId);
-    console.log(instituteId);
     const teacher = new TeacherModel({
       user: createdUser.id,
       institute: instituteId,

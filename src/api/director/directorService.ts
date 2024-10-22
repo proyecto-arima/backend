@@ -17,7 +17,6 @@ export const directorService = {
     logger.trace(`[DirectorService] - [create] - Creating user: ${JSON.stringify(user)}`);
     logger.trace(`[DirectorService] - [create] - Generating random password...`);
     const randomPassword = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
-    console.log('DIRECTOR PASS:', randomPassword);
     if (config.app.node_env === 'development') {
       logger.trace(`[DirectorService] - [create] - Random password: ${randomPassword}`);
     }
