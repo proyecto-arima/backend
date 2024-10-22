@@ -91,7 +91,8 @@ export const contentService = {
     }
 
     generatedContent.content = newContent;
-    generatedContent.content.status = 'PENDING_AUDIO';
+    //generatedContent.content.status = 'PENDING_AUDIO';
+    content.status = 'PENDING_AUDIO';
     await content.save();
 
     return content.toDto();
