@@ -42,15 +42,26 @@ export const surveyService = {
     const surveyFilter: any = {};
 
     // Filtro por fechas (opcional)
+    // Filtro por fechas (opcional)
     if (dateFrom && dateTo) {
-      surveyFilter.createdAt = {
-        $gte: new Date(dateFrom),
-        $lte: new Date(dateTo),
+      const startOfDateFrom = new Date(dateFrom);
+      startOfDateFrom.setUTCHours(0, 0, 0, 0); // Inicio del día en UTC para dateFrom
+
+      const endOfDateTo = new Date(dateTo);
+      endOfDateTo.setUTCHours(23, 59, 59, 999); // Final del día en UTC para dateTo
+
+      surveyFilter.updatedAt = {
+        $gte: startOfDateFrom,
+        $lte: endOfDateTo,
       };
     } else if (dateFrom) {
-      surveyFilter.createdAt = { $gte: new Date(dateFrom) };
+      const startOfDateFrom = new Date(dateFrom);
+      startOfDateFrom.setUTCHours(0, 0, 0, 0); // Inicio del día en UTC para dateFrom
+      surveyFilter.updatedAt = { $gte: startOfDateFrom };
     } else if (dateTo) {
-      surveyFilter.createdAt = { $lte: new Date(dateTo) };
+      const endOfDateTo = new Date(dateTo);
+      endOfDateTo.setUTCHours(23, 59, 59, 999); // Final del día en UTC para dateTo
+      surveyFilter.updatedAt = { $lte: endOfDateTo };
     }
 
     // Filtro por curso (opcional)
