@@ -21,4 +21,9 @@ export const teacherRepository = {
   findByInstituteId: async (instituteId: string): Promise<Teacher[]> => {
     return TeacherModel.find({ institute: instituteId }).populate('user').exec();
   },
+
+  getInstituteId: async (teacherUserId: string): Promise<string> => {
+    const teacher = await teacherRepository.findByUserIdAsync(teacherUserId);
+    return teacher.institute.toString();
+  },
 };

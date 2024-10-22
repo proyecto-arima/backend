@@ -20,6 +20,8 @@ import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 
+import { teacherService } from '../teacher/teacherService';
+
 const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
 
 export const surveyRegistry = new OpenAPIRegistry();
@@ -110,8 +112,17 @@ export const surveyRouter: Router = (() => {
       try {
         const { courseId, dateFrom, dateTo } = req.query;
 
+        const sessionContext = req.sessionContext;
+        if (!sessionContext?.user?.id) {
+          return next(UNAUTHORIZED);
+        }
+
+        const userId = sessionContext.user.id;
+        const instituteId = await teacherService.getInstituteId(userId);
+
         // Llamar al servicio con los filtros
         const responses = await surveyService.calculateStudentsSurveyResults(
+          instituteId,
           courseId as string,
           dateFrom as string,
           dateTo as string

@@ -11,6 +11,7 @@ import { config } from '@/common/utils/config';
 import { logger } from '@/common/utils/serverLogger';
 
 import { userService } from '../user/userService';
+import { teacherRepository } from './teacherRepository';
 
 // TODO: Reimplementar para no repetir
 export const teacherService = {
@@ -80,5 +81,10 @@ export const teacherService = {
     logger.trace(`[TeacherService] - [findByInstituteId] - Found ${teachers.length} teachers`);
     logger.trace('[TeacherService] - [findByInstituteId] - End');
     return teachers.map((teacher) => (teacher as any).toDto());
+  },
+
+  getInstituteId: async (teacherId: string): Promise<string> => {
+    const id = await teacherRepository.getInstituteId(teacherId);
+    return id;
   },
 };
