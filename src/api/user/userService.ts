@@ -76,12 +76,12 @@ export const userService = {
     //const nextMonth = new Date();
     //nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-    const nextDayDate = new Date();
-    nextDayDate.setDate(nextDayDate.getDate() + 1); // Agregar un día a la fecha actual
+    const nextDate = new Date();
+    nextDate.setMinutes(nextDate.getMinutes() + 1);
 
     const userWithSurveyFields = {
       ...user,
-      nextDateSurvey: nextDayDate, // La fecha de la encuesta es en un dia
+      nextDateSurvey: nextDate, // La fecha de la encuesta es en un min
     };
 
     const createdUser: User = await userRepository.create(userWithSurveyFields);

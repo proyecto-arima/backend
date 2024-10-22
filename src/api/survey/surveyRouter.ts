@@ -81,10 +81,10 @@ export const surveyRouter: Router = (() => {
         //const nextMonthDate = new Date();
         //nextMonthDate.setMonth(nextMonthDate.getMonth() + 1); // Agregar un mes a la fecha actual
 
-        const nextDayDate = new Date();
-        nextDayDate.setDate(nextDayDate.getDate() + 1); // Agregar un día a la fecha actual
+        const nextDate = new Date();
+        nextDate.setMinutes(nextDate.getMinutes() + 1);
 
-        await userService.updateNextDateSurvey(userId, nextDayDate);
+        await userService.updateNextDateSurvey(userId, nextDate);
 
         const apiResponse = new ApiResponse(ResponseStatus.Success, 'Survey saved successfully', null, StatusCodes.OK);
         handleApiResponse(apiResponse, res);
