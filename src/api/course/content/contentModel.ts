@@ -10,7 +10,7 @@ extendZodWithOpenApi(z);
 
 const GeneratedContentSchema = z.object({
   type: z.enum([ContentType.SUMMARY, ContentType.MIND_MAP, ContentType.GAMIFICATION, ContentType.SPEECH]),
-  content: z.string(),
+  content: z.any(),
   approved: z.boolean(),
 });
 
@@ -46,7 +46,7 @@ const reactionSchema = new Schema(
 const generatedContentSchema = new Schema(
   {
     type: { type: String, enum: Object.values(ContentType), required: true },
-    content: { type: String, required: false },
+    content: { type: Schema.Types.Mixed, required: false },
     approved: { type: Boolean, required: true, default: false },
   },
   { _id: false }

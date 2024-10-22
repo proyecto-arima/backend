@@ -577,7 +577,7 @@ export const contentRouter: Router = (() => {
       const { newContent } = req.body;
 
       try {
-        const content = await contentService.updateGeneratedContent(contentId, 'SPEECH', newContent);
+        const content = await contentService.updateAudio(contentId, newContent);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,

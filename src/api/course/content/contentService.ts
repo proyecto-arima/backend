@@ -77,6 +77,26 @@ export const contentService = {
     return content.toDto();
   },
 
+  async updateAudio(contentId: string, newContent: any[]): Promise<ContentDTO> {
+    const content = await ContentModel.findById(contentId);
+
+    if (!content) {
+      throw new Error('Content not found');
+    }
+
+    const generatedContent = content.generated?.find((item) => item.type === 'SPEECH');
+
+    if (!generatedContent) {
+      throw new Error('Generated content not found');
+    }
+
+    generatedContent.content = newContent;
+    generatedContent.content.status = 'PENDING_AUDIO';
+    await content.save();
+
+    return content.toDto();
+  },
+
   async regenerateContent(contentId: string): Promise<ContentDTO> {
     const content = await ContentModel.findById(contentId);
 
