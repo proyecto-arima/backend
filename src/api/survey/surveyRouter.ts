@@ -20,6 +20,7 @@ import { ApiResponse, ResponseStatus } from '@/common/models/apiResponse';
 import { Role } from '@/common/models/role';
 import { handleApiResponse, validateRequest } from '@/common/utils/httpHandlers';
 
+import { directorService } from '../director/directorService';
 import { teacherService } from '../teacher/teacherService';
 
 const UNAUTHORIZED = new ApiError('Unauthorized', StatusCodes.UNAUTHORIZED);
@@ -118,7 +119,20 @@ export const surveyRouter: Router = (() => {
         }
 
         const userId = sessionContext.user.id;
-        const instituteId = await teacherService.getInstituteId(userId);
+
+        let instituteId: string = '';
+        if (sessionContext.user.role === 'TEACHER') {
+          instituteId = await teacherService.getInstituteId(userId);
+        } else if (sessionContext.user.role === 'DIRECTOR') {
+          instituteId = await directorService.getInstituteId(userId);
+        } else {
+          const apiError = new ApiError(
+            'Failed to fetch students survey',
+            StatusCodes.UNAUTHORIZED,
+            'Role not allowed'
+          );
+          return next(apiError);
+        }
 
         // Llamar al servicio con los filtros
         const responses = await surveyService.calculateStudentsSurveyResults(
