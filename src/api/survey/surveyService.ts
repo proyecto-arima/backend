@@ -34,6 +34,7 @@ export const surveyService = {
   },
 
   calculateStudentsSurveyResults: async (
+    instituteId: string, // instituteId es obligatorio,
     courseId?: string,
     dateFrom?: string,
     dateTo?: string
@@ -56,12 +57,21 @@ export const surveyService = {
     if (courseId) {
       const studentsInCourse = await StudentModel.find({
         'courses.id': courseId,
+        institute: instituteId, // Filtrar también por instituteId
       }).select('user'); // Solo necesitamos el campo user (userId)
 
       // Obtener los ids de los estudiantes en el curso
       const studentIds = studentsInCourse.map((student) => student.user);
 
       // Filtrar encuestas de estos estudiantes
+      surveyFilter.userId = { $in: studentIds };
+    } else {
+      // Si no se filtra por curso, buscar todos los estudiantes del instituto
+      const studentsInInstitute = await StudentModel.find({
+        institute: instituteId,
+      }).select('user');
+
+      const studentIds = studentsInInstitute.map((student) => student.user);
       surveyFilter.userId = { $in: studentIds };
     }
 
@@ -95,21 +105,14 @@ export const surveyService = {
 
     // Calcular porcentajes
     const percentages: Percentages = {
-      question1: [],
-      question2: [],
-      question3: [],
-      question4: [],
-      question5: [],
+      question1: responseCounts.question1.map((count) => (count / totalResponses) * 100),
+      question2: responseCounts.question2.map((count) => (count / totalResponses) * 100),
+      question3: responseCounts.question3.map((count) => (count / totalResponses) * 100),
+      question4: responseCounts.question4.map((count) => (count / totalResponses) * 100),
+      question5: responseCounts.question5.map((count) => (count / totalResponses) * 100),
     };
 
-    for (let i = 0; i < 5; i++) {
-      const questionKey = `question${i + 1}` as keyof Percentages; // Asegurarse de que la clave es de tipo keyof Percentages
-      percentages[questionKey] = responseCounts[questionKey].map((count) => {
-        return (count / totalResponses) * 100; // Calcular el porcentaje
-      });
-    }
-
-    return percentages; // Retornar los resultados
+    return percentages;
   },
 
   calculateTeachersSurveyResults: async (dateFrom?: string, dateTo?: string): Promise<Percentages | null> => {
