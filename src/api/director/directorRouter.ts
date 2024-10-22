@@ -107,9 +107,6 @@ export const directorRouter: Router = (() => {
 
         // Extrae los cursos de cada docente
         const courses = teachers.flatMap((teacher) => teacher.courses);
-
-        console.log(courses, 'CURSOS');
-
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
           'courses retrieved successfully',

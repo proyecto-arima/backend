@@ -20,8 +20,6 @@ export const studentService = {
     logger.trace(`[StudentService] - [create] - Creating user: ${JSON.stringify(user)}`);
     logger.trace(`[StudentService] - [create] - Generating random password...`);
     const randomPassword = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
-    console.log('STUDENT PASS:', randomPassword);
-    console.log('PASSWORD', randomPassword);
     if (config.app.node_env === 'development') {
       logger.trace(`[StudentService] - [create] - Random password: ${randomPassword}`);
     }

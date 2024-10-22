@@ -149,7 +149,6 @@ export const courseService = {
     contentData: ContentCreationDTO,
     file: Express.Multer.File
   ): Promise<ContentDTO> {
-    console.log('[courseService] - [addContentToSection] - Parameters:', { sectionId, contentData });
     const key = `${randomUUID()}`.toString();
     const preSignedUrl = await s3Put(key, file);
     return await courseRepository.addContentToSection(sectionId, contentData, key, preSignedUrl);

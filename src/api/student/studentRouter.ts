@@ -270,9 +270,6 @@ export const studentRouter: Router = (() => {
           },
           teacherLogged
         );
-
-        console.log(students);
-
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
           'Students retrieved successfully',
