@@ -15,9 +15,26 @@ export const contentService = {
     return await contentRepository.getReactionsByContentId(contentId);
   },
 
-  getContentById: async (contentId: string): Promise<ContentDTO> => {
+  getContentById: async (
+    contentId: string,
+    studentUserId?: string // Ahora es opcional
+  ): Promise<ContentDTO & { userIsSatisfied?: boolean | null }> => {
     const content = await contentRepository.findById(contentId);
-    return content.toDto();
+    const contentDto = content.toDto();
+
+    // Solo verifica la reacción del usuario si studentUserId está presente
+    if (studentUserId) {
+      const userReaction = content.reactions?.find((reaction) => reaction.userId.toString() === studentUserId);
+      return {
+        ...contentDto,
+        userIsSatisfied: userReaction ? userReaction.isSatisfied : null,
+      };
+    }
+
+    // Devuelve el DTO sin userIsSatisfied si no se proporciona studentUserId
+    return {
+      ...contentDto,
+    };
   },
 
   async updateContentVisibility(contentId: string, visible: boolean): Promise<ContentDTO> {

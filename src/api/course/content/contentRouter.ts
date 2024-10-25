@@ -252,9 +252,14 @@ export const contentRouter: Router = (() => {
     roleMiddleware([Role.STUDENT, Role.TEACHER]),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const { contentId } = req.params;
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
 
       try {
-        const content = await contentService.getContentById(contentId);
+        const studentUserId = sessionContext.user.id;
+        const content = await contentService.getContentById(contentId, studentUserId);
 
         if (!content) {
           return next(new ApiError('Content not found', StatusCodes.NOT_FOUND));
@@ -273,6 +278,7 @@ export const contentRouter: Router = (() => {
             approved: summaryContent.approved,
             content: summaryContent.content,
             title: content.title,
+            userIsSatisfied: content.userIsSatisfied,
           },
           StatusCodes.OK
         );
@@ -298,9 +304,14 @@ export const contentRouter: Router = (() => {
     roleMiddleware([Role.STUDENT, Role.TEACHER]),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const { contentId } = req.params;
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
 
       try {
-        const content = await contentService.getContentById(contentId);
+        const studentUserId = sessionContext.user.id;
+        const content = await contentService.getContentById(contentId, studentUserId);
 
         if (!content) {
           return next(new ApiError('Content not found', StatusCodes.NOT_FOUND));
@@ -309,13 +320,18 @@ export const contentRouter: Router = (() => {
         const mindmapContent = content.generated?.find((item) => item.type === 'MIND_MAP');
 
         if (!mindmapContent) {
-          return next(new ApiError('Summary content not found', StatusCodes.NOT_FOUND));
+          return next(new ApiError('Mind Map content not found', StatusCodes.NOT_FOUND));
         }
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
           'Mind Map content retrieved successfully',
-          mindmapContent,
+          {
+            approved: mindmapContent.approved,
+            content: mindmapContent.content,
+            title: content.title,
+            userIsSatisfied: content.userIsSatisfied,
+          },
           StatusCodes.OK
         );
         handleApiResponse(apiResponse, res);
@@ -340,9 +356,14 @@ export const contentRouter: Router = (() => {
     roleMiddleware([Role.STUDENT, Role.TEACHER]),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const { contentId } = req.params;
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
 
       try {
-        const content = await contentService.getContentById(contentId);
+        const studentUserId = sessionContext.user.id;
+        const content = await contentService.getContentById(contentId, studentUserId);
 
         if (!content) {
           return next(new ApiError('Content not found', StatusCodes.NOT_FOUND));
@@ -351,13 +372,18 @@ export const contentRouter: Router = (() => {
         const gamificationContent = content.generated?.find((item) => item.type === 'GAMIFICATION');
 
         if (!gamificationContent) {
-          return next(new ApiError('Summary content not found', StatusCodes.NOT_FOUND));
+          return next(new ApiError('Gamification content not found', StatusCodes.NOT_FOUND));
         }
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
           'Gamification content retrieved successfully',
-          gamificationContent,
+          {
+            approved: gamificationContent.approved,
+            content: gamificationContent.content,
+            title: content.title,
+            userIsSatisfied: content.userIsSatisfied,
+          },
           StatusCodes.OK
         );
         handleApiResponse(apiResponse, res);
@@ -382,9 +408,14 @@ export const contentRouter: Router = (() => {
     roleMiddleware([Role.STUDENT, Role.TEACHER]),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const { contentId } = req.params;
+      const sessionContext = req.sessionContext;
+      if (!sessionContext?.user?.id) {
+        return next(UNAUTHORIZED);
+      }
 
       try {
-        const content = await contentService.getContentById(contentId);
+        const studentUserId = sessionContext.user.id;
+        const content = await contentService.getContentById(contentId, studentUserId);
 
         if (!content) {
           return next(new ApiError('Content not found', StatusCodes.NOT_FOUND));
@@ -399,12 +430,17 @@ export const contentRouter: Router = (() => {
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
           'Speech content retrieved successfully',
-          speechContent,
+          {
+            approved: speechContent.approved,
+            content: speechContent.content,
+            title: content.title,
+            userIsSatisfied: content.userIsSatisfied,
+          },
           StatusCodes.OK
         );
         handleApiResponse(apiResponse, res);
       } catch (e) {
-        const apiError = new ApiError('Failed to retrieve Gamification content', StatusCodes.INTERNAL_SERVER_ERROR, e);
+        const apiError = new ApiError('Failed to retrieve Speech content', StatusCodes.INTERNAL_SERVER_ERROR, e);
         return next(apiError);
       }
     }
