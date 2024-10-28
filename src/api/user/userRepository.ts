@@ -42,13 +42,10 @@ export const userRepository = {
     return UserModel.find<User>({ role, _id: { $in: userIds } }).exec();
   },
 
-  async updateUserProfile(
-    userId: string,
-    updatedFields: Partial<{ email: string; firstName: string; lastName: string }>
-  ) {
+  async updateUserProfile(userId: string, profilePicture: string) {
     const updatedUser = await UserModel.findByIdAndUpdate(
       userId,
-      { $set: updatedFields },
+      { $set: { profilePicture } },
       { new: true, runValidators: true }
     ).exec();
     return updatedUser;

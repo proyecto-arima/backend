@@ -26,6 +26,7 @@ export const UserDTOSchema = z.object({
     type: z.string(),
     number: z.string(),
   }),
+  profilePicture: z.string().default(''), // Campo opcional con valor por defecto
 });
 export type UserDTO = z.infer<typeof UserDTOSchema>; // Inferred type of UserDTO
 
@@ -54,6 +55,7 @@ const userModelSchemaDefinition = {
       required: true,
     },
   },
+  profilePicture: { type: String, default: '' }, // Campo de foto de perfil opcional con valor por defecto
   forcePasswordReset: { type: Boolean, default: true },
   nextDateSurvey: { type: Date },
 };
@@ -99,6 +101,7 @@ userModelSchema.method('toDto', function (): UserDTO {
       number: this.document.number.toString(),
     },
     email: this.email.toString(),
+    profilePicture: this.profilePicture, // Devuelve el campo de foto de perfil
   };
 });
 
@@ -209,9 +212,7 @@ export type UserLoginDTO = z.infer<typeof UserLoginSchema.shape.body>;
 
 export const UpdateUserProfileSchema = z.object({
   body: z.object({
-    email: z.string().email().optional(),
-    firstName: z.string().min(1).optional(),
-    lastName: z.string().min(1).optional(),
+    profilePicture: z.string().url().optional(),
   }),
 });
 
