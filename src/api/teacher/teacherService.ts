@@ -10,6 +10,7 @@ import { Role } from '@/common/models/role';
 import { config } from '@/common/utils/config';
 import { logger } from '@/common/utils/serverLogger';
 
+import { instituteRepository } from '../institute/instituteRepository';
 import { userService } from '../user/userService';
 import { teacherRepository } from './teacherRepository';
 
@@ -31,6 +32,8 @@ export const teacherService = {
     logger.trace(`[TeacherService] - [create] - Teacher created: ${JSON.stringify(createdUser)}`);
 
     const instituteId = await directorRepository.getInstituteId(directorUserId);
+    const instituteName: string = (await instituteRepository.findById(instituteId)).name;
+
     const teacher = new TeacherModel({
       user: createdUser.id,
       institute: instituteId,
@@ -48,7 +51,7 @@ export const teacherService = {
       templateParams: {
         teacherName: createdUser.firstName,
         teacherEmail: createdUser.email,
-        teacherInstitute: teacher.toDto().institute.name,
+        teacherInstitute: instituteName,
         reset_password_link: `${config.app.frontendUrl}/recoverPassword?token=${token}`,
       },
     });
