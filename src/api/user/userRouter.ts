@@ -135,11 +135,10 @@ export const userRouter: Router = (() => {
           return next(UNAUTHORIZED);
         }
 
-        const { email, firstName, lastName } = req.body;
-        const updatedFields = { email, firstName, lastName };
+        const { profilePicture } = req.body;
 
         // Actualizar solo los campos proporcionados
-        const updatedUser = await userService.updateUserProfile(userId, updatedFields);
+        const updatedUser = await userService.updateUserProfile(userId, profilePicture);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,

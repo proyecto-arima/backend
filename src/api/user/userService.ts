@@ -102,11 +102,8 @@ export const userService = {
     return users.map((user) => user.toDto());
   },
 
-  async updateUserProfile(
-    userId: string,
-    updatedFields: Partial<{ email: string; firstName: string; lastName: string }>
-  ): Promise<UserDTO> {
-    const updatedUser = await userRepository.updateUserProfile(userId, updatedFields);
+  async updateUserProfile(userId: string, profilePicture: string): Promise<UserDTO> {
+    const updatedUser = await userRepository.updateUserProfile(userId, profilePicture);
 
     if (!updatedUser) {
       throw new Error('User not found');
