@@ -150,11 +150,11 @@ export const UserCreationSchema = z.object({
   body: z.object({
     firstName: z
       .string()
-      .regex(/^[a-zA-Z\s]+$/, 'First name must contain only letters')
+      .regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'First name must contain only letters')
       .min(1, 'First name cannot be empty'),
     lastName: z
       .string()
-      .regex(/^[a-zA-Z\s]+$/, 'Last name must contain only letters')
+      .regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'Last name must contain only letters')
       .min(1, 'Last name cannot be empty'),
     email: z.string().email('Invalid email format'),
     document: DocumentSchema,
@@ -167,11 +167,11 @@ export const UserCreationMassiveSchema = z.object({
       z.object({
         firstName: z
           .string()
-          .regex(/^[a-zA-Z\s]+$/, 'First name must contain only letters')
+          .regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'First name must contain only letters')
           .min(1, 'First name cannot be empty'),
         lastName: z
           .string()
-          .regex(/^[a-zA-Z\s]+$/, 'Last name must contain only letters')
+          .regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'Last name must contain only letters')
           .min(1, 'Last name cannot be empty'),
         email: z.string().email('Invalid email format'),
         document: DocumentSchema,
@@ -184,11 +184,11 @@ export const UserDirectorCreationSchema = z.object({
   body: z.object({
     firstName: z
       .string()
-      .regex(/^[a-zA-Z\s]+$/, 'First name must contain only letters')
+      .regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'First name must contain only letters')
       .min(1, 'First name cannot be empty'),
     lastName: z
       .string()
-      .regex(/^[a-zA-Z\s]+$/, 'Last name must contain only letters')
+      .regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'Last name must contain only letters')
       .min(1, 'Last name cannot be empty'),
     email: z.string().email('Invalid email format'),
     document: DocumentSchema,
