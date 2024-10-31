@@ -79,13 +79,10 @@ export const surveyRouter: Router = (() => {
           }
         }
         // Calcular la fecha dentro de un mes
-        //const nextMonthDate = new Date();
-        //nextMonthDate.setMonth(nextMonthDate.getMonth() + 1); // Agregar un mes a la fecha actual
+        const nextMonthDate = new Date();
+        nextMonthDate.setMonth(nextMonthDate.getMonth() + 1); // Agregar un mes a la fecha actual
 
-        const nextDate = new Date();
-        nextDate.setMinutes(nextDate.getMinutes() + 1);
-
-        await userService.updateNextDateSurvey(userId, nextDate);
+        await userService.updateNextDateSurvey(userId, nextMonthDate);
 
         const apiResponse = new ApiResponse(ResponseStatus.Success, 'Survey saved successfully', null, StatusCodes.OK);
         handleApiResponse(apiResponse, res);

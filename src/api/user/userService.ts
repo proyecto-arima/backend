@@ -73,15 +73,12 @@ export const userService = {
   },
 
   create: async (user: UserCreation): Promise<UserDTO> => {
-    //const nextMonth = new Date();
-    //nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-    const nextDate = new Date();
-    nextDate.setMinutes(nextDate.getMinutes() + 1);
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
 
     const userWithSurveyFields = {
       ...user,
-      nextDateSurvey: nextDate, // La fecha de la encuesta es en un min
+      nextDateSurvey: nextMonth, // La fecha de la encuesta es en un min
     };
 
     const createdUser: User = await userRepository.create(userWithSurveyFields);
