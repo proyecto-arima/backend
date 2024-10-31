@@ -66,6 +66,20 @@ export const contentService = {
     return content.toDto();
   },
 
+  async updateContent(contentId: string, title: string, visibility: boolean): Promise<ContentDTO> {
+    const content = await ContentModel.findById(contentId);
+
+    if (!content) {
+      throw new Error('Content not found');
+    }
+
+    content.title = title;
+    content.visible = visibility;
+    await content.save();
+
+    return content.toDto();
+  },
+
   async deleteContent(contentId: string): Promise<void> {
     const content = await ContentModel.findById(contentId);
 

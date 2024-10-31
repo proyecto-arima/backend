@@ -219,12 +219,13 @@ export const SpeechContentSchema = z.object({
   approved: z.boolean(),
 });
 
-export const UpdateTitleSchema = z.object({
+export const UpdateContentSchema = z.object({
   params: z.object({
     contentId: z.string(),
   }),
   body: z.object({
     title: z.string(),
+    visibility: z.boolean(),
   }),
 });
 

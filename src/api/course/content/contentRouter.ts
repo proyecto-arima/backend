@@ -12,7 +12,7 @@ import {
   SpeechContentSchema,
   SummaryContentSchema,
   UpdateApproveSchema,
-  UpdateTitleSchema,
+  UpdateContentSchema,
   UpdateVisibilitySchema,
 } from '@/api/course/content/contentModel';
 import { contentService } from '@/api/course/content/contentService';
@@ -448,30 +448,30 @@ export const contentRouter: Router = (() => {
 
   contentRegistry.registerPath({
     method: 'patch',
-    path: '/contents/{contentId}/title',
+    path: '/contents/{contentId}/',
     tags: ['Content'],
     request: {
-      params: UpdateTitleSchema.shape.params,
-      body: { content: { 'application/json': { schema: UpdateTitleSchema.shape.body } } },
+      params: UpdateContentSchema.shape.params,
+      body: { content: { 'application/json': { schema: UpdateContentSchema.shape.body } } },
     },
     responses: createApiResponse(ContentDTOSchema, 'Success'),
   });
 
   router.patch(
-    '/:contentId/title',
+    '/:contentId/',
     sessionMiddleware,
     roleMiddleware([Role.TEACHER]),
-    validateRequest(UpdateTitleSchema),
+    validateRequest(UpdateContentSchema),
     async (req: SessionRequest, res: Response, next: NextFunction) => {
       const { contentId } = req.params;
-      const { title } = req.body;
+      const { title, visibility } = req.body;
 
       try {
-        const updatedContent = await contentService.updateContentTitle(contentId, title);
+        const updatedContent = await contentService.updateContent(contentId, title, visibility);
 
         const apiResponse = new ApiResponse(
           ResponseStatus.Success,
-          'Content title updated successfully',
+          'Content updated successfully',
           updatedContent,
           StatusCodes.OK
         );
@@ -488,8 +488,8 @@ export const contentRouter: Router = (() => {
     path: '/contents/{contentId}',
     tags: ['Content'],
     request: {
-      params: UpdateTitleSchema.shape.params,
-      body: { content: { 'application/json': { schema: UpdateTitleSchema.shape.body } } },
+      params: UpdateContentSchema.shape.params,
+      body: { content: { 'application/json': { schema: UpdateContentSchema.shape.body } } },
     },
     responses: createApiResponse(ContentDTOSchema, 'Success'),
   });
